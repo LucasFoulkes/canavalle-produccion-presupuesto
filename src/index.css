@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./lib/safe-area.css";
 
 /* PWA App-like styles */
 html,
@@ -13,12 +14,14 @@ body {
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
-  padding: 0;
   margin: 0;
-  /* Add support for safe area insets */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   background-color: #f3f4f6;
   /* Light gray background */
+}
+
+/* Add this utility class for safe bottom padding */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 #root {
