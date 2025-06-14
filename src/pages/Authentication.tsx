@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useSupabase } from '@/hooks/useSupabase';
 import { useNavigate } from 'react-router-dom';
 
