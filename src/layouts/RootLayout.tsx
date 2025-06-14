@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <main className="flex-1 overflow-auto p-4">
                 {children}
             </main>
-            <nav className="flex gap-4 p-4 shrink-0">
+            <nav className="flex gap-4 p-4 shrink-0 bg-black">
                 <NavLink to="/acciones" label="acciones" />
                 <NavLink to="/configuracion" label="configuracion" />
             </nav>
