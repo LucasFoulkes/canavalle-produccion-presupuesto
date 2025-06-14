@@ -19,8 +19,8 @@ export default defineConfig({
       name: 'Cananvalle Producción',
       short_name: 'Cananvalle',
       description: 'Aplicación de presupuesto y producción de Cananvalle',
-      theme_color: '#ffffff',
-      background_color: '#ffffff',
+      theme_color: '#f3f4f6',
+      background_color: '#f3f4f6',
       display: 'standalone',
       orientation: 'portrait',
       icons: [
