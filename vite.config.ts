@@ -16,10 +16,31 @@ export default defineConfig({
     },
 
     manifest: {
-      name: 'cananvalle-produccion-presupuesto',
-      short_name: 'cananvalle-produccion-presupuesto',
-      description: 'cananvalle-produccion-presupuesto',
+      name: 'Cananvalle Producción',
+      short_name: 'Cananvalle',
+      description: 'Aplicación de presupuesto y producción de Cananvalle',
       theme_color: '#ffffff',
+      background_color: '#ffffff',
+      display: 'standalone',
+      orientation: 'portrait',
+      icons: [
+        {
+          src: '/icons/pwa-192x192.png',
+          sizes: '192x192',
+          type: 'image/png'
+        },
+        {
+          src: '/icons/pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png'
+        },
+        {
+          src: '/icons/pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
+        }
+      ]
     },
 
     workbox: {

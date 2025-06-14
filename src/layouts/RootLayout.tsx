@@ -11,11 +11,11 @@ function NavLink({ to, label }: { to: string; label?: string }) {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex flex-col min-h-screen">
-            <main className="container mx-auto p-4 flex-1 ">
+        <div className="flex flex-col h-full">
+            <main className="flex-1 overflow-auto p-4">
                 {children}
             </main>
-            <nav className="flex gap-2 p-2">
+            <nav className="flex gap-4 p-4 shrink-0">
                 <NavLink to="/acciones" label="acciones" />
                 <NavLink to="/configuracion" label="configuracion" />
             </nav>
