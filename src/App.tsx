@@ -1,10 +1,18 @@
-import { Button } from "@/components/ui/button"
+import { Routes, Route } from "react-router-dom"
+import Authentication from "./pages/Authentication"
+import RootLayout from "./layouts/RootLayout"
+import Acciones from "./pages/Acciones"
+import Configuracion from "./pages/Configuracion"
 
 function App() {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
+    <RootLayout>
+      <Routes>
+        <Route path="/" element={<Authentication />} />
+        <Route path="/acciones" element={<Acciones />} />
+        <Route path="/configuracion" element={<Configuracion />} />
+      </Routes>
+    </RootLayout>
   )
 }
 
