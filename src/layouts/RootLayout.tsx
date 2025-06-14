@@ -12,7 +12,7 @@ function NavLink({ to, label }: { to: string; label?: string }) {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <div className="flex flex-col min-h-screen">
-            <main className="container mx-auto p-4 flex-grow ">
+            <main className="container mx-auto p-4 flex-1 ">
                 {children}
             </main>
             <nav className="flex gap-2 p-2">
