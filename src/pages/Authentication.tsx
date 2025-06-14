@@ -23,7 +23,6 @@ export default function Authentication() {
 
                 if (isValid && userData) {
                     setMessage({ type: 'success', text: `Bienvenido/a ${userData.nombre || 'Administrador/a'}` });
-                    // Store user data in session or context if needed
                     setTimeout(() => {
                         navigate('/acciones');
                     }, 1000);
