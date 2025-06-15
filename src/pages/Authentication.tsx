@@ -75,12 +75,9 @@ export default function Authentication() {
             setPin('');
             setMessage(null);
         }
-    };
-
-    return (
-        <div className="flex flex-col items-center justify-between min-h-[90vh] py-8">
-            {/* Header */}
-            <div className="flex flex-col items-center mb-8">
+    }; return (
+        <div className="flex flex-col items-center justify-between min-h-[90vh] py-8 px-4">            {/* Header */}
+            <div className="flex flex-col items-center mb-12 mt-8">
                 <h1 className="text-3xl font-bold mb-2">Cananvalle</h1>
                 <p className="text-gray-500">Ingrese su PIN para continuar</p>
             </div>
@@ -106,20 +103,21 @@ export default function Authentication() {
 
                 {message && (
                     <div className={`text-sm mt-4 ${message.type === 'error' ? 'text-red-500' :
-                            message.type === 'success' ? 'text-green-500' :
-                                'text-blue-500'
+                        message.type === 'success' ? 'text-green-500' :
+                            'text-blue-500'
                         }`}>
                         {message.text}
                     </div>
                 )}
+            </div>            {/* Numeric Keyboard - properly centered */}
+            <div className="w-full flex justify-center mt-12 mb-8">
+                <NumericKeyboard
+                    onKeyPress={handleKeyPress}
+                    onDelete={handleDelete}
+                    onClear={handleClear}
+                    disabled={loading}
+                />
             </div>
-
-            {/* Numeric Keyboard */}
-            <NumericKeyboard
-                onKeyPress={handleKeyPress}
-                onDelete={handleDelete}
-                onClear={handleClear}
-                disabled={loading}
-            />        </div>
+        </div>
     );
 }
