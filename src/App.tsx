@@ -3,6 +3,7 @@ import Authentication from "./pages/Authentication"
 import RootLayout from "./layouts/RootLayout"
 import Fincas from "./pages/Fincas"
 import Bloques from "./pages/Bloques"
+import Acciones from "./pages/Acciones"
 import Variedades from "./pages/Variedades"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ReactElement } from "react"
@@ -41,6 +42,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Bloques />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/acciones/:bloqueId"
+          element={
+            <ProtectedRoute>
+              <Acciones />
             </ProtectedRoute>
           }
         />

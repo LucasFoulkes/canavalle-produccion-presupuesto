@@ -23,11 +23,9 @@ export default function Variedades() {
             return truncateLocation(currentBloque.nombre);
         }
         return 'Variedades';
-    };
-
-    const getBackPath = () => {
-        if (currentFinca) {
-            return `/bloques/${currentFinca.id}`;
+    }; const getBackPath = () => {
+        if (bloqueId) {
+            return `/acciones/${bloqueId}`;
         }
         return '/fincas';
     }; const fetchVariedades = useCallback(() => {
