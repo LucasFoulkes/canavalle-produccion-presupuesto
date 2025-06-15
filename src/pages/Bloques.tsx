@@ -1,29 +1,38 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSupabase } from '@/hooks/useSupabase';
+import { useAuth } from '@/contexts/AuthContext';
 import DataGridPage from '@/components/DataGridPage';
 
 export default function Bloques() {
     const { fincaId } = useParams<{ fincaId: string }>();
+    const navigate = useNavigate();
     const { fetchBloquesByFincaId, fetchFincaById } = useSupabase();
+    const { currentFinca, setCurrentFinca, setCurrentBloque } = useAuth();
     const [fincaName, setFincaName] = useState<string>('');
 
     useEffect(() => {
         if (fincaId) {
-            fetchFincaById(fincaId).then(({ data }) => {
-                setFincaName(data?.nombre || 'Finca');
-            });
+            // Check if we already have the finca in context
+            if (currentFinca && currentFinca.id === fincaId) {
+                setFincaName(currentFinca.nombre);
+            } else {
+                // Fetch and store in context
+                fetchFincaById(fincaId).then(({ data }) => {
+                    if (data) {
+                        setCurrentFinca(data);
+                        setFincaName(data.nombre);
+                    }
+                });
+            }
         }
-    }, [fincaId, fetchFincaById]);
-
-    const fetchBloques = () => {
+    }, [fincaId, fetchFincaById, currentFinca, setCurrentFinca]); const fetchBloques = useCallback(() => {
         if (!fincaId) return Promise.resolve({ data: [], error: null });
         return fetchBloquesByFincaId(fincaId);
-    };
-
-    const handleBloqueClick = (bloque: any) => {
-        // TODO: Navigate to bloque details
-        console.log('Clicked bloque:', bloque.id);
+    }, [fincaId, fetchBloquesByFincaId]); const handleBloqueClick = (bloque: any) => {
+        // Store the clicked bloque in context
+        setCurrentBloque(bloque);
+        navigate(`/variedades/${bloque.id}`);
     }; return (
         <DataGridPage
             fetchData={fetchBloques}

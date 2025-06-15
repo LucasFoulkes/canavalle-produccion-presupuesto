@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Grid3X3 } from 'lucide-react';
 import { useDataGrid } from '@/hooks/useDataGrid';
 import DataStateHandler from './DataStateHandler';
-import GridCard from './GridCard';
 import { Button } from '@/components/ui/button';
 
 interface DataGridPageProps {
@@ -56,26 +55,27 @@ export default function DataGridPage({
     }; return (
         <div className="container mx-auto space-y-4">
             {showHeader && (
-                <div className="flex items-center justify-between ">
-                    <Button variant='outline' className='uppercase h-16 flex-grow justify-between'>
-                        {showBackButton && (
-                            <button
-                                onClick={() => navigate(backPath)}
-                                className="flex items-center justify-center w-8 h-8 rounded-full"
-                            >
-                                <ChevronLeft className="size-10 text-zinc-300" />
-                            </button>
-                        )}
-                        {title && <h1 className="text-4xl font-bold flex-grow">{title}</h1>}
-                    </Button>
+                <div className="flex items-center gap-2">
+                    {title && (
+                        <Button
+                            variant='outline'
+                            className='uppercase h-16 flex-grow flex items-center justify-center gap-3'
+                            onClick={showBackButton ? () => navigate(backPath) : undefined}
+                        >
+                            {showBackButton && <ChevronLeft className="w-6 h-6" />}
+                            <h1 className="text-4xl font-bold">{title}</h1>
+                        </Button>
+                    )}
 
                     {showGridToggle && (
-                        <button
+                        <Button
+                            variant="outline"
+                            size="icon"
                             onClick={toggleGrid}
-                            className="flex items-center justify-center w-8 h-8 rounded-full"
+                            className="flex-shrink-0"
                         >
                             <Grid3X3 className="w-5 h-5" />
-                        </button>
+                        </Button>
                     )}
                 </div>
             )}
@@ -87,11 +87,14 @@ export default function DataGridPage({
                 emptyMessage={emptyMessage}
             >                <div className={getGridClasses()}>
                     {data.map((item) => (
-                        <GridCard
+                        <Button
                             key={getItemKey(item)}
-                            title={getItemTitle(item)}
+                            className={`w-full uppercase text-lg ${cols === 1 ? 'h-16' : 'aspect-square h-full'}`}
                             onClick={() => onItemClick?.(item)}
-                        />
+                            variant="outline"
+                        >
+                            {getItemTitle(item)}
+                        </Button>
                     ))}
                 </div>
             </DataStateHandler>

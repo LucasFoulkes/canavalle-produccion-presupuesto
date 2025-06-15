@@ -7,20 +7,20 @@ interface UseDataGridProps {
 export function useDataGrid({ fetchData }: UseDataGridProps) {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const loadData = useCallback(async () => {
+    const [error, setError] = useState<string | null>(null); const loadData = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
             const result = await fetchData();
 
             if (result.error) {
+                console.error('Error fetching data:', result.error);
                 setError(result.error.message || 'Error desconocido');
             } else {
                 setData(result.data || []);
             }
         } catch (err) {
+            console.error('Exception in loadData:', err);
             setError('Error inesperado al cargar los datos');
         } finally {
             setLoading(false);

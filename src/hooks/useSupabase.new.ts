@@ -32,7 +32,7 @@ export const useSupabase = () => {
 
     const fetchFincas = useCallback((): QueryResult<Finca[]> => query('fincas'), [query]);
 
-    const fetchBloquesByFincaId = useCallback((fincaId: string): QueryResult<Bloque[]> => 
+    const fetchBloquesByFincaId = useCallback((fincaId: string): QueryResult<Bloque[]> =>
         query('bloques', '*', { finca_id: fincaId }), [query]);
 
     const fetchFincaById = useCallback(async (fincaId: string): QueryResult<Finca> => {
