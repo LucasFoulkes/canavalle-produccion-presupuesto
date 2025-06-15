@@ -8,15 +8,17 @@ export default function Acciones() {
 
     const handleFincaClick = (finca: any) => {
         navigate(`/bloques/${finca.id}`);
-    };
-
-    return (
+    }; return (
         <DataGridPage
             fetchData={fetchFincas}
             emptyMessage="No hay fincas disponibles"
             onItemClick={handleFincaClick}
             getItemTitle={(finca) => finca.nombre}
             getItemKey={(finca) => finca.id}
+            showHeader={false}
+            showGridToggle={false}
+            defaultCols={2}
+            storageKey="accionesGridLayout"
         />
     );
 }

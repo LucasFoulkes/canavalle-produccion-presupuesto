@@ -24,9 +24,7 @@ export default function Bloques() {
     const handleBloqueClick = (bloque: any) => {
         // TODO: Navigate to bloque details
         console.log('Clicked bloque:', bloque.id);
-    };
-
-    return (
+    }; return (
         <DataGridPage
             fetchData={fetchBloques}
             title={fincaName}
@@ -36,6 +34,10 @@ export default function Bloques() {
             onItemClick={handleBloqueClick}
             getItemTitle={(bloque) => bloque.nombre}
             getItemKey={(bloque) => bloque.id}
+            showHeader={true}
+            showGridToggle={false}
+            defaultCols={4}
+            storageKey="bloquesGridLayout"
         />
     );
 }

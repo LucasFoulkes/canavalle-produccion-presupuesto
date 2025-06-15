@@ -96,16 +96,14 @@ export const useSupabase = () => {    // Generic database operations
             console.error('Error in fetchFincas:', error);
             return { data: null, error };
         }
-    }, []);
-
-    // Fetch blocks by finca ID
+    }, []);    // Fetch blocks by finca ID
     const fetchBloquesByFincaId = useCallback(async (fincaId: string): Promise<{ data: Bloque[] | null; error: any }> => {
         try {
             const { data, error } = await supabase
                 .from('bloques')
                 .select('*')
                 .eq('finca_id', fincaId)
-                .order('nombre');
+            // .order('created_at', { ascending: true });
 
             if (error) {
                 console.error('Error fetching bloques:', error);
