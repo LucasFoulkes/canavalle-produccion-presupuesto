@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { useCallback } from 'react';
 
 // Initialize the Supabase client
 const supabaseUrl = 'https://enejgdsgqahbktocmvev.supabase.co';
@@ -14,9 +15,26 @@ interface Usuario {
     created_at?: string;
 }
 
-export const useSupabase = () => {
-    // Generic database operations
-    const fetchData = async (table: string, queryOptions: any = {}) => {
+interface Finca {
+    id: string;
+    nombre: string;
+    ubicacion?: string;
+    hectareas?: number;
+    created_at?: string;
+    // Add other fields as needed
+}
+
+interface Bloque {
+    id: string;
+    nombre: string;
+    finca_id: string;
+    hectareas?: number;
+    created_at?: string;
+    // Add other fields as needed
+}
+
+export const useSupabase = () => {    // Generic database operations
+    const fetchData = useCallback(async (table: string, queryOptions: any = {}) => {
         let query = supabase.from(table).select(queryOptions.select || '*');
 
         // Apply filters if provided
@@ -35,8 +53,10 @@ export const useSupabase = () => {
 
         const { data, error } = await query;
         return { data, error };
-    };    // Authentication with PIN
-    const verifyAdminPin = async (pin: string): Promise<{ isValid: boolean; userData?: Usuario }> => {
+    }, []);
+
+    // Authentication with PIN
+    const verifyAdminPin = useCallback(async (pin: string): Promise<{ isValid: boolean; userData?: Usuario }> => {
         try {
             const { data, error } = await supabase
                 .from('usuarios')
@@ -58,11 +78,74 @@ export const useSupabase = () => {
             console.error('Error in verifyAdminPin:', error);
             return { isValid: false };
         }
-    };
+    }, []);// Fetch all fincas
+    const fetchFincas = useCallback(async (): Promise<{ data: Finca[] | null; error: any }> => {
+        try {
+            const { data, error } = await supabase
+                .from('fincas')
+                .select('*')
+                .order('nombre');
+
+            if (error) {
+                console.error('Error fetching fincas:', error);
+                return { data: null, error };
+            }
+
+            return { data: data as Finca[], error: null };
+        } catch (error) {
+            console.error('Error in fetchFincas:', error);
+            return { data: null, error };
+        }
+    }, []);
+
+    // Fetch blocks by finca ID
+    const fetchBloquesByFincaId = useCallback(async (fincaId: string): Promise<{ data: Bloque[] | null; error: any }> => {
+        try {
+            const { data, error } = await supabase
+                .from('bloques')
+                .select('*')
+                .eq('finca_id', fincaId)
+                .order('nombre');
+
+            if (error) {
+                console.error('Error fetching bloques:', error);
+                return { data: null, error };
+            }
+
+            return { data: data as Bloque[], error: null };
+        } catch (error) {
+            console.error('Error in fetchBloquesByFincaId:', error);
+            return { data: null, error };
+        }
+    }, []);
+
+    // Fetch a single finca by ID
+    const fetchFincaById = useCallback(async (fincaId: string): Promise<{ data: Finca | null; error: any }> => {
+        try {
+            const { data, error } = await supabase
+                .from('fincas')
+                .select('*')
+                .eq('id', fincaId)
+                .single();
+
+            if (error) {
+                console.error('Error fetching finca:', error);
+                return { data: null, error };
+            }
+
+            return { data: data as Finca, error: null };
+        } catch (error) {
+            console.error('Error in fetchFincaById:', error);
+            return { data: null, error };
+        }
+    }, []);
 
     return {
         // Database
         fetchData,
+        fetchFincas,
+        fetchBloquesByFincaId,
+        fetchFincaById,
 
         // Auth
         verifyAdminPin,

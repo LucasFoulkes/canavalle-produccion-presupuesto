@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import Authentication from "./pages/Authentication"
 import RootLayout from "./layouts/RootLayout"
 import Acciones from "./pages/Acciones"
+import Bloques from "./pages/Bloques"
 import Configuracion from "./pages/Configuracion"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ReactElement } from "react"
@@ -40,6 +41,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Configuracion />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bloques/:fincaId"
+          element={
+            <ProtectedRoute>
+              <Bloques />
             </ProtectedRoute>
           }
         />
