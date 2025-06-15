@@ -1,10 +1,9 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"
 import Authentication from "./pages/Authentication"
 import RootLayout from "./layouts/RootLayout"
-import Acciones from "./pages/Acciones"
+import Fincas from "./pages/Fincas"
 import Bloques from "./pages/Bloques"
 import Variedades from "./pages/Variedades"
-import Configuracion from "./pages/Configuracion"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { ReactElement } from "react"
 
@@ -30,18 +29,10 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Authentication />} />
         <Route
-          path="/acciones"
+          path="/fincas"
           element={
             <ProtectedRoute>
-              <Acciones />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/configuracion"
-          element={
-            <ProtectedRoute>
-              <Configuracion />
+              <Fincas />
             </ProtectedRoute>
           }
         />

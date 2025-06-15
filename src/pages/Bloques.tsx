@@ -33,19 +33,19 @@ export default function Bloques() {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/variedades/${bloque.id}`);
-    }; return (        <DataGridPage
-            fetchData={fetchBloques}
-            title={fincaName || 'Finca'}
-            showBackButton={true}
-            backPath="/acciones"
-            emptyMessage="No hay bloques disponibles para esta finca"
-            onItemClick={handleBloqueClick}
-            getItemTitle={(bloque) => bloque.nombre}
-            getItemKey={(bloque) => bloque.id}
-            showHeader={true}
-            showGridToggle={false}
-            defaultCols={4}
-            storageKey="bloquesGridLayout"
-        />
+    }; return (<DataGridPage
+        fetchData={fetchBloques}
+        title={fincaName || 'Finca'}
+        showBackButton={true}
+        backPath="/fincas"
+        emptyMessage="No hay bloques disponibles para esta finca"
+        onItemClick={handleBloqueClick}
+        getItemTitle={(bloque) => bloque.nombre}
+        getItemKey={(bloque) => bloque.id}
+        showHeader={true}
+        showGridToggle={false}
+        defaultCols={4}
+        storageKey="bloquesGridLayout"
+    />
     );
 }

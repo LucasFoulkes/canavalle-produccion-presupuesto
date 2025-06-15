@@ -16,7 +16,7 @@ type QueryResult<T> = Promise<{ data: T | null; error: any }>;
 export const useSupabase = () => {
     const query = useCallback(async <T>(table: string, select = '*', filters?: Record<string, any>): QueryResult<T[]> => {
         try {
-            let q = supabase.from(table).select(select).order('nombre');
+            let q = supabase.from(table).select(select);
             if (filters) Object.entries(filters).forEach(([key, value]) => q = q.eq(key, value));
             const { data, error } = await q;
             return { data: error ? null : data as T[], error };
@@ -32,7 +32,7 @@ export const useSupabase = () => {
 
     const fetchFincas = useCallback((): QueryResult<Finca[]> => query('fincas'), [query]);
 
-    const fetchBloquesByFincaId = useCallback((fincaId: string): QueryResult<Bloque[]> => 
+    const fetchBloquesByFincaId = useCallback((fincaId: string): QueryResult<Bloque[]> =>
         query('bloques', '*', { finca_id: fincaId }), [query]);
 
     const fetchFincaById = useCallback(async (fincaId: string): QueryResult<Finca> => {
@@ -59,7 +59,6 @@ export const useSupabase = () => {
                 .from('variedades')
                 .select('id, nombre')
                 .in('id', ids)
-                .order('nombre');
 
             return { data: error ? [] : data as Variedad[], error };
         } catch (error) {

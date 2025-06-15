@@ -11,12 +11,10 @@ export default function Authentication() {
     const [message, setMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
     const { verifyAdminPin } = useSupabase();
     const navigate = useNavigate();
-    const { login, isAuthenticated } = useAuth();
-
-    // Redirect if already authenticated
+    const { login, isAuthenticated } = useAuth();    // Redirect if already authenticated
     useEffect(() => {
         if (isAuthenticated) {
-            navigate('/acciones');
+            navigate('/fincas');
         }
     }, [isAuthenticated, navigate]);
 
@@ -34,10 +32,8 @@ export default function Authentication() {
                         setMessage({ type: 'success', text: `Bienvenido/a ${userData.nombre || 'Administrador/a'}` });
 
                         // Store user data using Auth context
-                        login(userData);
-
-                        setTimeout(() => {
-                            navigate('/acciones');
+                        login(userData); setTimeout(() => {
+                            navigate('/fincas');
                         }, 1000);
                     } else {
                         setMessage({ type: 'error', text: 'PIN inválido. Intente nuevamente.' });

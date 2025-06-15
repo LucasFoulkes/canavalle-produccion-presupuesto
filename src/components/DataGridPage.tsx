@@ -25,7 +25,7 @@ export default function DataGridPage({
     title,
     emptyMessage = "No hay datos disponibles",
     showBackButton = false,
-    backPath = "/acciones",
+    backPath = "/fincas",
     onItemClick,
     getItemTitle,
     getItemKey,
@@ -56,18 +56,18 @@ export default function DataGridPage({
         <div className="container mx-auto space-y-4">
             {showHeader && (
                 <div className="flex items-center gap-2">                    {title && (
-                        <Button
-                            variant='outline'
-                            className='uppercase h-16 flex-grow flex items-center justify-between px-4'
-                            onClick={showBackButton ? () => navigate(backPath) : undefined}
-                        >
-                            <div className="flex items-center">
-                                {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
-                            </div>
-                            <h1 className="text-4xl font-bold flex-1 text-center">{title}</h1>
-                            <div className="w-9"></div> {/* Spacer to balance the layout */}
-                        </Button>
-                    )}
+                    <Button
+                        variant='outline'
+                        className='uppercase h-16 flex-grow flex items-center justify-between px-4'
+                        onClick={showBackButton ? () => navigate(backPath) : undefined}
+                    >
+                        <div className="flex items-center">
+                            {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
+                        </div>
+                        <h1 className="text-4xl font-bold flex-1 text-center">{title}</h1>
+                        <div className="w-9"></div> {/* Spacer to balance the layout */}
+                    </Button>
+                )}
 
                     {showGridToggle && (
                         <Button

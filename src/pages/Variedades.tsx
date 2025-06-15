@@ -22,7 +22,7 @@ export default function Variedades() {
         if (currentFinca) {
             return `/bloques/${currentFinca.id}`;
         }
-        return '/acciones';
+        return '/fincas';
     }; const fetchVariedades = useCallback(() => {
         if (!bloqueId) {
             return Promise.resolve({ data: [], error: null });
