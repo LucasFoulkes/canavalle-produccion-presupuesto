@@ -7,12 +7,13 @@ import DataGridPage from '@/components/DataGridPage';
 export default function Variedades() {
     const { bloqueId } = useParams<{ bloqueId: string }>();
     const { fetchVariedadesByBloqueId } = useSupabase();
-    const { currentFinca, currentBloque } = useAuth();
-
-    // Get title and back path from context
+    const { currentFinca, currentBloque } = useAuth();    // Get breadcrumb title showing the hierarchy
     const getTitle = () => {
+        if (currentFinca && currentBloque) {
+            return `${currentFinca.nombre} / ${currentBloque.nombre}`;
+        }
         if (currentBloque) {
-            return `${currentBloque.nombre} - Variedades`;
+            return currentBloque.nombre;
         }
         return 'Variedades';
     };

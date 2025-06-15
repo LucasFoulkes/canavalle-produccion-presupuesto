@@ -55,15 +55,17 @@ export default function DataGridPage({
     }; return (
         <div className="container mx-auto space-y-4">
             {showHeader && (
-                <div className="flex items-center gap-2">
-                    {title && (
+                <div className="flex items-center gap-2">                    {title && (
                         <Button
                             variant='outline'
-                            className='uppercase h-16 flex-grow flex items-center justify-center gap-3'
+                            className='uppercase h-16 flex-grow flex items-center justify-between px-4'
                             onClick={showBackButton ? () => navigate(backPath) : undefined}
                         >
-                            {showBackButton && <ChevronLeft className="w-6 h-6" />}
-                            <h1 className="text-4xl font-bold">{title}</h1>
+                            <div className="flex items-center">
+                                {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
+                            </div>
+                            <h1 className="text-4xl font-bold flex-1 text-center">{title}</h1>
+                            <div className="w-9"></div> {/* Spacer to balance the layout */}
                         </Button>
                     )}
 

@@ -33,10 +33,9 @@ export default function Bloques() {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/variedades/${bloque.id}`);
-    }; return (
-        <DataGridPage
+    }; return (        <DataGridPage
             fetchData={fetchBloques}
-            title={fincaName}
+            title={fincaName || 'Finca'}
             showBackButton={true}
             backPath="/acciones"
             emptyMessage="No hay bloques disponibles para esta finca"
