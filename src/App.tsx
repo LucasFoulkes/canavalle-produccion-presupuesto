@@ -54,7 +54,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/variedades/:bloqueId"
+          path="/variedades/:bloqueId/:accionId"
           element={
             <ProtectedRoute>
               <Variedades />

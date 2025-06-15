@@ -48,9 +48,9 @@ export default function Acciones() {
     // Mock fetch function that returns the static actions
     const fetchAcciones = () => {
         return Promise.resolve({ data: ACCIONES_ITEMS, error: null });
-    }; const handleAccionClick = (_accion: any) => {
-        // Navigate to variedades when an action is selected
-        navigate(`/variedades/${bloqueId}`);
+    }; const handleAccionClick = (accion: any) => {
+        // Navigate to variedades with the selected action
+        navigate(`/variedades/${bloqueId}/${accion.id}`);
     };
 
     return (
@@ -64,8 +64,8 @@ export default function Acciones() {
             getItemTitle={(accion) => accion.nombre}
             getItemKey={(accion) => accion.id}
             showHeader={true}
-            showGridToggle={true}
-            defaultCols={2}
+            showGridToggle={false}
+            defaultCols={1}
             storageKey="accionesGridLayout"
         />
     );
