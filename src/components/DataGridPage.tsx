@@ -64,7 +64,7 @@ export default function DataGridPage({
                         <div className="flex items-center">
                             {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
                         </div>
-                        <h1 className="text-4xl font-bold flex-1 text-center">{title}</h1>
+                        <h1 className="text-4xl font-bold flex-1 text-center truncate px-2">{title}</h1>
                         <div className="w-9"></div> {/* Spacer to balance the layout */}
                     </Button>
                 )}

@@ -7,13 +7,20 @@ import DataGridPage from '@/components/DataGridPage';
 export default function Variedades() {
     const { bloqueId } = useParams<{ bloqueId: string }>();
     const { fetchVariedadesByBloqueId } = useSupabase();
-    const { currentFinca, currentBloque } = useAuth();    // Get breadcrumb title showing the hierarchy
+    const { currentFinca, currentBloque } = useAuth();    // Utility function to truncate location names
+    const truncateLocation = (name: string, maxLength: number = 5) => {
+        return name.length > maxLength ? name.substring(0, maxLength) : name;
+    };
+
+    // Get breadcrumb title showing the hierarchy
     const getTitle = () => {
         if (currentFinca && currentBloque) {
-            return `${currentFinca.nombre} / ${currentBloque.nombre}`;
+            const truncatedFinca = truncateLocation(currentFinca.nombre);
+            const truncatedBloque = truncateLocation(currentBloque.nombre);
+            return `${truncatedFinca} / ${truncatedBloque}`;
         }
         if (currentBloque) {
-            return currentBloque.nombre;
+            return truncateLocation(currentBloque.nombre);
         }
         return 'Variedades';
     };
