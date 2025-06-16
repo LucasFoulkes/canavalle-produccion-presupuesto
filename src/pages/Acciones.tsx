@@ -135,7 +135,8 @@ export default function Acciones() {
             emptyMessage="No hay acciones disponibles"
             onItemClick={handleAccionClick}
             getItemTitle={(accion) => accion.nombre}
-            getItemKey={(accion) => accion.id} getItemClassName={(accion) => {
+            getItemKey={(accion) => accion.id}
+            getItemClassName={(accion) => {
                 const status = accion.completionStatus;
                 if (status === 'complete') return 'border-green-500 border-2 bg-green-500/10 text-green-500/70';
                 if (status === 'partial') return 'border-yellow-500 border-2 bg-yellow-500/10 text-yellow-500/70';
