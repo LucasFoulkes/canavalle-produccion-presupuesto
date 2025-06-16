@@ -20,29 +20,13 @@ export default function Variedades() {
         'arveja': 'ARVEJA',
         'garbanzo': 'GARBANZO',
         'uva': 'UVA'
-    };
-
-    // Utility function to truncate location names
+    };    // Utility function to truncate location names
     const truncateLocation = (name: string, maxLength: number = 5) => {
         return name.length > maxLength ? name.substring(0, maxLength) : name;
     };
 
-    // Utility function to truncate action names (1 letter of first word, 3 of second if 2 words)
-    const truncateAction = (actionName: string) => {
-        const words = actionName.split(' ');
-        if (words.length >= 2) {
-            return `${words[0].charAt(0)}${words[1].substring(0, 3)}`;
-        }
-        return actionName.substring(0, 5); // Fallback to 5 chars if single word
-    };    // Get breadcrumb title showing the hierarchy
+    // Get breadcrumb title showing the hierarchy (location only)
     const getTitle = () => {
-        if (currentFinca && currentBloque && accionId) {
-            const truncatedFinca = truncateLocation(currentFinca.nombre);
-            const truncatedBloque = truncateLocation(currentBloque.nombre);
-            const actionName = ACCIONES_MAP[accionId as keyof typeof ACCIONES_MAP] || accionId;
-            const truncatedAction = truncateAction(actionName);
-            return `${truncatedFinca} / ${truncatedBloque} / ${truncatedAction}`;
-        }
         if (currentFinca && currentBloque) {
             const truncatedFinca = truncateLocation(currentFinca.nombre);
             const truncatedBloque = truncateLocation(currentBloque.nombre);
@@ -52,6 +36,12 @@ export default function Variedades() {
             return truncateLocation(currentBloque.nombre);
         }
         return 'Variedades';
+    };    // Get the action name for display
+    const getActionName = () => {
+        if (accionId) {
+            return ACCIONES_MAP[accionId as keyof typeof ACCIONES_MAP] || accionId;
+        }
+        return null;
     }; const getBackPath = () => {
         if (bloqueId) {
             return `/acciones/${bloqueId}`;
@@ -64,21 +54,22 @@ export default function Variedades() {
         return fetchVariedadesByBloqueId(bloqueId);
     }, [bloqueId, fetchVariedadesByBloqueId]); const handleVariedadClick = (_variedad: any) => {
         // Handle variedad selection logic here
-    };
-
-    return (<DataGridPage
-        fetchData={fetchVariedades}
-        title={getTitle()}
-        showBackButton={true}
-        backPath={getBackPath()}
-        emptyMessage="No hay variedades disponibles para este bloque"
-        onItemClick={handleVariedadClick}
-        getItemTitle={(variedad) => variedad.nombre}
-        getItemKey={(variedad) => variedad.id}
-        showHeader={true}
-        showGridToggle={false}
-        defaultCols={1}
-        storageKey="variedadesGridLayout"
-    />
+    }; return (
+        <DataGridPage
+            fetchData={fetchVariedades}
+            title={getTitle()}
+            showBackButton={true}
+            backPath={getBackPath()}
+            emptyMessage="No hay variedades disponibles para este bloque"
+            onItemClick={handleVariedadClick}
+            getItemTitle={(variedad) => variedad.nombre}
+            getItemKey={(variedad) => variedad.id}
+            showHeader={true}
+            showGridToggle={false}
+            defaultCols={1}
+            storageKey="variedadesGridLayout" secondaryAction={getActionName() ? {
+                label: getActionName()!
+            } : undefined}
+        />
     );
 }

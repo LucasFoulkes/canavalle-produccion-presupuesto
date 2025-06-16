@@ -6,14 +6,11 @@ import DataGridPage from '@/components/DataGridPage';
 
 export default function Bloques() {
     const { fincaId } = useParams<{ fincaId: string }>();
-    const navigate = useNavigate(); const { fetchBloquesByFincaId, fetchFincaById } = useSupabase();
+    const navigate = useNavigate(); 
+
+    const { fetchBloquesByFincaId, fetchFincaById } = useSupabase();
     const { currentFinca, setCurrentFinca, setCurrentBloque } = useAuth();
     const [fincaName, setFincaName] = useState<string>('');
-
-    // Utility function to truncate location names
-    const truncateLocation = (name: string, maxLength: number = 5) => {
-        return name.length > maxLength ? name.substring(0, maxLength) : name;
-    };
 
     useEffect(() => {
         if (fincaId) {
@@ -37,10 +34,10 @@ export default function Bloques() {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/acciones/${bloque.id}`);
-    }; return (
+    };    return (
         <DataGridPage
             fetchData={fetchBloques}
-            title={fincaName ? truncateLocation(fincaName) : 'Finca'}
+            title={fincaName ? fincaName : 'Finca'}
             showBackButton={true}
             backPath="/fincas"
             emptyMessage="No hay bloques disponibles para esta finca"

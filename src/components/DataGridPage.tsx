@@ -18,6 +18,10 @@ interface DataGridPageProps {
     showGridToggle?: boolean;
     defaultCols?: 1 | 2 | 3 | 4;
     storageKey?: string;
+    secondaryAction?: {
+        label: string;
+        disabled?: boolean;
+    };
 }
 
 export default function DataGridPage({
@@ -32,7 +36,8 @@ export default function DataGridPage({
     showHeader = true,
     showGridToggle = true,
     defaultCols = 2,
-    storageKey = 'gridLayout'
+    storageKey = 'gridLayout',
+    secondaryAction
 }: DataGridPageProps) {
     const navigate = useNavigate();
     const { data, loading, error } = useDataGrid({ fetchData }); const [cols, setCols] = useState<1 | 2 | 3 | 4>(() => {
@@ -55,28 +60,39 @@ export default function DataGridPage({
     }; return (
         <div className="container mx-auto space-y-4">
             {showHeader && (
-                <div className="flex items-center gap-2">                    {title && (
-                    <Button
-                        variant='outline'
-                        className='uppercase h-16 flex-grow flex items-center justify-between px-4'
-                        onClick={showBackButton ? () => navigate(backPath) : undefined}
-                    >
-                        <div className="flex items-center">
-                            {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
-                        </div>
-                        <h1 className="text-4xl font-bold flex-1 text-center truncate px-2">{title}</h1>
-                        <div className="w-9"></div> {/* Spacer to balance the layout */}
-                    </Button>
-                )}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                        {title && (
+                            <Button
+                                variant='outline'
+                                className='uppercase h-16 flex-grow flex items-center justify-between px-4'
+                                onClick={showBackButton ? () => navigate(backPath) : undefined}
+                            >
+                                <div className="flex items-center">
+                                    {showBackButton && <ChevronLeft className="w-6 h-6 mr-3" />}
+                                </div>
+                                <h1 className="text-2xl font-bold flex-1 text-center truncate px-2">{title}</h1>
+                                <div className="w-9"></div> {/* Spacer to balance the layout */}
+                            </Button>
+                        )}
 
-                    {showGridToggle && (
+                        {showGridToggle && (
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={toggleGrid}
+                                className="flex-shrink-0"
+                            >
+                                <Grid3X3 className="w-5 h-5" />
+                            </Button>
+                        )}
+                    </div>                    {secondaryAction && (
                         <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={toggleGrid}
-                            className="flex-shrink-0"
+                            className="w-full uppercase text-lg h-16 text-2xl font-bold"
+                            variant='secondary'
+                            disabled={secondaryAction.disabled}
                         >
-                            <Grid3X3 className="w-5 h-5" />
+                            {secondaryAction.label}
                         </Button>
                     )}
                 </div>
