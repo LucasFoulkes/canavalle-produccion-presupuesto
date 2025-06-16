@@ -1,11 +1,19 @@
-import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import { useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupabase } from '@/hooks/useSupabase';
 import DataGridPage from '@/components/DataGridPage';
 
-const ACCIONES_ITEMS = [
+// Types
+interface AccionItem {
+    id: string;
+    nombre: string;
+    completionStatus?: 'empty' | 'partial' | 'complete';
+}
+
+type CompletionStatus = 'empty' | 'partial' | 'complete';
+
+const ACCIONES_ITEMS: AccionItem[] = [
     { id: 'produccion-real', nombre: 'PRODUCCION REAL' },
     { id: 'pinche-apertura', nombre: 'PINCHE DE APERTURA' },
     { id: 'pinche-sanitario', nombre: 'PINCHE SANITARIO' },
@@ -16,19 +24,31 @@ const ACCIONES_ITEMS = [
     { id: 'uva', nombre: 'UVA' }
 ];
 
+// Column mapping for each action type - centralized to avoid duplication
+const COLUMN_MAPPING: Record<string, string[]> = {
+    'produccion-real': ['produccion_real'],
+    'pinche-apertura': ['pinche_apertura'],
+    'pinche-sanitario': ['pinche_sanitario'],
+    'pinche-tierno': ['pinche_tierno'],
+    'clima': ['temperatura', 'humedad'],
+    'arveja': ['arveja'],
+    'garbanzo': ['garbanzo'],
+    'uva': ['uva']
+};
+
 export default function Acciones() {
     const { bloqueId } = useParams<{ bloqueId: string }>();
     const navigate = useNavigate();
     const { currentFinca, currentBloque } = useAuth();
-    const { fetchVariedadesByBloqueId, getBloqueVariedadId, supabase } = useSupabase();
-
-    // Utility function to truncate location names
-    const truncateLocation = (name: string, maxLength: number = 5) => {
-        return name.length > maxLength ? name.substring(0, maxLength) : name;
-    };
+    const { fetchVariedadesByBloqueId, getBloqueVariedadId, supabase } = useSupabase();    // Memoized utility functions
+    const truncateLocation = useMemo(() =>
+        (name: string, maxLength: number = 5): string => {
+            return name.length > maxLength ? name.substring(0, maxLength) : name;
+        }, []
+    );
 
     // Get breadcrumb title showing the hierarchy
-    const getTitle = () => {
+    const getTitle = useMemo(() => {
         if (currentFinca && currentBloque) {
             const truncatedFinca = truncateLocation(currentFinca.nombre);
             const truncatedBloque = truncateLocation(currentBloque.nombre);
@@ -38,15 +58,15 @@ export default function Acciones() {
             return truncateLocation(currentBloque.nombre);
         }
         return 'Acciones';
-    };
+    }, [currentFinca, currentBloque, truncateLocation]);
 
-    const getBackPath = () => {
+    const getBackPath = useMemo(() => {
         if (currentFinca) {
             return `/bloques/${currentFinca.id}`;
         }
         return '/fincas';
-    };    // Calculate completion status for an action
-    const getActionCompletionStatus = useCallback(async (actionId: string): Promise<'empty' | 'partial' | 'complete'> => {
+    }, [currentFinca]);    // Calculate completion status for an action
+    const getActionCompletionStatus = useCallback(async (actionId: string): Promise<CompletionStatus> => {
         if (!bloqueId) return 'empty';
 
         try {
@@ -56,20 +76,11 @@ export default function Acciones() {
                 return 'empty';
             }
 
-            // Column mapping for each action type
-            const columnMapping: { [key: string]: string[] } = {
-                'produccion-real': ['produccion_real'],
-                'pinche-apertura': ['pinche_apertura'],
-                'pinche-sanitario': ['pinche_sanitario'],
-                'pinche-tierno': ['pinche_tierno'],
-                'clima': ['temperatura', 'humedad'],
-                'arveja': ['arveja'],
-                'garbanzo': ['garbanzo'],
-                'uva': ['uva']
-            };
-
-            const columns = columnMapping[actionId];
-            if (!columns) return 'empty';
+            const columns = COLUMN_MAPPING[actionId];
+            if (!columns) {
+                console.warn(`Unknown action type: ${actionId}`);
+                return 'empty';
+            }
 
             // For clima, we only need to check one bloque_variedad_id (since it's per-bloque)
             const variedadesToCheck = actionId === 'clima' ? [variedadesResult.data[0]] : variedadesResult.data;
@@ -77,17 +88,24 @@ export default function Acciones() {
             let totalExpectedValues = 0;
             let nonZeroValues = 0;
 
-            for (const variedad of variedadesToCheck) {
-                const bloqueVariedadId = await getBloqueVariedadId(bloqueId, variedad.id);
-                if (!bloqueVariedadId) continue;
+            // Batch all bloque_variedad_id requests
+            const bloqueVariedadIds = await Promise.all(
+                variedadesToCheck.map(variedad => getBloqueVariedadId(bloqueId, variedad.id))
+            );
 
-                // Get action data for this bloque_variedad
-                const { data: actionData } = await supabase
-                    .from('acciones')
-                    .select(columns.join(', '))
-                    .eq('bloque_variedad_id', bloqueVariedadId)
-                    .maybeSingle();
+            // Filter out null values and batch database queries
+            const validBloqueVariedadIds = bloqueVariedadIds.filter(Boolean) as string[];
 
+            if (validBloqueVariedadIds.length === 0) return 'empty';
+
+            // Batch query all action data
+            const { data: actionDataArray } = await supabase
+                .from('acciones')
+                .select(columns.join(', '))
+                .in('bloque_variedad_id', validBloqueVariedadIds);
+
+            // Count values
+            for (const actionData of actionDataArray || []) {
                 for (const column of columns) {
                     totalExpectedValues++;
                     const value = (actionData as any)?.[column] || 0;
@@ -95,8 +113,7 @@ export default function Acciones() {
                         nonZeroValues++;
                     }
                 }
-
-                // For clima, we only check one entry (break after first variedad)
+                // For clima, we only check one entry
                 if (actionId === 'clima') break;
             }
 
@@ -107,7 +124,7 @@ export default function Acciones() {
             console.error('Error checking action completion:', error);
             return 'empty';
         }
-    }, [bloqueId, fetchVariedadesByBloqueId, getBloqueVariedadId, supabase]);    // Fetch actions with completion status
+    }, [bloqueId, fetchVariedadesByBloqueId, getBloqueVariedadId, supabase]);// Fetch actions with completion status
     const fetchAccionesWithStatus = useCallback(async () => {
         try {
             const accionesWithStatus = await Promise.all(
@@ -123,29 +140,38 @@ export default function Acciones() {
         } catch (error) {
             return { data: ACCIONES_ITEMS, error };
         }
-    }, [getActionCompletionStatus]); const handleAccionClick = (accion: any) => {
+    }, [getActionCompletionStatus]);
+
+    const handleAccionClick = useCallback((accion: AccionItem) => {
         // Navigate to variedades with the selected action
         navigate(`/variedades/${bloqueId}/${accion.id}`);
-    }; return (
-        <DataGridPage
-            fetchData={fetchAccionesWithStatus}
-            title={getTitle()}
-            showBackButton={true}
-            backPath={getBackPath()}
-            emptyMessage="No hay acciones disponibles"
-            onItemClick={handleAccionClick}
-            getItemTitle={(accion) => accion.nombre}
-            getItemKey={(accion) => accion.id}
-            getItemClassName={(accion) => {
-                const status = accion.completionStatus;
-                if (status === 'complete') return 'border-green-500 border-2 bg-green-500/10 text-green-500/70';
-                if (status === 'partial') return 'border-yellow-500 border-2 bg-yellow-500/10 text-yellow-500/70';
-                return 'border-red-500 border-2 bg-red-500/10 text-red-500/70'; // empty status = red
-            }}
-            showHeader={true}
-            showGridToggle={false}
-            defaultCols={1}
-            storageKey="accionesGridLayout"
-        />
+    }, [navigate, bloqueId]);
+
+    // Memoized class name generator for better performance
+    const getItemClassName = useCallback((accion: AccionItem): string => {
+        const status = accion.completionStatus;
+        switch (status) {
+            case 'complete':
+                return 'border-green-500 border-2 bg-green-500/10 text-green-500/70';
+            case 'partial':
+                return 'border-yellow-500 border-2 bg-yellow-500/10 text-yellow-500/70';
+            default: // 'empty' or undefined
+                return 'border-red-500 border-2 bg-red-500/10 text-red-500/70';
+        }
+    }, []);
+
+    return (<DataGridPage
+        fetchData={fetchAccionesWithStatus}
+        title={getTitle}
+        showBackButton={true}
+        backPath={getBackPath}
+        emptyMessage="No hay acciones disponibles"
+        onItemClick={handleAccionClick} getItemTitle={(accion: AccionItem) => accion.nombre}
+        getItemKey={(accion: AccionItem) => accion.id} getItemClassName={getItemClassName}
+        showHeader={true}
+        showGridToggle={false}
+        defaultCols={1}
+        storageKey="accionesGridLayout"
+    />
     );
 }
