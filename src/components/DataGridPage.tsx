@@ -10,10 +10,12 @@ interface DataGridPageProps {
     title?: string;
     emptyMessage?: string;
     showBackButton?: boolean;
-    backPath?: string;
-    onItemClick?: (item: any) => void;
+    backPath?: string; onItemClick?: (item: any) => void;
     getItemTitle: (item: any) => string;
     getItemKey: (item: any) => string | number;
+    getItemValue?: (item: any) => number; // Optional function to get a value to display on the right
+    getItemClassName?: (item: any) => string; // Optional function to get custom CSS classes for the item
+    onRefetch?: (refetchFn: () => Promise<void>) => void; // Callback to provide refetch function to parent
     showHeader?: boolean;
     showGridToggle?: boolean;
     defaultCols?: 1 | 2 | 3 | 4;
@@ -30,9 +32,11 @@ export default function DataGridPage({
     emptyMessage = "No hay datos disponibles",
     showBackButton = false,
     backPath = "/fincas",
-    onItemClick,
-    getItemTitle,
+    onItemClick, getItemTitle,
     getItemKey,
+    getItemValue,
+    getItemClassName,
+    onRefetch,
     showHeader = true,
     showGridToggle = true,
     defaultCols = 2,
@@ -40,7 +44,12 @@ export default function DataGridPage({
     secondaryAction
 }: DataGridPageProps) {
     const navigate = useNavigate();
-    const { data, loading, error } = useDataGrid({ fetchData }); const [cols, setCols] = useState<1 | 2 | 3 | 4>(() => {
+    const { data, loading, error, refetch } = useDataGrid({ fetchData });    // Provide refetch function to parent component
+    useEffect(() => {
+        if (onRefetch) {
+            onRefetch(refetch);
+        }
+    }, [onRefetch, refetch]); const [cols, setCols] = useState<1 | 2 | 3 | 4>(() => {
         const saved = localStorage.getItem(storageKey);
         return saved && [1, 2, 3, 4].includes(+saved) ? +saved as 1 | 2 | 3 | 4 : defaultCols;
     });
@@ -104,15 +113,19 @@ export default function DataGridPage({
                 data={data}
                 emptyMessage={emptyMessage}
             >                <div className={getGridClasses()}>
-                    {data.map((item) => (
-                        <Button
-                            key={getItemKey(item)}
-                            className={`w-full uppercase text-lg ${cols === 1 ? 'h-16' : 'aspect-square h-full'}`}
-                            onClick={() => onItemClick?.(item)}
-                            variant="outline"
-                        >
-                            {getItemTitle(item)}
-                        </Button>
+                    {data.map((item) => (<Button
+                        key={getItemKey(item)}
+                        className={`w-full uppercase text-lg ${cols === 1 ? 'h-16' : 'aspect-square h-full'} flex items-center ${getItemValue ? 'justify-between' : 'justify-center'} px-4 ${getItemClassName ? getItemClassName(item) : ''}`}
+                        onClick={() => onItemClick?.(item)}
+                        variant="outline"
+                    >
+                        <span className={`${getItemValue ? 'flex-1 text-left' : 'text-center'}`}>{getItemTitle(item)}</span>
+                        {getItemValue && (
+                            <span className="text-2xl font-bold text-black">
+                                {getItemValue(item)}
+                            </span>
+                        )}
+                    </Button>
                     ))}
                 </div>
             </DataStateHandler>

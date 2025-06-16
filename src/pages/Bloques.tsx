@@ -6,7 +6,7 @@ import DataGridPage from '@/components/DataGridPage';
 
 export default function Bloques() {
     const { fincaId } = useParams<{ fincaId: string }>();
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
 
     const { fetchBloquesByFincaId, fetchFincaById } = useSupabase();
     const { currentFinca, setCurrentFinca, setCurrentBloque } = useAuth();
@@ -34,7 +34,7 @@ export default function Bloques() {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/acciones/${bloque.id}`);
-    };    return (
+    }; return (
         <DataGridPage
             fetchData={fetchBloques}
             title={fincaName ? fincaName : 'Finca'}

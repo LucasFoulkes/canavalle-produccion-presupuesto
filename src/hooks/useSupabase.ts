@@ -66,6 +66,127 @@ export const useSupabase = () => {
         }
     }, []);
 
+    // Get bloque_variedad_id for a specific bloque and variedad
+    const getBloqueVariedadId = useCallback(async (bloqueId: string, variedadId: string): Promise<string | null> => {
+        const { data } = await supabase
+            .from('bloque_variedad')
+            .select('id')
+            .eq('bloque_id', bloqueId)
+            .eq('variedad_id', variedadId)
+            .single();
+        return data?.id || null;
+    }, []);    // Get today's action value for a specific bloque_variedad and action type
+    const getActionValue = useCallback(async (bloqueVariedadId: string, accionTipo: string): Promise<number> => {
+        try {
+            console.log('Getting action value for:', { bloqueVariedadId, accionTipo });
+
+            // Map action IDs to column names
+            const columnMapping: { [key: string]: string } = {
+                'produccion-real': 'produccion_real',
+                'pinche-apertura': 'pinche_apertura',
+                'pinche-sanitario': 'pinche_sanitario',
+                'pinche-tierno': 'pinche_tierno',
+                'clima': 'temperatura', // Assuming clima maps to temperatura
+                'arveja': 'arveja',
+                'garbanzo': 'garbanzo',
+                'uva': 'uva'
+            };
+
+            const columnName = columnMapping[accionTipo];
+            if (!columnName) {
+                console.warn('Unknown action type:', accionTipo);
+                return 0;
+            }
+
+            const { data, error } = await supabase
+                .from('acciones')
+                .select(columnName)
+                .eq('bloque_variedad_id', bloqueVariedadId)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error fetching action value:', error);
+                return 0;
+            }
+            console.log('Action value result:', data);
+            return (data as any)?.[columnName] || 0;
+        } catch (error) {
+            console.error('Exception in getActionValue:', error);
+            return 0;
+        }
+    }, []);    // Update or create an action entry
+    const upsertActionValue = useCallback(async (bloqueVariedadId: string, accionTipo: string, valor: number): Promise<{ success: boolean; error?: any }> => {
+        console.log('Upserting action value:', { bloqueVariedadId, accionTipo, valor });
+
+        try {
+            // Map action IDs to column names
+            const columnMapping: { [key: string]: string } = {
+                'produccion-real': 'produccion_real',
+                'pinche-apertura': 'pinche_apertura',
+                'pinche-sanitario': 'pinche_sanitario',
+                'pinche-tierno': 'pinche_tierno',
+                'clima': 'temperatura', // Assuming clima maps to temperatura
+                'arveja': 'arveja',
+                'garbanzo': 'garbanzo',
+                'uva': 'uva'
+            };
+
+            const columnName = columnMapping[accionTipo];
+            if (!columnName) {
+                console.error('Unknown action type:', accionTipo);
+                return { success: false, error: 'Unknown action type' };
+            }
+
+            // First, check if an entry exists for this bloque_variedad_id
+            const { data: existingEntry, error: selectError } = await supabase
+                .from('acciones')
+                .select('id')
+                .eq('bloque_variedad_id', bloqueVariedadId)
+                .maybeSingle();
+
+            // If there's an error selecting, return error
+            if (selectError) {
+                console.error('Error checking existing entry:', selectError);
+                return { success: false, error: selectError };
+            } console.log('Existing entry:', existingEntry);
+
+            let result;
+            if (existingEntry) {
+                // Update existing entry - only update the specific column
+                console.log('Updating existing entry with ID:', existingEntry.id);
+                const updateData = { [columnName]: valor };
+                result = await supabase
+                    .from('acciones')
+                    .update(updateData)
+                    .eq('id', existingEntry.id);
+            } else {
+                // Create new entry - set all other columns to 0 and the specific column to the value
+                console.log('Creating new entry');
+                const insertData = {
+                    bloque_variedad_id: bloqueVariedadId,
+                    produccion_real: accionTipo === 'produccion-real' ? valor : 0,
+                    pinche_apertura: accionTipo === 'pinche-apertura' ? valor : 0,
+                    pinche_sanitario: accionTipo === 'pinche-sanitario' ? valor : 0,
+                    pinche_tierno: accionTipo === 'pinche-tierno' ? valor : 0,
+                    temperatura: accionTipo === 'clima' ? valor : 0,
+                    humedad: 0, // Default to 0
+                    arveja: accionTipo === 'arveja' ? valor : 0,
+                    garbanzo: accionTipo === 'garbanzo' ? valor : 0,
+                    uva: accionTipo === 'uva' ? valor : 0
+                };
+                result = await supabase
+                    .from('acciones')
+                    .insert(insertData);
+            }
+
+            console.log('Upsert result:', result);
+            return { success: !result.error, error: result.error };
+        } catch (error) {
+            console.error('Error in upsertActionValue:', error);
+            return { success: false, error };
+        }
+    }, []);
+
     return {
         fetchFincas,
         fetchBloquesByFincaId,
@@ -73,6 +194,9 @@ export const useSupabase = () => {
         fetchBloqueById,
         fetchVariedadesByBloqueId,
         verifyAdminPin,
+        getBloqueVariedadId,
+        getActionValue,
+        upsertActionValue,
         supabase
     };
 };
