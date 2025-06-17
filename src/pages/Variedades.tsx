@@ -4,11 +4,14 @@ import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/contexts/AuthContext';
 import DataGridPage from '@/components/DataGridPage';
 import ActionValueDialog from '@/components/ActionValueDialog';
+import { Leaf, Wheat, Sun, TreePine, Grape } from 'lucide-react';
 
 export default function Variedades() {
     const { bloqueId, accionId } = useParams<{ bloqueId: string; accionId: string }>();
     const { fetchVariedadesByBloqueId, getBloqueVariedadId, getActionValue, upsertActionValue, supabase } = useSupabase();
-    const { currentFinca, currentBloque } = useAuth();    // State for dialog
+    const { currentFinca, currentBloque } = useAuth();
+
+    // State for dialog
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedVariedad, setSelectedVariedad] = useState<any>(null);
     const [currentActionValue, setCurrentActionValue] = useState(0);
@@ -18,22 +21,64 @@ export default function Variedades() {
     const handleRefetch = useCallback((refetchFn: () => Promise<void>) => {
         console.log('Variedades: Received refetch function:', typeof refetchFn);
         setRefetchData(() => refetchFn);
-    }, []);    // Action items mapping (to get the action name from ID)
+    }, []);    // Enhanced action items mapping with icons and descriptions
     const ACCIONES_MAP = {
-        'produccion-real': 'PRODUCCION REAL',
-        'pinche-apertura': 'PINCHE DE APERTURA',
-        'pinche-sanitario': 'PINCHE SANITARIO',
-        'pinche-tierno': 'PINCHE EN TIERNO',
-        'clima': 'CLIMA',
-        'arveja': 'ARVEJA',
-        'garbanzo': 'GARBANZO',
-        'uva': 'UVA'
-    };// Utility function to truncate location names
-    const truncateLocation = (name: string, maxLength: number = 5) => {
-        return name.length > maxLength ? name.substring(0, maxLength) : name;
+        'produccion-real': {
+            name: 'PRODUCCIÓN REAL',
+            icon: <Wheat className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Registro de producción efectiva'
+        },
+        'pinche-apertura': {
+            name: 'PINCHE DE APERTURA',
+            icon: <TreePine className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Control de apertura de cultivos'
+        },
+        'pinche-sanitario': {
+            name: 'PINCHE SANITARIO',
+            icon: <Leaf className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Manejo sanitario de cultivos'
+        },
+        'pinche-tierno': {
+            name: 'PINCHE EN TIERNO',
+            icon: <Leaf className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Control en estado tierno'
+        },
+        'clima': {
+            name: 'CLIMA',
+            icon: <Sun className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Condiciones climáticas'
+        },
+        'arveja': {
+            name: 'ARVEJA',
+            icon: <Leaf className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Cultivo de arveja'
+        },
+        'garbanzo': {
+            name: 'GARBANZO',
+            icon: <Leaf className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Cultivo de garbanzo'
+        },
+        'uva': {
+            name: 'UVA',
+            icon: <Grape className="h-6 w-6" />,
+            color: 'text-primary',
+            description: 'Cultivo de uva'
+        }
     };
 
-    // Get breadcrumb title showing the hierarchy (location only)
+    // Utility function to truncate location names with enhanced styling
+    const truncateLocation = (name: string, maxLength: number = 6) => {
+        return name.length > maxLength ? `${name.substring(0, maxLength)}...` : name;
+    };
+
+    // Get enhanced breadcrumb title showing the hierarchy
     const getTitle = () => {
         if (currentFinca && currentBloque) {
             const truncatedFinca = truncateLocation(currentFinca.nombre);
@@ -44,18 +89,26 @@ export default function Variedades() {
             return truncateLocation(currentBloque.nombre);
         }
         return 'Variedades';
-    };    // Get the action name for display
+    };
+
+    // Get the action name for display
     const getActionName = () => {
         if (accionId) {
-            return ACCIONES_MAP[accionId as keyof typeof ACCIONES_MAP] || accionId;
+            const actionDetails = ACCIONES_MAP[accionId as keyof typeof ACCIONES_MAP];
+            return actionDetails?.name || accionId.toUpperCase();
         }
         return null;
-    }; const getBackPath = () => {
+    };
+
+    // Get back path
+    const getBackPath = () => {
         if (bloqueId) {
             return `/acciones/${bloqueId}`;
         }
         return '/fincas';
-    };    // Define which actions support per-variedad value display and editing
+    };
+
+    // Define which actions support per-variedad value display and editing
     const ACTIONS_WITH_VALUES = [
         'produccion-real',
         'pinche-apertura',
@@ -64,7 +117,9 @@ export default function Variedades() {
         'arveja',
         'garbanzo',
         'uva'
-    ]; const fetchVariedades = useCallback(async () => {
+    ];
+
+    const fetchVariedades = useCallback(async () => {
         if (!bloqueId) {
             return Promise.resolve({ data: [], error: null });
         }
@@ -131,18 +186,23 @@ export default function Variedades() {
                         bloqueVariedadId: null,
                         actionValue: 0
                     };
-                }));
+                })
+            );
             return { data: variedadesWithData, error: null };
         }
 
         return result;
-    }, [bloqueId, fetchVariedadesByBloqueId, accionId, getBloqueVariedadId, getActionValue]); const handleVariedadClick = (variedad: any) => {
+    }, [bloqueId, fetchVariedadesByBloqueId, accionId, getBloqueVariedadId, getActionValue, supabase]);
+
+    const handleVariedadClick = (variedad: any) => {
         if (accionId === 'clima' || (accionId && ACTIONS_WITH_VALUES.includes(accionId))) {
             setSelectedVariedad(variedad);
             setCurrentActionValue(variedad.actionValue || 0);
             setDialogOpen(true);
         }
-    }; const handleSaveActionValue = async (value: number) => {
+    };
+
+    const handleSaveActionValue = async (value: number) => {
         if (selectedVariedad && selectedVariedad.bloqueVariedadId && accionId) {
             console.log('Saving action value:', {
                 bloqueVariedadId: selectedVariedad.bloqueVariedadId,
@@ -221,26 +281,29 @@ export default function Variedades() {
         setDialogOpen(false);
         setSelectedVariedad(null);
         setCurrentActionValue(0);
-    }; return (
-        <>            <DataGridPage
-            fetchData={fetchVariedades}
-            title={getTitle()}
-            showBackButton={true}
-            backPath={getBackPath()}
-            emptyMessage={accionId === 'clima' ? "No hay datos de clima disponibles para este bloque" : "No hay variedades disponibles para este bloque"}
-            onItemClick={handleVariedadClick}
-            getItemTitle={(variedad) => variedad.nombre}
-            getItemKey={(variedad) => variedad.id}
-            getItemValue={(accionId === 'clima' || (accionId && ACTIONS_WITH_VALUES.includes(accionId))) ? (variedad) => variedad.actionValue || 0 : undefined}
-            onRefetch={handleRefetch}
-            showHeader={true}
-            showGridToggle={false}
-            defaultCols={1}
-            storageKey="variedadesGridLayout"
-            secondaryAction={getActionName() ? {
-                label: getActionName()!
-            } : undefined}
-        />
+    };
+
+    return (
+        <>
+            <DataGridPage
+                fetchData={fetchVariedades}
+                title={getTitle()}
+                showBackButton={true}
+                backPath={getBackPath()}
+                emptyMessage={accionId === 'clima' ? "No hay datos de clima disponibles para este bloque" : "No hay variedades disponibles para este bloque"}
+                onItemClick={handleVariedadClick}
+                getItemTitle={(variedad) => variedad.nombre}
+                getItemKey={(variedad) => variedad.id}
+                getItemValue={(accionId === 'clima' || (accionId && ACTIONS_WITH_VALUES.includes(accionId))) ? (variedad) => variedad.actionValue || 0 : undefined}
+                onRefetch={handleRefetch}
+                showHeader={true}
+                showGridToggle={false}
+                defaultCols={1}
+                storageKey="variedadesGridLayout"
+                secondaryAction={getActionName() ? {
+                    label: getActionName()!
+                } : undefined}
+            />
 
             {dialogOpen && selectedVariedad && (
                 <ActionValueDialog

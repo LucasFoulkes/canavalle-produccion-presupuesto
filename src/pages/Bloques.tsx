@@ -27,17 +27,23 @@ export default function Bloques() {
                 });
             }
         }
-    }, [fincaId, fetchFincaById, currentFinca, setCurrentFinca]); const fetchBloques = useCallback(() => {
+    }, [fincaId, fetchFincaById, currentFinca, setCurrentFinca]);
+
+    const fetchBloques = useCallback(() => {
         if (!fincaId) return Promise.resolve({ data: [], error: null });
         return fetchBloquesByFincaId(fincaId);
-    }, [fincaId, fetchBloquesByFincaId]); const handleBloqueClick = (bloque: any) => {
+    }, [fincaId, fetchBloquesByFincaId]);
+
+    const handleBloqueClick = (bloque: any) => {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/acciones/${bloque.id}`);
-    }; return (
+    };
+
+    return (<div className="min-h-screen">
         <DataGridPage
             fetchData={fetchBloques}
-            title={fincaName ? fincaName : 'Finca'}
+            title={fincaName ? `${fincaName} - Bloques` : 'Finca - Bloques'}
             showBackButton={true}
             backPath="/fincas"
             emptyMessage="No hay bloques disponibles para esta finca"
@@ -49,5 +55,6 @@ export default function Bloques() {
             defaultCols={4}
             storageKey="bloquesGridLayout"
         />
+    </div>
     );
 }

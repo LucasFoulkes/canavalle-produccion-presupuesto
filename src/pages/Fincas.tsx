@@ -11,18 +11,20 @@ export default function Fincas() {
     };
 
     return (
-        <DataGridPage
-            fetchData={fetchFincas}
-            title="Fincas"
-            emptyMessage="No hay fincas disponibles"
-            onItemClick={handleFincaClick}
-            getItemTitle={(finca) => finca.nombre}
-            getItemKey={(finca) => finca.id}
-            showHeader={false}
-            showBackButton={false}
-            showGridToggle={false}
-            defaultCols={2}
-            storageKey="fincasGridLayout"
-        />
+        <div className="min-h-screen">
+            <DataGridPage
+                fetchData={fetchFincas}
+                title="CANANVALLE - Fincas"
+                emptyMessage="No hay fincas disponibles"
+                onItemClick={handleFincaClick}
+                getItemTitle={(finca) => finca.nombre}
+                getItemKey={(finca) => finca.id}
+                showHeader={false}
+                showBackButton={false}
+                showGridToggle={false}
+                defaultCols={2}
+                storageKey="fincasGridLayout"
+            />
+        </div>
     );
 }

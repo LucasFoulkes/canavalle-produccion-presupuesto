@@ -145,18 +145,16 @@ export default function Acciones() {
     const handleAccionClick = useCallback((accion: AccionItem) => {
         // Navigate to variedades with the selected action
         navigate(`/variedades/${bloqueId}/${accion.id}`);
-    }, [navigate, bloqueId]);
-
-    // Memoized class name generator for better performance
+    }, [navigate, bloqueId]);    // Memoized class name generator for better performance
     const getItemClassName = useCallback((accion: AccionItem): string => {
         const status = accion.completionStatus;
         switch (status) {
             case 'complete':
-                return 'border-green-500 border-2 bg-green-500/10 text-green-500/70';
+                return 'border-green-400 dark:border-green-500 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/50 dark:to-emerald-950/50 text-green-800 dark:text-green-200 shadow-green-200/50 dark:shadow-green-900/30 border-2';
             case 'partial':
-                return 'border-yellow-500 border-2 bg-yellow-500/10 text-yellow-500/70';
+                return 'border-amber-400 dark:border-amber-500 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/50 dark:to-yellow-950/50 text-amber-800 dark:text-amber-200 shadow-amber-200/50 dark:shadow-amber-900/30 border-2';
             default: // 'empty' or undefined
-                return 'border-red-500 border-2 bg-red-500/10 text-red-500/70';
+                return 'border-red-400 dark:border-red-500 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/50 dark:to-rose-950/50 text-red-800 dark:text-red-200 shadow-red-200/50 dark:shadow-red-900/30 border-2';
         }
     }, []);
 
