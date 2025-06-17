@@ -8,9 +8,7 @@ export default function Fincas() {
 
     const handleFincaClick = (finca: any) => {
         navigate(`/bloques/${finca.id}`);
-    };
-
-    return (<div className="min-h-screen">
+    }; return (<div className="h-full">
         {/* Custom header for Fincas page */}
         <div className="mb-6">
             <div className="flex items-center justify-center">

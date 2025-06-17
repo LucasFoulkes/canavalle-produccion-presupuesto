@@ -1,22 +1,24 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* PWA App-like styles */
+/* PWA App-like styles - Fixed viewport */
 html,
 body {
   overscroll-behavior: none;
   overflow: hidden;
   position: fixed;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   user-select: none;
+  margin: 0;
+  padding: 0;
 }
 
 #root {
-  height: 100%;
+  height: 100vh;
   width: 100%;
   overflow: hidden;
   display: flex;

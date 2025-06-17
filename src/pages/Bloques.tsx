@@ -38,9 +38,7 @@ export default function Bloques() {
         // Store the clicked bloque in context
         setCurrentBloque(bloque);
         navigate(`/acciones/${bloque.id}`);
-    };
-
-    return (<div className="min-h-screen">
+    }; return (<div className="h-full">
         <DataGridPage
             fetchData={fetchBloques}
             title={fincaName ? `${fincaName} - Bloques` : 'Finca - Bloques'}
