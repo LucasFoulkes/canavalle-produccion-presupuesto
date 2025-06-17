@@ -76,7 +76,7 @@ export default function Authentication() {
             setPin('');
             setMessage(null);
         }
-    }; return (<div className="flex flex-col items-center justify-between h-full py-8 px-4">
+    }; return (<div className="flex flex-col items-center justify-between min-h-[90vh] py-8 px-4">
         {/* Professional Header */}
         <div className="flex flex-col items-center mb-12 mt-8 text-center">
             <div className="mb-6 p-4 rounded-2xl glass-professional shadow-professional-lg">
