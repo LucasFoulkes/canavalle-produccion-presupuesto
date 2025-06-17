@@ -44,8 +44,7 @@ export default function ActionValueDialog({
             <DialogContent className="sm:max-w-md glass-professional shadow-professional-xl border animate-fade-in">
                 <DialogHeader>
                     <div className="flex items-center gap-3 mb-2">
-                        <Calculator className="h-5 w-5 text-professional-primary" />
-                        <DialogTitle className="text-xl font-semibold text-professional-primary">
+                        <Calculator className="h-5 w-5 text-professional-primary" />                        <DialogTitle className="text-xl font-semibold text-professional-primary bauhaus-header">
                             {actionName}
                         </DialogTitle>
                     </div>
@@ -77,18 +76,17 @@ export default function ActionValueDialog({
                         )}
                     </div>
 
-                    <div className="flex gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={onClose}
-                            className="flex-1 h-11 hover-professional"
-                        >
-                            <X className="h-4 w-4 mr-2" />
-                            Cancelar
-                        </Button>
+                    <div className="flex gap-3">                        <Button
+                        variant="outline"
+                        onClick={onClose}
+                        className="flex-1 h-11 hover-professional bauhaus-grid-item"
+                    >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancelar
+                    </Button>
                         <Button
                             onClick={handleSave}
-                            className="flex-1 h-11 bg-gradient-primary hover:opacity-90 hover-professional"
+                            className="flex-1 h-11 bg-gradient-primary hover:opacity-90 hover-professional bauhaus-grid-item"
                         >
                             <Save className="h-4 w-4 mr-2" />
                             Guardar

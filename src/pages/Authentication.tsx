@@ -82,11 +82,10 @@ export default function Authentication() {
             <div className="flex flex-col items-center mb-12 mt-8 text-center">
                 <div className="mb-6 p-4 rounded-2xl glass-professional shadow-professional-lg">
                     <Shield className="w-12 h-12 text-professional-primary" />
-                </div>
-                <h1 className="text-3xl font-bold mb-3 text-professional-primary">
+                </div>                <h1 className="text-3xl font-bold mb-3 text-professional-primary bauhaus-title">
                     Cananvalle
                 </h1>
-                <p className="text-professional-muted text-base font-medium">
+                <p className="text-professional-muted text-base font-medium bauhaus-header">
                     Control de Producción
                 </p>
             </div>
@@ -119,10 +118,10 @@ export default function Authentication() {
 
                     {message && (
                         <div className={`text-sm mt-4 text-center p-3 rounded-lg font-medium flex items-center justify-center gap-2 ${message.type === 'error'
-                                ? 'text-destructive bg-destructive/10 border border-destructive/20' :
-                                message.type === 'success'
-                                    ? 'text-professional-primary bg-professional-primary/10 border border-professional-primary/20' :
-                                    'text-professional-muted bg-muted border border-border'
+                            ? 'text-destructive bg-destructive/10 border border-destructive/20' :
+                            message.type === 'success'
+                                ? 'text-professional-primary bg-professional-primary/10 border border-professional-primary/20' :
+                                'text-professional-muted bg-muted border border-border'
                             }`}>
                             {message.type === 'error' && <AlertCircle className="w-4 h-4" />}
                             {message.type === 'success' && <CheckCircle className="w-4 h-4" />}
