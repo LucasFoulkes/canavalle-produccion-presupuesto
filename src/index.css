@@ -1,32 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* PWA App-like styles - Fixed viewport */
-html,
-body {
-  overscroll-behavior: none;
-  overflow: hidden;
-  position: fixed;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh; /* Use dynamic viewport height for mobile */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  user-select: none;
-  margin: 0;
-  padding: 0;
-}
-
-#root {
-  height: 100vh;
-  height: 100dvh; /* Use dynamic viewport height for mobile */
-  width: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -68,258 +42,79 @@ body {
 }
 
 :root {
-  --radius: 0.0625rem;
-  /* Ultra-minimal radius for pure Bauhaus aesthetic */
-  /* Bauhaus-inspired color palette - Bold and functional */
-  --background: oklch(0.98 0.001 0);
-  --foreground: oklch(0.1 0.001 0);
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.141 0.005 285.823);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.1 0.001 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.1 0.001 0);
-  --primary: oklch(0.2 0.15 240);
-  /* Bold blue */
-  --primary-foreground: oklch(0.98 0.001 0);
-  --secondary: oklch(0.15 0.1 30);
-  /* Deep red */
-  --secondary-foreground: oklch(0.98 0.001 0);
-  --muted: oklch(0.95 0.001 0);
-  --muted-foreground: oklch(0.4 0.001 0);
-  --accent: oklch(0.9 0.15 85);
-  /* Bauhaus yellow */
-  --accent-foreground: oklch(0.1 0.001 0);
-  --destructive: oklch(0.55 0.15 15);
-  --border: oklch(0.85 0.001 0);
-  --input: oklch(0.98 0.001 0);
-  --ring: oklch(0.2 0.15 240);
-  --chart-1: oklch(0.2 0.15 240);
-  /* Blue */
-  --chart-2: oklch(0.15 0.1 30);
-  /* Red */
-  --chart-3: oklch(0.9 0.15 85);
-  /* Yellow */
-  --chart-4: oklch(0.1 0.001 0);
-  /* Black */
-  --chart-5: oklch(0.95 0.001 0);
-  /* White */
-  --sidebar: oklch(0.98 0.001 0);
-  --sidebar-foreground: oklch(0.1 0.001 0);
-  --sidebar-primary: oklch(0.2 0.15 240);
-  --sidebar-primary-foreground: oklch(0.98 0.001 0);
-  --sidebar-accent: oklch(0.95 0.001 0);
-  --sidebar-accent-foreground: oklch(0.1 0.001 0);
-  --sidebar-border: oklch(0.85 0.001 0);
-  --sidebar-ring: oklch(0.2 0.15 240);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.21 0.006 285.885);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.552 0.016 285.938);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.21 0.006 285.885);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.92 0.004 286.32);
+  --input: oklch(0.92 0.004 286.32);
+  --ring: oklch(0.705 0.015 286.067);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.21 0.006 285.885);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.967 0.001 286.375);
+  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-ring: oklch(0.705 0.015 286.067);
 }
 
 .dark {
-  /* Professional dark mode */
-  --background: oklch(0.08 0.005 180);
-  --foreground: oklch(0.95 0.002 120);
-  --card: oklch(0.12 0.008 180);
-  --card-foreground: oklch(0.95 0.002 120);
-  --popover: oklch(0.12 0.008 180);
-  --popover-foreground: oklch(0.95 0.002 120);
-  --primary: oklch(0.55 0.12 150);
-  /* Brighter professional green for dark mode */
-  --primary-foreground: oklch(0.08 0.005 180);
-  --secondary: oklch(0.18 0.01 150);
-  --secondary-foreground: oklch(0.95 0.002 120);
-  --muted: oklch(0.15 0.008 150);
-  --muted-foreground: oklch(0.7 0.02 150);
-  --accent: oklch(0.65 0.08 80);
-  /* Professional gold for dark mode */
-  --accent-foreground: oklch(0.08 0.005 180);
-  --destructive: oklch(0.65 0.15 15);
-  --border: oklch(0.22 0.01 150);
-  --input: oklch(0.15 0.008 150);
-  --ring: oklch(0.65 0.18 135);
-  --chart-1: oklch(0.65 0.20 135);
-  /* Vibrant forest green */
-  --chart-2: oklch(0.75 0.18 85);
-  /* Bright golden */
-  --chart-3: oklch(0.55 0.15 160);
-  /* Sage green */
-  --chart-4: oklch(0.80 0.12 70);
-  /* Bright harvest yellow */
-  --chart-5: oklch(0.60 0.16 180);
-  /* Bright teal */
-  --sidebar: oklch(0.15 0.025 140);
-  --sidebar-foreground: oklch(0.96 0.008 110);
-  --sidebar-primary: oklch(0.65 0.18 135);
-  --sidebar-primary-foreground: oklch(0.12 0.02 140);
-  --sidebar-accent: oklch(0.22 0.03 135);
-  --sidebar-accent-foreground: oklch(0.96 0.008 110);
-  --sidebar-border: oklch(0.25 0.03 135);
-  --sidebar-ring: oklch(0.65 0.18 135);
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.92 0.004 286.32);
+  --primary-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.552 0.016 285.938);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.21 0.006 285.885);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.274 0.006 286.033);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-/* Bauhaus Design System Utilities */
-@layer utilities {
-
-  /* Bauhaus Typography Classes */
-  .bauhaus-header {
-    text-transform: capitalize;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-  }
-
-  .bauhaus-grid-item {
-    text-transform: uppercase;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.05em;
-  }
-
-  .bauhaus-title {
-    text-transform: uppercase;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-  }
-
-  /* Bauhaus Color Gradients */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg,
-        oklch(0.2 0.15 240) 0%,
-        oklch(0.25 0.12 250) 100%);
-  }
-
-  .bg-gradient-secondary {
-    background: linear-gradient(135deg,
-        oklch(0.15 0.1 30) 0%,
-        oklch(0.2 0.08 35) 100%);
-  }
-
-  .bg-gradient-accent {
-    background: linear-gradient(135deg,
-        oklch(0.9 0.15 85) 0%,
-        oklch(0.85 0.12 80) 100%);
-  }
-
-  /* Bauhaus Glass Effects - Bold and geometric */
-  .glass-professional {
-    background: oklch(1 0 0 / 0.9);
-    backdrop-filter: blur(12px);
-    border: 2px solid oklch(0.2 0.15 240);
-    box-shadow:
-      0 8px 32px oklch(0.2 0.15 240 / 0.1),
-      inset 0 1px 0 oklch(1 0 0 / 0.2);
-  }
-
-  .glass-professional-dark {
-    background: oklch(0.12 0.008 180 / 0.9);
-    backdrop-filter: blur(12px);
-    border: 2px solid oklch(0.65 0.18 135);
-    box-shadow:
-      0 8px 32px oklch(0.65 0.18 135 / 0.1),
-      inset 0 1px 0 oklch(0.3 0.01 150 / 0.2);
-  }
-
-  /* Bauhaus Geometric Shadows */
-  .shadow-professional {
-    box-shadow:
-      0 2px 4px 0 oklch(0.2 0.15 240 / 0.15),
-      0 1px 2px 0 oklch(0.2 0.15 240 / 0.1);
-  }
-
-  .shadow-professional-lg {
-    box-shadow:
-      0 6px 12px -2px oklch(0.2 0.15 240 / 0.15),
-      0 3px 6px -1px oklch(0.2 0.15 240 / 0.1);
-  }
-
-  .shadow-professional-xl {
-    box-shadow:
-      0 24px 32px -8px oklch(0.2 0.15 240 / 0.15),
-      0 12px 16px -4px oklch(0.2 0.15 240 / 0.08);
-  }
-
-  /* Bauhaus Animations - Geometric and functional */
-  .animate-fade-in {
-    animation: bauhaus-fade-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .animate-slide-up {
-    animation: bauhaus-slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes bauhaus-fade-in {
-    0% {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes bauhaus-slide-up {
-    0% {
-      transform: translateY(12px) scale(0.95);
-      opacity: 0;
-    }
-
-    100% {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-  }
-
-  /* Bauhaus Status Indicators - Bold and functional */
-  .status-completed {
-    background: oklch(0.2 0.15 240);
-    color: oklch(0.98 0.001 0);
-    border: 2px solid oklch(0.2 0.15 240);
-  }
-
-  .status-pending {
-    background: oklch(0.9 0.15 85);
-    color: oklch(0.1 0.001 0);
-    border: 2px solid oklch(0.85 0.12 80);
-  }
-
-  .status-inactive {
-    background: oklch(0.95 0.001 0);
-    color: oklch(0.4 0.001 0);
-    border: 2px solid oklch(0.85 0.001 0);
-  }
-
-  /* Bauhaus Hover Effects - Sharp and geometric */
-  .hover-professional {
-    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .hover-professional:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 8px 16px -4px oklch(0.2 0.15 240 / 0.2),
-      0 4px 8px -2px oklch(0.2 0.15 240 / 0.15);
-  }
-
-  /* Bauhaus Typography Colors */
-  .text-professional-primary {
-    color: oklch(0.2 0.15 240);
-  }
-
-  .text-professional-accent {
-    color: oklch(0.15 0.1 30);
-  }
-
-  .text-professional-muted {
-    color: oklch(0.4 0.001 0);
   }
 }

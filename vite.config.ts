@@ -4,11 +4,10 @@ import react from '@vitejs/plugin-react'
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), VitePWA({
-    registerType: 'prompt',
-    injectRegister: 'auto',
+    registerType: 'autoUpdate',
+    injectRegister: false,
 
     pwaAssets: {
       disabled: false,
@@ -16,77 +15,29 @@ export default defineConfig({
     },
 
     manifest: {
-      name: 'Cananvalle Producción',
-      short_name: 'Cananvalle',
-      description: 'Aplicación de presupuesto y producción de Cananvalle',
+      name: 'cananvalle-produccion-presupuesto',
+      short_name: 'cananvalle-produccion-presupuesto',
+      description: 'cananvalle-produccion-presupuesto',
       theme_color: '#ffffff',
-      background_color: '#ffffff',
-      display: 'standalone',
-      orientation: 'portrait',
-      start_url: '/',
-      scope: '/',
-      lang: 'es',
-      categories: ['business', 'productivity'],
-      screenshots: [
-        {
-          src: '/pwa-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          form_factor: 'narrow'
-        }
-      ],
-      icons: [
-        {
-          src: '/pwa-192x192.png',
-          sizes: '192x192',
-          type: 'image/png'
-        },
-        {
-          src: '/pwa-512x512.png',
-          sizes: '512x512',
-          type: 'image/png'
-        },
-        {
-          src: '/maskable-icon-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable'
-        }
-      ]
     },
 
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
       cleanupOutdatedCaches: true,
       clientsClaim: true,
-      skipWaiting: true,
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'supabase-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-            },
-          },
-        },
-      ],
     },
 
     devOptions: {
-      enabled: true,
+      enabled: false,
       navigateFallback: 'index.html',
       suppressWarnings: true,
       type: 'module',
     },
   })],
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
 })
-
-
