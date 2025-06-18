@@ -75,8 +75,8 @@ export default function Authentication() {
             setPin('');
             setMessage(null);
         }
-    }; return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background px-6">
+    };    return (
+        <div className="flex flex-col items-center justify-center h-full bg-background px-6">
             {/* Minimal Header - iPhone style */}
             <div className="flex flex-col items-center text-center mb-16">
                 <h1 className="text-4xl font-light text-foreground mb-2 tracking-tight">

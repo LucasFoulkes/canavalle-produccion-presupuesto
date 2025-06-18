@@ -1,6 +1,6 @@
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="flex flex-col h-full bg-background">
+        <div className="flex flex-col h-screen bg-background">
             {/* Bauhaus geometric background */}
             <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-background pointer-events-none" />
             <div className="absolute inset-0 opacity-5 pointer-events-none" style={{
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 backgroundPosition: '0 0, 0 16px, 16px -16px, -16px 0px'
             }} />
 
-            <main className="relative flex-1 overflow-auto">
+            <main className="relative flex-1 overflow-auto min-h-0">
                 <div className="mx-auto max-w-7xl p-4 md:p-6 h-full">
                     {children}
                 </div>

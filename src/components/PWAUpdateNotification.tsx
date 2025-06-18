@@ -42,11 +42,9 @@ export default function PWAUpdateNotification() {
 
     if (!showNotification || !needRefresh) {
         return null;
-    }
-
-    return (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-primary text-white shadow-lg animate-fade-in">
-            <div className="max-w-7xl mx-auto px-4 py-3">
+    }    return (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-gradient-primary text-white shadow-lg animate-fade-in rounded-lg max-w-md mx-auto">
+            <div className="px-4 py-3">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Download className="h-5 w-5 flex-shrink-0" />
@@ -105,35 +103,35 @@ export default function PWAUpdateNotification() {
                     </div>
                 </div>
 
-                {/* Advanced options */}
-                {showAdvanced && (
-                    <div className="mt-3 pt-3 border-t border-white/20">
-                        <div className="flex items-center justify-between">
-                            <p className="text-xs opacity-75">
-                                ¿La actualización no funciona? Prueba la actualización forzada:
-                            </p>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleForceUpdate}
-                                disabled={isUpdating}
-                                className="bg-orange-500/20 hover:bg-orange-500/30 text-white border-orange-300/30"
-                            >
-                                {isUpdating ? (
-                                    <>
-                                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                        Forzando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <AlertTriangle className="h-4 w-4 mr-2" />
-                                        Forzar Actualización
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    </div>
+        {/* Advanced options */}
+        {showAdvanced && (
+          <div className="mt-3 pt-3 border-t border-white/20">
+            <div className="flex flex-col gap-2">
+              <p className="text-xs opacity-75">
+                ¿La actualización no funciona?
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleForceUpdate}
+                disabled={isUpdating}
+                className="bg-orange-500/20 hover:bg-orange-500/30 text-white border-orange-300/30 w-full"
+              >
+                {isUpdating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Forzando actualización...
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Forzar Actualización
+                  </>
                 )}
+              </Button>
+            </div>
+          </div>
+        )}
             </div>
         </div>
     );
