@@ -39,26 +39,18 @@ const COLUMN_MAPPING: Record<string, string[]> = {
 export default function Acciones() {
     const { bloqueId } = useParams<{ bloqueId: string }>();
     const navigate = useNavigate();
-    const { currentFinca, currentBloque } = useAuth();
-    const { fetchVariedadesByBloqueId, getBloqueVariedadId, supabase } = useSupabase();    // Memoized utility functions
-    const truncateLocation = useMemo(() =>
-        (name: string, maxLength: number = 5): string => {
-            return name.length > maxLength ? name.substring(0, maxLength) : name;
-        }, []
-    );
+    const { currentFinca, currentBloque } = useAuth(); const { fetchVariedadesByBloqueId, getBloqueVariedadId, supabase } = useSupabase();
 
     // Get breadcrumb title showing the hierarchy
     const getTitle = useMemo(() => {
         if (currentFinca && currentBloque) {
-            const truncatedFinca = truncateLocation(currentFinca.nombre);
-            const truncatedBloque = truncateLocation(currentBloque.nombre);
-            return `${truncatedFinca} / ${truncatedBloque}`;
+            return `${currentFinca.nombre} / ${currentBloque.nombre}`;
         }
         if (currentBloque) {
-            return truncateLocation(currentBloque.nombre);
+            return currentBloque.nombre;
         }
         return 'Acciones';
-    }, [currentFinca, currentBloque, truncateLocation]);
+    }, [currentFinca, currentBloque]);
 
     const getBackPath = useMemo(() => {
         if (currentFinca) {

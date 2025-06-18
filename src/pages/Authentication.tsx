@@ -4,7 +4,6 @@ import { useSupabase } from '@/hooks/useSupabase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import NumericKeyboard from '@/components/NumericKeyboard';
-import { Shield, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function Authentication() {
     const [pin, setPin] = useState('');
@@ -76,68 +75,59 @@ export default function Authentication() {
             setPin('');
             setMessage(null);
         }
-    }; return (<div className="flex flex-col items-center justify-between min-h-[90vh] py-8 px-4">
-        {/* Professional Header */}
-        <div className="flex flex-col items-center mb-12 mt-8 text-center">
-            <div className="mb-6 p-4 rounded-2xl glass-professional shadow-professional-lg">
-                <Shield className="w-12 h-12 text-professional-primary" />
-            </div>                <h1 className="text-3xl font-bold mb-3 text-professional-primary bauhaus-title">
-                Cananvalle
-            </h1>
-            <p className="text-professional-muted text-base font-medium bauhaus-header">
-                Control de Producción
-            </p>
-        </div>
+    }; return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background px-6">
+            {/* Minimal Header - iPhone style */}
+            <div className="flex flex-col items-center text-center mb-16">
+                <h1 className="text-4xl font-light text-foreground mb-2 tracking-tight">
+                    Cananvalle
+                </h1>
+                <p className="text-muted-foreground text-sm font-normal">
+                    Control de Producción
+                </p>
+            </div>
 
-        {/* PIN Input */}
-        <div className="flex flex-col items-center">
-            <div className="glass-professional rounded-xl p-8 shadow-professional-xl">
-                <div className="mb-4 text-center">
-                    <p className="text-sm text-professional-muted font-medium mb-4">
-                        Ingrese su PIN de acceso
-                    </p>
-                </div>
-
-                <InputOTP
+            {/* Clean PIN Input */}
+            <div className="flex flex-col items-center space-y-8">
+                <p className="text-foreground text-lg font-normal">
+                    Ingrese su PIN
+                </p>                <InputOTP
                     maxLength={6}
                     value={pin}
                     onChange={setPin}
                     disabled={loading}
-                    containerClassName="gap-2"
+                    containerClassName="gap-0"
                 >
-                    <InputOTPGroup className="gap-2">
-                        <InputOTPSlot index={0} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
-                        <InputOTPSlot index={1} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
-                        <InputOTPSlot index={2} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
-                        <InputOTPSlot index={3} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
-                        <InputOTPSlot index={4} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
-                        <InputOTPSlot index={5} className="w-12 h-12 text-lg font-medium border-2 border-border rounded-lg focus:border-primary/40 bg-background" />
+                    <InputOTPGroup className="gap-0">
+                        <InputOTPSlot index={0} className="w-14 h-14 text-xl font-normal border border-border/30 rounded-none first:rounded-l-xl focus:border-foreground/60 bg-transparent transition-colors" />
+                        <InputOTPSlot index={1} className="w-14 h-14 text-xl font-normal border-t border-b border-r border-border/30 rounded-none focus:border-foreground/60 bg-transparent transition-colors" />
+                        <InputOTPSlot index={2} className="w-14 h-14 text-xl font-normal border-t border-b border-r border-border/30 rounded-none focus:border-foreground/60 bg-transparent transition-colors" />
+                        <InputOTPSlot index={3} className="w-14 h-14 text-xl font-normal border-t border-b border-r border-border/30 rounded-none focus:border-foreground/60 bg-transparent transition-colors" />
+                        <InputOTPSlot index={4} className="w-14 h-14 text-xl font-normal border-t border-b border-r border-border/30 rounded-none focus:border-foreground/60 bg-transparent transition-colors" />
+                        <InputOTPSlot index={5} className="w-14 h-14 text-xl font-normal border border-border/30 rounded-none last:rounded-r-xl focus:border-foreground/60 bg-transparent transition-colors" />
                     </InputOTPGroup>
                 </InputOTP>
 
                 {message && (
-                    <div className={`text-sm mt-4 text-center p-3 rounded-lg font-medium flex items-center justify-center gap-2 ${message.type === 'error'
-                        ? 'text-destructive bg-destructive/10 border border-destructive/20' :
+                    <div className={`text-sm text-center px-4 py-2 rounded-lg font-normal ${message.type === 'error'
+                        ? 'text-red-600' :
                         message.type === 'success'
-                            ? 'text-professional-primary bg-professional-primary/10 border border-professional-primary/20' :
-                            'text-professional-muted bg-muted border border-border'
+                            ? 'text-green-600' :
+                            'text-muted-foreground'
                         }`}>
-                        {message.type === 'error' && <AlertCircle className="w-4 h-4" />}
-                        {message.type === 'success' && <CheckCircle className="w-4 h-4" />}
-                        {message.type === 'info' && <Loader2 className="w-4 h-4 animate-spin" />}
                         {message.text}
                     </div>
                 )}
+            </div>            {/* Minimal Numeric Keyboard */}
+            <div className="mt-16 mb-8">
+                <NumericKeyboard
+                    onKeyPress={handleKeyPress}
+                    onDelete={handleDelete}
+                    onClear={handleClear}
+                    disabled={loading}
+                    minimal={true}
+                />
             </div>
-        </div>            {/* Numeric Keyboard */}
-        <div className="w-full flex justify-center mt-8 mb-8">
-            <NumericKeyboard
-                onKeyPress={handleKeyPress}
-                onDelete={handleDelete}
-                onClear={handleClear}
-                disabled={loading}
-            />
         </div>
-    </div>
     );
 }
