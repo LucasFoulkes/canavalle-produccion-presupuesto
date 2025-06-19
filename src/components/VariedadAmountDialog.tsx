@@ -43,13 +43,13 @@ export function VariedadAmountDialog({
             return
         }
 
-        const data = {
-            finca: finca.nombre,
-            bloque: bloque.nombre,
-            variedad: variedad.nombre,
-            accion: accion,
-            amount: parseFloat(amount)
-        }
+        // const data = {
+        //     finca: finca.nombre,
+        //     bloque: bloque.nombre,
+        //     variedad: variedad.nombre,
+        //     accion: accion,
+        //     amount: parseFloat(amount)
+        // }
 
         setAmount('')
         setOpen(false)
@@ -85,13 +85,14 @@ export function VariedadAmountDialog({
                     />
                 </div>
 
-                <DialogFooter className="flex flex-col gap-2">                    <Button
-                    onClick={handleConfirm}
-                    disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))}
-                    className="w-full h-14 text-lg"
-                >
-                    Confirmar
-                </Button>
+                <DialogFooter className="flex flex-col gap-2">
+                    <Button
+                        onClick={handleConfirm}
+                        disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))}
+                        className="w-full h-14 text-lg"
+                    >
+                        Confirmar
+                    </Button>
                     <Button
                         variant="destructive"
                         onClick={handleCancel}
