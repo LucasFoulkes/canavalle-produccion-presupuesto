@@ -1,50 +1,27 @@
-# React + TypeScript + Vite
+# Hooks Architecture README
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Hook Patterns
 
-Currently, two official plugins are available:
+### useCrud Pattern
+For CRUD operations on database entities with `id` property:
+- `useFincas`, `useBloques` - use `useGenericCrud`
+- Provides: `items`, `getStateInfo`, `create`, `update`, `remove`
+- Uses `StateDisplay` component for loading/error/empty states
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Custom Hook Pattern  
+For specialized data fetching (non-CRUD):
+- `useAcciones` - fetches column names (returns string[])
+- **Different from CRUD hooks because**: returns primitive strings, not objects with IDs
+- Implements own `getStateInfo` for consistency with CRUD hooks
+- Uses `StateDisplay` component for UI consistency
 
-## Expanding the ESLint configuration
+## Acciones Hook Specifics
+- Fetches table column metadata, not database records
+- Returns `string[]` instead of `Entity[]`
+- Cannot use `useGenericCrud` due to type constraints (no `id` property)
+- Maintains same UI patterns (`getStateInfo` + `StateDisplay`) for consistency
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+## Future Regularization
+- Consider creating `useQuery` hook for non-CRUD data fetching
+- Standardize all hooks to use `getStateInfo` + `StateDisplay` pattern
+- Keep CRUD operations using `useGenericCrud`
