@@ -23,7 +23,7 @@ function Home() {
                         <Button
                             key={finca.id}
                             className="w-full h-full capitalize aspect-square text-lg"
-                            onClick={() => navigate(`/bloques`, { state: { finca: finca } })}
+                            onClick={() => navigate(`/acciones`, { state: { finca: finca } })}
                         >
                             {finca.nombre}
                         </Button>

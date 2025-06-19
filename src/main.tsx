@@ -16,9 +16,9 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/home" element={<Home />} />
-          <Route path="/bloques" element={<Bloques />} />
-          <Route path="/variedades/:bloqueId" element={<Variedades />} />
           <Route path="/acciones" element={<Acciones />} />
+          <Route path="/bloques" element={<Bloques />} />
+          <Route path="/variedades" element={<Variedades />} />
           <Route path="*" element={<div>404 Not Found</div>} />
         </Routes>
       </BrowserRouter>

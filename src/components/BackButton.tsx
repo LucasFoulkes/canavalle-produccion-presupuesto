@@ -22,11 +22,11 @@ export function BackButton({ to, state, className = '' }: BackButtonProps) {
 
     return (
         <Button
-            className={`absolute left-4 top-4 rounded-full size-10 border-2 z-50 pointer-events-auto ${className}`}
+            className={`absolute left-4 top-4 rounded-full size-16 border-2 z-50 pointer-events-auto ${className}`}
             variant='outline'
             onClick={handleClick}
         >
-            <ChevronLeft className='size-6 text-zinc-300' />
+            <ChevronLeft className='size-10 text-zinc-300' />
         </Button>
     )
 }
