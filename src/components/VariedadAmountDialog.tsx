@@ -39,7 +39,7 @@ export function VariedadAmountDialog({
     const [open, setOpen] = useState(false)
 
     const handleConfirm = () => {
-        if (!amount || parseFloat(amount) <= 0) {
+        if (!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))) {
             return
         }
 
@@ -65,33 +65,33 @@ export function VariedadAmountDialog({
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="flex flex-col gap-4">
                 <DialogHeader>
                     <DialogTitle className="text-center capitalize text-xl font-bold">
                         {finca.nombre} • {bloque.nombre} • {variedad.nombre}
                     </DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
                     <ActionButton action={accion} />
                     <Input
                         id="amount"
                         type="number"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="text-lg h-14 text-center"
+                        className="text-lg h-14 text-center w-full"
                         placeholder='Ingrese la cantidad'
                         autoFocus
                     />
                 </div>
 
-                <DialogFooter className="flex-col space-y-2">
-                    <Button
-                        onClick={handleConfirm}
-                        disabled={!amount || parseFloat(amount) <= 0}
-                        className="w-full h-14 text-lg"
-                    >
-                        Confirmar
-                    </Button>
+                <DialogFooter className="flex flex-col gap-2">                    <Button
+                    onClick={handleConfirm}
+                    disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))}
+                    className="w-full h-14 text-lg"
+                >
+                    Confirmar
+                </Button>
                     <Button
                         variant="destructive"
                         onClick={handleCancel}

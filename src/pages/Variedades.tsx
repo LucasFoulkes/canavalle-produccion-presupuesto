@@ -27,7 +27,7 @@ function Variedades() {
     } return (
         <div className="flex flex-col p-4 gap-4 h-screen">
             <BackButton to="/bloques" state={{ finca, accion }} />
-            <header className='flex flex-col gap-2 justify-center items-center'>
+            <header className='flex flex-col gap-2 justify-center items-center absolute top-4 left-0 right-0'>
                 <h1 className='text-2xl font-bold capitalize'>
                     {finca.nombre} • {bloque.nombre}
                 </h1>
