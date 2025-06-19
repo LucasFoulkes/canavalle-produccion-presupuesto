@@ -26,7 +26,6 @@ function App() {
     }
   }, [error])
 
-  // Navigate to home when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/home')

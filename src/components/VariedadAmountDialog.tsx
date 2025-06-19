@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/ActionButton'
@@ -21,36 +21,29 @@ interface Variedad {
 }
 
 interface VariedadAmountDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
     finca: Finca;
     bloque: Bloque;
-    variedad: Variedad | null;
+    variedad: Variedad;
     accion: string;
-    onConfirm: (data: {
-        finca: string;
-        bloque: string;
-        variedad: string;
-        accion: string;
-        amount: number;
-    }) => void;
+    children: React.ReactNode;
 }
 
 export function VariedadAmountDialog({
-    open,
-    onOpenChange,
     finca,
     bloque,
     variedad,
     accion,
-    onConfirm
+    children
 }: VariedadAmountDialogProps) {
     const [amount, setAmount] = useState('')
+    const [open, setOpen] = useState(false)
 
     const handleConfirm = () => {
-        if (!variedad || !amount || parseFloat(amount) < 0) {
+        if (!amount || parseFloat(amount) <= 0) {
             return
-        } const data = {
+        }
+
+        const data = {
             finca: finca.nombre,
             bloque: bloque.nombre,
             variedad: variedad.nombre,
@@ -58,24 +51,28 @@ export function VariedadAmountDialog({
             amount: parseFloat(amount)
         }
 
-        onConfirm(data)
-        handleClose()
+        setAmount('')
+        setOpen(false)
     }
 
-    const handleClose = () => {
+    const handleCancel = () => {
         setAmount('')
-        onOpenChange(false)
+        setOpen(false)
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent >
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                {children}
+            </DialogTrigger>
+            <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="text-center capitalize text-xl font-bold ">
-                        {finca.nombre} • {bloque.nombre} • {variedad?.nombre}
-                    </DialogTitle>                </DialogHeader>
+                    <DialogTitle className="text-center capitalize text-xl font-bold">
+                        {finca.nombre} • {bloque.nombre} • {variedad.nombre}
+                    </DialogTitle>
+                </DialogHeader>
                 <div className="space-y-4">
-                    <ActionButton action={accion} variant="full" />
+                    <ActionButton action={accion} />
                     <Input
                         id="amount"
                         type="number"
@@ -90,20 +87,20 @@ export function VariedadAmountDialog({
                 <DialogFooter className="flex-col space-y-2">
                     <Button
                         onClick={handleConfirm}
-                        disabled={!amount || parseFloat(amount) < 0}
+                        disabled={!amount || parseFloat(amount) <= 0}
                         className="w-full h-14 text-lg"
                     >
                         Confirmar
                     </Button>
                     <Button
                         variant="destructive"
-                        onClick={handleClose}
+                        onClick={handleCancel}
                         className="w-full h-14 text-lg"
                     >
                         Cancelar
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog >
+        </Dialog>
     )
 }

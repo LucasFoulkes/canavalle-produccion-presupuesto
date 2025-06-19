@@ -1,32 +1,16 @@
-import { Button } from '@/components/ui/button'
 import { ChevronLeft } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
+import { Button } from './ui/button';
 
-interface BackButtonProps {
-    to?: string
-    state?: any
-    className?: string
-}
+export function BackButton({ to, state }: { to?: string; state?: any }) {
+    const navigate = useNavigate();
 
-export function BackButton({ to, state, className = '' }: BackButtonProps) {
-    const navigate = useNavigate()
-
-    const handleClick = () => {
-        console.log('BackButton clicked', { to, state })
-        if (to) {
-            navigate(to, { state })
-        } else {
-            navigate(-1)
-        }
-    }
-
-    return (
-        <Button
-            className={`absolute left-4 top-4 rounded-full size-16 border-2 z-50 pointer-events-auto ${className}`}
-            variant='outline'
-            onClick={handleClick}
-        >
-            <ChevronLeft className='size-10 text-zinc-300' />
-        </Button>
-    )
+    return (<Button
+        variant="outline"
+        className={'absolute right-4 top-4 rounded-full size-16 border-2 z-10'}
+        onClick={() => to ? navigate(to, { state }) : navigate(-1)}
+    >
+        <ChevronLeft className='size-10 text-zinc-300' />
+    </Button>
+    );
 }

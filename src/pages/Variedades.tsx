@@ -3,102 +3,55 @@ import { Button } from '@/components/ui/button'
 import { StateDisplay } from '@/components/StateDisplay'
 import { VariedadAmountDialog } from '@/components/VariedadAmountDialog'
 import { ActionButton } from '@/components/ActionButton'
-import { useLocation, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/BackButton'
-import { useEffect, useState } from 'react'
-
-interface Finca {
-    id: number;
-    nombre: string;
-}
-
-interface Bloque {
-    id: number;
-    nombre: string;
-    finca_id: number;
-}
-
-interface Variedad {
-    id: number;
-    nombre: string;
-}
+import { useLocation, useNavigate } from 'react-router-dom'
 
 function Variedades() {
     const location = useLocation()
     const navigate = useNavigate()
-    const [selectedAccion, setSelectedAccion] = useState<string | null>(null)
-    const [dialogOpen, setDialogOpen] = useState(false)
-    const [selectedVariedad, setSelectedVariedad] = useState<Variedad | null>(null)
 
-    const finca = location.state?.finca as Finca
-    const accion = location.state?.accion as string
-    const bloque = location.state?.bloque as Bloque
+    const finca = location.state?.finca
+    const accion = location.state?.accion
+    const bloque = location.state?.bloque
 
     const { variedades, getStateInfo } = useVariedades(bloque?.id)
-
-    useEffect(() => {
-        // Load selected accion from localStorage on component mount
-        const storedAccion = localStorage.getItem('selectedAccion')
-        if (storedAccion) {
-            setSelectedAccion(storedAccion)
-        }
-    }, [])
 
     if (!finca || !bloque) {
         navigate('/home')
         return null
-    } const stateInfo = getStateInfo()
+    }
+
+    const stateInfo = getStateInfo()
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
-    }
-
-    const handleVariedadSelect = (variedad: Variedad) => {
-        setSelectedVariedad(variedad)
-        setDialogOpen(true)
-    }
-
-    const handleDialogConfirm = (_data: {
-        finca: string;
-        bloque: string;
-        variedad: string;
-        accion: string;
-        amount: number;
-    }) => {
-        setSelectedVariedad(null)
-        setDialogOpen(false)
-    }
-
-    return (<div className="flex flex-col p-4 gap-4 h-screen">
-        <BackButton to="/bloques" state={{ finca, accion: accion || selectedAccion }} />        <div className='absolute flex flex-col gap-2 flex-grow justify-center items-center left-0 right-0'>
-            <h1 className='text-2xl font-bold capitalize'>
-                {finca?.nombre && bloque?.nombre
-                    ? `${finca.nombre} • ${bloque.nombre}`
-                    : bloque?.nombre || 'Variedades'}            </h1>
-            <span>Selecciona una variedad</span>
-            <ActionButton action={accion || selectedAccion || ''} />
-        </div>
-        <div className='flex flex-col flex-grow justify-center w-full'>
-            <div className="grid grid-cols-1 gap-3">
-                {variedades.map(variedad => (
-                    <Button
-                        key={variedad.id} className="w-full h-full capitalize h-20 text-lg"
-                        onClick={() => handleVariedadSelect(variedad)}>
-                        {variedad.nombre}
-                    </Button>
-                ))}
+    } return (
+        <div className="flex flex-col p-4 gap-4 h-screen">
+            <BackButton to="/bloques" state={{ finca, accion }} />
+            <header className='flex flex-col gap-2 justify-center items-center'>
+                <h1 className='text-2xl font-bold capitalize'>
+                    {finca.nombre} • {bloque.nombre}
+                </h1>
+                <span>Selecciona una variedad</span>
+                <ActionButton action={accion} />
+            </header>
+            <div className="flex-1 flex items-center justify-center">
+                <div className="grid gap-3 w-full grid-cols-1">
+                    {variedades.map(variedad => (
+                        <VariedadAmountDialog
+                            key={variedad.id}
+                            finca={finca}
+                            bloque={bloque}
+                            variedad={variedad}
+                            accion={accion || ''}
+                        >
+                            <Button className="w-full capitalize h-20 text-lg">
+                                {variedad.nombre}
+                            </Button>
+                        </VariedadAmountDialog>
+                    ))}
+                </div>
             </div>
         </div>
-
-        <VariedadAmountDialog
-            open={dialogOpen}
-            onOpenChange={setDialogOpen}
-            finca={finca}
-            bloque={bloque}
-            variedad={selectedVariedad}
-            accion={accion || selectedAccion || ''}
-            onConfirm={handleDialogConfirm}
-        />
-    </div>
     )
 }
 
