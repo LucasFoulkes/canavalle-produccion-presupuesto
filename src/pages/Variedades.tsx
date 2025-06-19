@@ -1,7 +1,6 @@
 import { useVariedades } from '@/hooks/useVariedades'
-import { Button } from '@/components/ui/button'
 import { StateDisplay } from '@/components/StateDisplay'
-import { VariedadAmountDialog } from '@/components/VariedadAmountDialog'
+import { VariedadButtonWithValue } from '@/components/VariedadButtonWithValue'
 import { ActionButton } from '@/components/ActionButton'
 import { BackButton } from '@/components/BackButton'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -34,22 +33,17 @@ function Variedades() {
                 <span>Selecciona una variedad</span>
                 <ActionButton action={accion} />
             </header>
-            <div className="flex-1 flex items-center justify-center">
-                <div className="grid gap-3 w-full grid-cols-1">
-                    {variedades.map(variedad => (
-                        <VariedadAmountDialog
-                            key={variedad.id}
-                            finca={finca}
-                            bloque={bloque}
-                            variedad={variedad}
-                            accion={accion || ''}
-                        >
-                            <Button className="w-full capitalize h-20 text-lg">
-                                {variedad.nombre}
-                            </Button>
-                        </VariedadAmountDialog>
-                    ))}
-                </div>
+            <div className="flex-1 flex items-center justify-center">                <div className="grid gap-3 w-full grid-cols-1">
+                {variedades.map(variedad => (
+                    <VariedadButtonWithValue
+                        key={variedad.id}
+                        finca={finca}
+                        bloque={bloque}
+                        variedad={variedad}
+                        accion={accion || ''}
+                    />
+                ))}
+            </div>
             </div>
         </div>
     )

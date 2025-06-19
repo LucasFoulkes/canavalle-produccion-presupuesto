@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/ActionButton'
 import { useState } from 'react'
+import { BloqueVariedadService } from '@/services/bloque-variedad.service'
+import { AccionesService, CreateAccionData } from '@/services/acciones.service'
 
 interface Finca {
     id: number;
@@ -26,6 +28,7 @@ interface VariedadAmountDialogProps {
     variedad: Variedad;
     accion: string;
     children: React.ReactNode;
+    onValueUpdate?: () => void; // Callback to refresh the button value
 }
 
 export function VariedadAmountDialog({
@@ -33,26 +36,57 @@ export function VariedadAmountDialog({
     bloque,
     variedad,
     accion,
-    children
+    children,
+    onValueUpdate
 }: VariedadAmountDialogProps) {
     const [amount, setAmount] = useState('')
     const [open, setOpen] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))) {
             return
         }
 
-        // const data = {
-        //     finca: finca.nombre,
-        //     bloque: bloque.nombre,
-        //     variedad: variedad.nombre,
-        //     accion: accion,
-        //     amount: parseFloat(amount)
-        // }
+        setIsLoading(true)
 
-        setAmount('')
-        setOpen(false)
+        try {
+            // Get or create the bloque_variedad relationship
+            const { data: bloqueVariedad, error: relationError } = await BloqueVariedadService.getOrCreateBloqueVariedad(
+                bloque.id,
+                variedad.id
+            )
+
+            if (relationError || !bloqueVariedad) {
+                console.error('Error getting/creating bloque_variedad relationship:', relationError)
+                setIsLoading(false)
+                return
+            }
+
+            // Create the accion data
+            const accionData: CreateAccionData = {
+                bloque_variedad_id: bloqueVariedad.id,
+                [accion]: parseFloat(amount) // Dynamically set the column based on the action
+            }            // Save to acciones table
+            const { data: savedAccion, error: saveError } = await AccionesService.createAccion(accionData)
+
+            if (saveError) {
+                console.error('Error saving accion:', saveError)
+            } else {
+                console.log('Accion saved successfully:', savedAccion)
+                // Call the callback to update the button value
+                if (onValueUpdate) {
+                    onValueUpdate()
+                }
+            }
+
+        } catch (error) {
+            console.error('Unexpected error:', error)
+        } finally {
+            setIsLoading(false)
+            setAmount('')
+            setOpen(false)
+        }
     }
 
     const handleCancel = () => {
@@ -83,19 +117,18 @@ export function VariedadAmountDialog({
                         placeholder='Ingrese la cantidad'
                         autoFocus
                     />
-                </div>
-
-                <DialogFooter className="flex flex-col gap-2">
+                </div>                <DialogFooter className="flex flex-col gap-2">
                     <Button
                         onClick={handleConfirm}
-                        disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount))}
+                        disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
                         className="w-full h-14 text-lg"
                     >
-                        Confirmar
+                        {isLoading ? 'Guardando...' : 'Confirmar'}
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={handleCancel}
+                        disabled={isLoading}
                         className="w-full h-14 text-lg"
                     >
                         Cancelar
