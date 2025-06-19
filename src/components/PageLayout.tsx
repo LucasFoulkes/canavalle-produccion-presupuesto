@@ -54,7 +54,7 @@ function PageLayout({ items, title, onItemSelect, columns = 2, mainTitle, action
                 </div>
             </div>
         ) : (
-            <div className="flex-1 flex flex-col min-h-0">                <ScrollArea className="flex-1 overflow-hidden [&>div>div[style]]:!mr-0">
+            <div className="flex-1 flex flex-col min-h-0">                <ScrollArea className="flex-1 overflow-hidden [&>[data-slot=scroll-area-scrollbar]]:hidden">
                 <div className="flex items-center justify-center min-h-full py-4">
                     <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
                         {items.map(item => (
