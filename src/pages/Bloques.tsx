@@ -25,7 +25,7 @@ function Bloques() {
                 </span>
             </div>
             <div className='flex flex-col flex-grow justify-center  w-full'>
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-4 gap-2">
                     {bloques.map(bloque => (<Button
                         key={bloque.id}
                         className="w-full h-full capitalize aspect-square text-lg"

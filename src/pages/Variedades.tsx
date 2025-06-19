@@ -17,10 +17,11 @@ function Variedades() {
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
     } return (<div className="flex flex-col p-4 gap-4 h-screen">
-        <BackButton to="/bloques" state={{ finca }} />
-        <div className='absolute flex flex-col gap-2 flex-grow justify-center items-center left-0 right-0'>
+        <BackButton to="/bloques" state={{ finca }} />        <div className='absolute flex flex-col gap-2 flex-grow justify-center items-center left-0 right-0'>
             <h1 className='text-2xl font-bold capitalize'>
-                {bloque?.nombre || 'Variedades'}
+                {finca?.nombre && bloque?.nombre
+                    ? `${finca.nombre} - ${bloque.nombre}`
+                    : bloque?.nombre || 'Variedades'}
             </h1>
             <span>Selecciona una variedad</span>
         </div>
