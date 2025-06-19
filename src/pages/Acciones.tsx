@@ -26,17 +26,17 @@ function Acciones() {
         navigate('/bloques', { state: { finca, accion: originalColumn } })
     }
 
-    return (
-        <>
-            <BackButton to="/home" />
-            <PageLayout
-                items={accionItems}
-                title="acción"
-                onItemSelect={handleAccionSelect}
-                columns={1}
-                mainTitle={finca.nombre}
-            />
-        </>
+    return (<>
+        <BackButton to="/home" />
+        <PageLayout
+            items={accionItems}
+            title="acción"
+            onItemSelect={handleAccionSelect}
+            columns={1}
+            mainTitle={finca.nombre}
+            absoluteHeader={false}
+        />
+    </>
     )
 }
 
