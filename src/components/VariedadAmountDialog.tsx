@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ActionButton } from '@/components/ActionButton'
 import { useState } from 'react'
 import { BloqueVariedadService } from '@/services/bloque-variedad.service'
-import { AccionesService, CreateAccionData } from '@/services/acciones.service'
+import { AccionesService } from '@/services/acciones.service'
 
 interface Finca {
     id: number;
@@ -63,17 +63,19 @@ export function VariedadAmountDialog({
                 return
             }
 
-            // Create the accion data
-            const accionData: CreateAccionData = {
-                bloque_variedad_id: bloqueVariedad.id,
-                [accion]: parseFloat(amount) // Dynamically set the column based on the action
-            }            // Save to acciones table
-            const { data: savedAccion, error: saveError } = await AccionesService.createAccion(accionData)
+            console.log('Got bloque_variedad_id:', bloqueVariedad.id, 'for bloque:', bloque.id, 'variedad:', variedad.id, 'action:', accion)
+
+            // Create or update today's entry in acciones table
+            const { data: savedAccion, error: saveError } = await AccionesService.createOrUpdateTodayAccion(
+                bloqueVariedad.id,
+                accion,
+                parseFloat(amount)
+            )
 
             if (saveError) {
-                console.error('Error saving accion:', saveError)
+                console.error('Error saving/updating accion:', saveError)
             } else {
-                console.log('Accion saved successfully:', savedAccion)
+                console.log('Accion saved/updated successfully:', savedAccion)
                 // Call the callback to update the button value
                 if (onValueUpdate) {
                     onValueUpdate()

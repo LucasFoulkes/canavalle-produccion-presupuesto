@@ -32,16 +32,19 @@ export class BloqueVariedadService {
             .single()
 
         return { data, error }
-    }
-
-    // CREATE - Create or get existing bloque_variedad relationship
+    }    // CREATE - Create or get existing bloque_variedad relationship
     static async getOrCreateBloqueVariedad(bloqueId: number, variedadId: number) {
+        console.log('Getting or creating bloque_variedad for bloque:', bloqueId, 'variedad:', variedadId)
+
         // First try to get existing relationship
         const { data: existing, error: getError } = await this.getBloqueVariedadByIds(bloqueId, variedadId)
 
         if (!getError && existing) {
+            console.log('Found existing bloque_variedad:', existing)
             return { data: existing, error: null }
         }
+
+        console.log('No existing bloque_variedad found, creating new one. Error:', getError)
 
         // If not found, create new relationship
         const { data, error } = await supabase
@@ -50,6 +53,7 @@ export class BloqueVariedadService {
             .select('*')
             .single()
 
+        console.log('Created new bloque_variedad:', data, 'Error:', error)
         return { data, error }
     }
 

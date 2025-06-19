@@ -128,6 +128,62 @@ export class AccionesService {
             data: { value: (data as any)[actionColumn] || 0 },
             error: null
         }
+    }    // CREATE OR UPDATE - Create new entry or update today's entry if it exists
+    static async createOrUpdateTodayAccion(
+        bloqueVariedadId: number,
+        actionColumn: string,
+        value: number) {
+        console.log('🔍 Looking for entry with bloque_variedad_id:', bloqueVariedadId, 'created today')
+
+        // Get today's date (YYYY-MM-DD)
+        const today = new Date().toISOString().split('T')[0]
+        console.log('📅 Today is:', today)
+
+        // Check if there's an entry with this bloque_variedad_id created today
+        const { data: todayEntries, error: checkError } = await supabase
+            .from('acciones')
+            .select('*')
+            .eq('bloque_variedad_id', bloqueVariedadId)
+            .gte('created_at', `${today}T00:00:00`)
+            .lt('created_at', `${today}T23:59:59`)
+
+        console.log('📋 Found entries for today:', todayEntries?.length || 0, 'entries')
+
+        if (checkError) {
+            console.error('❌ Error checking entries:', checkError)
+            return { data: null, error: checkError }
+        }
+
+        if (todayEntries && todayEntries.length > 0) {
+            // Update the first entry found
+            const entryToUpdate = todayEntries[0]
+            console.log('🔄 Updating existing entry ID:', entryToUpdate.id)
+
+            const { data, error } = await supabase
+                .from('acciones')
+                .update({ [actionColumn]: value })
+                .eq('id', entryToUpdate.id)
+                .select('*')
+                .single()
+
+            console.log('✅ Update result:', data ? 'SUCCESS' : 'FAILED', error || '')
+            return { data, error }
+        } else {
+            // Create new entry
+            console.log('➕ Creating new entry')
+
+            const { data, error } = await supabase
+                .from('acciones')
+                .insert([{
+                    bloque_variedad_id: bloqueVariedadId,
+                    [actionColumn]: value
+                }])
+                .select('*')
+                .single()
+
+            console.log('✅ Create result:', data ? 'SUCCESS' : 'FAILED', error || '')
+            return { data, error }
+        }
     }
 
     // GETCOLUMNS - Get column names for a table (keeping existing functionality)
