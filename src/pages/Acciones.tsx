@@ -4,7 +4,6 @@ import { StateDisplay } from '@/components/StateDisplay'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { BackButton } from '@/components/BackButton'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 
 interface Finca {
     id: number;
@@ -15,18 +14,8 @@ function Acciones() {
     const location = useLocation()
     const navigate = useNavigate()
     const { columns, getStateInfo } = useAcciones()
-    const [selectedAccion, setSelectedAccion] = useState<string | null>(null)
 
     const finca = location.state?.finca as Finca
-
-    useEffect(() => {
-        // Load selected accion from localStorage on component mount
-        const storedAccion = localStorage.getItem('selectedAccion')
-        console.log('Stored accion from localStorage:', storedAccion)
-        if (storedAccion) {
-            setSelectedAccion(storedAccion)
-        }
-    }, [])
 
     if (!finca) {
         navigate('/home')
@@ -43,7 +32,6 @@ function Acciones() {
         // Store selected accion in localStorage
         localStorage.setItem('selectedAccion', accion)
         console.log('Storing accion in localStorage:', accion)
-        setSelectedAccion(accion)
 
         // Navigate to bloques with both finca and accion data
         navigate('/bloques', {

@@ -49,12 +49,14 @@ function Variedades() {
     } const stateInfo = getStateInfo()
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
-    } const handleVariedadSelect = (variedad: Variedad) => {
+    }
+
+    const handleVariedadSelect = (variedad: Variedad) => {
         setSelectedVariedad(variedad)
         setDialogOpen(true)
     }
 
-    const handleDialogConfirm = (data: {
+    const handleDialogConfirm = (_data: {
         finca: string;
         bloque: string;
         variedad: string;
@@ -62,6 +64,7 @@ function Variedades() {
         amount: number;
     }) => {
         setSelectedVariedad(null)
+        setDialogOpen(false)
     }
 
     return (<div className="flex flex-col p-4 gap-4 h-screen">
