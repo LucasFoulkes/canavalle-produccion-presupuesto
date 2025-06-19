@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { ReactNode } from 'react'
 
 interface PageLayoutProps {
@@ -38,19 +39,39 @@ function PageLayout({ items, title, onItemSelect, columns = 2, mainTitle, action
                 }`}>
                 Selecciona una {title}
             </h1>
-        )}            <div className={`grid gap-3 w-full ${absoluteHeader ? 'mt-auto mb-auto' : 'flex-1 content-center'}`}>
-            <div className={`grid gap-3 ${getGridCols()}`}>
-                {items.map(item => (
-                    <Button
-                        key={item.id}
-                        className={`w-full h-full capitalize text-lg ${columns === 1 ? 'h-20' : 'aspect-square'}`}
-                        onClick={() => onItemSelect(item)}
-                    >
-                        {item.nombre}
-                    </Button>
-                ))}
+        )}            {absoluteHeader ? (
+            <div className="grid gap-3 w-full mt-auto mb-auto">
+                <div className={`grid gap-3 ${getGridCols()}`}>
+                    {items.map(item => (
+                        <Button
+                            key={item.id}
+                            className={`w-full h-full capitalize text-lg ${columns === 1 ? 'h-20' : 'aspect-square'}`}
+                            onClick={() => onItemSelect(item)}
+                        >
+                            {item.nombre}
+                        </Button>
+                    ))}
+                </div>
             </div>
-        </div>
+        ) : (
+            <div className="flex-1 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 overflow-hidden">
+                    <div className="flex items-center justify-center min-h-full py-4">
+                        <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
+                            {items.map(item => (
+                                <Button
+                                    key={item.id}
+                                    className={`w-full capitalize text-lg ${columns === 1 ? 'h-20' : 'min-h-[80px] aspect-square'}`}
+                                    onClick={() => onItemSelect(item)}
+                                >
+                                    {item.nombre}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                </ScrollArea>
+            </div>
+        )}
     </div>
     )
 }
