@@ -1,6 +1,7 @@
 import { useBloques } from '@/hooks/useBloques'
 import { Button } from '@/components/ui/button'
 import { StateDisplay } from '@/components/StateDisplay'
+import { ActionButton } from '@/components/ActionButton'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/BackButton'
 import { useEffect, useState } from 'react'
@@ -53,13 +54,10 @@ function Bloques() {
             <div className='absolute flex flex-col gap-2 flex-grow justify-center items-center left-0 right-0'>
                 <h1 className='text-2xl font-bold capitalize'>
                     {finca?.nombre}
-                </h1>
-                <span>
+                </h1>                <span>
                     Selecciona un bloque
                 </span>
-                <Button className='bg-blue-600 text-white capitalize font-semibold w-screen rounded-none mt-2 text-lg'>
-                    {accion.replace(/_/g, ' ') || selectedAccion?.replace(/_/g, ' ')}
-                </Button>
+                <ActionButton action={accion || selectedAccion || ''} />
             </div>
             <div className='flex flex-col flex-grow justify-center  w-full'>
                 <div className="grid grid-cols-4 gap-2">

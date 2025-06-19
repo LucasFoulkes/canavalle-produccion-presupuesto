@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { ActionButton } from '@/components/ActionButton'
 import { useState } from 'react'
 
 interface Finca {
@@ -72,12 +73,9 @@ export function VariedadAmountDialog({
                 <DialogHeader>
                     <DialogTitle className="text-center capitalize text-xl font-bold ">
                         {finca.nombre} • {bloque.nombre} • {variedad?.nombre}
-                    </DialogTitle>
-                </DialogHeader>
+                    </DialogTitle>                </DialogHeader>
                 <div className="space-y-4">
-                    <Button className='bg-blue-600 text-white capitalize font-semibold w-full h-14 text-lg'>
-                        {accion.replace(/_/g, ' ')}
-                    </Button>
+                    <ActionButton action={accion} variant="full" />
                     <Input
                         id="amount"
                         type="number"

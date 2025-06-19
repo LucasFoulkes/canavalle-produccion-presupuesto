@@ -2,6 +2,7 @@ import { useVariedades } from '@/hooks/useVariedades'
 import { Button } from '@/components/ui/button'
 import { StateDisplay } from '@/components/StateDisplay'
 import { VariedadAmountDialog } from '@/components/VariedadAmountDialog'
+import { ActionButton } from '@/components/ActionButton'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BackButton } from '@/components/BackButton'
 import { useEffect, useState } from 'react'
@@ -72,12 +73,9 @@ function Variedades() {
             <h1 className='text-2xl font-bold capitalize'>
                 {finca?.nombre && bloque?.nombre
                     ? `${finca.nombre} • ${bloque.nombre}`
-                    : bloque?.nombre || 'Variedades'}
-            </h1>
+                    : bloque?.nombre || 'Variedades'}            </h1>
             <span>Selecciona una variedad</span>
-            <Button className='bg-blue-600 text-white uppercase font-semibold w-screen rounded-none mt-2 text-lg'>
-                {accion.replace(/_/g, ' ') || selectedAccion?.replace(/_/g, ' ')}
-            </Button>
+            <ActionButton action={accion || selectedAccion || ''} />
         </div>
         <div className='flex flex-col flex-grow justify-center w-full'>
             <div className="grid grid-cols-1 gap-3">
