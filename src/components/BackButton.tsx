@@ -12,6 +12,7 @@ export function BackButton({ to, state, className = '' }: BackButtonProps) {
     const navigate = useNavigate()
 
     const handleClick = () => {
+        console.log('BackButton clicked', { to, state })
         if (to) {
             navigate(to, { state })
         } else {
@@ -21,7 +22,7 @@ export function BackButton({ to, state, className = '' }: BackButtonProps) {
 
     return (
         <Button
-            className={`absolute left-4 top-4 rounded-full size-10 border-2 ${className}`}
+            className={`absolute left-4 top-4 rounded-full size-10 border-2 z-50 pointer-events-auto ${className}`}
             variant='outline'
             onClick={handleClick}
         >
