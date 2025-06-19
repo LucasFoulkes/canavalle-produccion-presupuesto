@@ -54,22 +54,21 @@ function PageLayout({ items, title, onItemSelect, columns = 2, mainTitle, action
                 </div>
             </div>
         ) : (
-            <div className="flex-1 flex flex-col min-h-0">
-                <ScrollArea className="flex-1 overflow-hidden">
-                    <div className="flex items-center justify-center min-h-full py-4">
-                        <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
-                            {items.map(item => (
-                                <Button
-                                    key={item.id}
-                                    className={`w-full capitalize text-lg ${columns === 1 ? 'h-20' : 'min-h-[80px] aspect-square'}`}
-                                    onClick={() => onItemSelect(item)}
-                                >
-                                    {item.nombre}
-                                </Button>
-                            ))}
-                        </div>
+            <div className="flex-1 flex flex-col min-h-0">                <ScrollArea className="flex-1 overflow-hidden [&>div>div[style]]:!mr-0">
+                <div className="flex items-center justify-center min-h-full py-4">
+                    <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
+                        {items.map(item => (
+                            <Button
+                                key={item.id}
+                                className={`w-full capitalize text-lg ${columns === 1 ? 'h-20' : 'min-h-[80px] aspect-square'}`}
+                                onClick={() => onItemSelect(item)}
+                            >
+                                {item.nombre}
+                            </Button>
+                        ))}
                     </div>
-                </ScrollArea>
+                </div>
+            </ScrollArea>
             </div>
         )}
     </div>
