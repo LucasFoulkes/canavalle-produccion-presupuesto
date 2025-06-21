@@ -17,11 +17,9 @@ export const useBloques = (fincaId?: number) => {
         : bloquesService
     const { items: bloques, getStateInfo, ...rest } = useGenericCrud<Bloque, CreateBloqueData, UpdateBloqueData>(
         service
-    )
-
-    // Customize the state info for bloques
-    const getBloquesStateInfo = () => {
-        return getStateInfo("Cargando bloques...", "No hay bloques disponibles")
+    )    // Customize the state info for bloques
+    const getBloquesStateInfo = (emptyMessage: string = "No hay bloques disponibles") => {
+        return getStateInfo("Cargando bloques...", emptyMessage)
     }
 
     return {

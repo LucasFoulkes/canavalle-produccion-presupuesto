@@ -18,10 +18,9 @@ function Bloques() {
     if (!fincaId || !fincaNombre || !accion) {
         navigate('/fincas')
         return null
-    } const stateInfo = getStateInfo()
-    if (stateInfo.shouldRender && stateInfo.stateProps) {
-        return <StateDisplay {...stateInfo.stateProps} />
     }
+
+    const stateInfo = getStateInfo(`No hay bloques configurados para la finca ${fincaNombre.replace(/-/g, ' ')}`)
 
     const handleBloqueSelect = (bloque: any) => {
         navigate(`/variedades/${fincaId}/${fincaNombre}/${accion}/${bloque.id}`)
@@ -34,23 +33,29 @@ function Bloques() {
                     <h1 className='text-2xl capitalize font-semibold'>
                         {fincaNombre.replace(/-/g, ' ')}
                     </h1>
-                    <p className='text-gray-600'>Selectiona un bloque</p>
+                    <p className='text-gray-600'>Selecciona un bloque</p>
                 </div>
                 <BackButton to={`/acciones/${fincaId}/${fincaNombre}`} />
-            </header>            <ActionBadge action={accion} />
-            <div className="flex-1 flex flex-col gap-2 w-full overflow-y-auto pb-8 mt-2">
-                <div className='grid grid-cols-4 gap-2 w-full'>
-                    {bloques.map((bloque) => (
+            </header>
+            <ActionBadge action={accion} />
+            {stateInfo.shouldRender && stateInfo.stateProps ? (
+                <div className="flex-1 flex items-center justify-center">
+                    <StateDisplay {...stateInfo.stateProps} />
+                </div>
+            ) : (
+                <div className="flex-1 flex flex-col gap-2 w-full overflow-y-auto pb-8 mt-2">
+                    <div className='grid grid-cols-4 gap-2 w-full'>                        {bloques.map((bloque) => (
                         <Button
                             key={bloque.id}
-                            className='aspect-square text-xl capitalize'
+                            className='aspect-square h-20 text-xl capitalize w-full h-full'
                             onClick={() => handleBloqueSelect(bloque)}
                         >
                             {bloque.nombre}
                         </Button>
                     ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </>
     )
 }

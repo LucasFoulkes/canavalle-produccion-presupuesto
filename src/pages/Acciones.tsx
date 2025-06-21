@@ -1,5 +1,4 @@
 import { useAcciones } from '@/hooks/useAcciones'
-import { StateDisplay } from '@/components/StateDisplay'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/BackButton'
@@ -7,7 +6,7 @@ import { BackButton } from '@/components/BackButton'
 function Acciones() {
     const navigate = useNavigate()
     const { fincaId, fincaNombre } = useParams<{ fincaId: string; fincaNombre: string }>()
-    const { columns, getStateInfo } = useAcciones()
+    const { columns } = useAcciones()
 
     if (!fincaId || !fincaNombre) {
         navigate('/fincas')
@@ -21,12 +20,6 @@ function Acciones() {
         id: index,
         nombre: column.replace(/_/g, ' ')
     }))
-
-    const stateInfo = getStateInfo()
-
-    if (stateInfo.shouldRender && stateInfo.stateProps) {
-        return <StateDisplay {...stateInfo.stateProps} />
-    }
 
     const handleAccionSelect = (item: { id: number; nombre: string }) => {
         const originalColumn = filteredColumns[item.id]
@@ -43,7 +36,8 @@ function Acciones() {
                     <p className='text-gray-600'>
                         Selecciona una acción
                     </p>
-                </div>                <BackButton to='/fincas' />
+                </div>
+                <BackButton to='/fincas' />
             </header>
             <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-8">
                 <div className="flex flex-col gap-2 w-full max-w-md">
@@ -53,7 +47,8 @@ function Acciones() {
                             {item.nombre}
                         </Button>
                     ))}
-                </div>            </div>
+                </div>
+            </div>
         </>
     )
 }
