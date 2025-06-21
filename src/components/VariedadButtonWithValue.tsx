@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { VariedadAmountDialog } from '@/components/VariedadAmountDialog'
 import { AccionesService } from '@/services/acciones.service'
 import { BloqueVariedadService } from '@/services/bloque-variedad.service'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Finca {
     id: number;
@@ -94,11 +95,9 @@ export function VariedadButtonWithValue({
             variedad={variedad}
             accion={accion}
             onValueUpdate={handleValueUpdate}
-        >
-            <Button className="w-full h-18 text-lg flex justify-between items-center px-4">
-                <span className="capitalize text-left">{variedad.nombre}</span>
-                <span className="font-bold text-xl">
-                    {loading ? '...' : currentValue}
+        >            <Button className="w-full h-18 text-lg flex justify-between items-center px-4">
+                <span className="capitalize text-left">{variedad.nombre}</span>                <span className="font-bold text-xl">
+                    {loading ? <Spinner size="sm" /> : currentValue}
                 </span>
             </Button>
         </VariedadAmountDialog>

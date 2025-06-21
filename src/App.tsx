@@ -7,6 +7,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp"
 import { useAuth } from '@/contexts/AuthContext'
+import { Spinner } from '@/components/ui/spinner'
 
 function App() {
   const maxLength = 6
@@ -50,7 +51,12 @@ function App() {
         {(() => {
           switch (true) {
             case isLoading:
-              return <span className="text-blue-600">Verificando...</span>
+              return (
+                <span className="text-blue-600 flex items-center justify-center gap-2">
+                  <Spinner size="sm" className="text-blue-600" />
+                  Verificando...
+                </span>
+              )
             case !!error:
               return <span className="text-red-500">{error} trata de nuevo</span>
             default:

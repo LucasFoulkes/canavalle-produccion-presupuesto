@@ -5,6 +5,7 @@ import { ActionBadge } from '@/components/ActionBadge'
 import { useState } from 'react'
 import { BloqueVariedadService } from '@/services/bloque-variedad.service'
 import { AccionesService } from '@/services/acciones.service'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Finca {
     id: number;
@@ -119,14 +120,14 @@ export function VariedadAmountDialog({
                         placeholder='Ingrese la cantidad'
                         autoFocus
                     />
-                </div>                <DialogFooter className="flex flex-col gap-2">
-                    <Button
-                        onClick={handleConfirm}
-                        disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
-                        className="w-full h-14 text-lg"
-                    >
-                        {isLoading ? 'Guardando...' : 'Confirmar'}
-                    </Button>
+                </div>                <DialogFooter className="flex flex-col gap-2">                    <Button
+                    onClick={handleConfirm}
+                    disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
+                    className="w-full h-14 text-lg flex items-center justify-center gap-2"
+                >
+                    {isLoading && <Spinner size="sm" />}
+                    {isLoading ? 'Guardando...' : 'Confirmar'}
+                </Button>
                     <Button
                         variant="destructive"
                         onClick={handleCancel}
