@@ -42,7 +42,7 @@ function Bloques() {
                 <div className="flex-1 flex items-center justify-center">
                     <StateDisplay {...stateInfo.stateProps} />
                 </div>) : (
-                <div className="flex-1 overflow-y-auto pb-8 mt-2">
+                <div className="flex-1 overflow-y-auto pb-20 mt-2">
                     <div className='grid grid-cols-4 gap-2 w-full'>
                         {bloques.map((bloque) => (
                             <Button

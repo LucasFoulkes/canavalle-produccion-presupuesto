@@ -38,7 +38,7 @@ function Acciones() {
                     </p>
                 </div>
                 <BackButton to='/fincas' />            </header>
-            <div className="flex-1 overflow-y-auto pb-8">
+            <div className="flex-1 overflow-y-auto pb-20">
                 <div className="flex flex-col gap-2 w-full max-w-md mx-auto">
                     {accionItems.map((item) => (
                         <Button className='w-full text-lg capitalize h-18'

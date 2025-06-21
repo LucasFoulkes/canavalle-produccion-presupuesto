@@ -115,7 +115,7 @@ function Variedades() {
                     <StateDisplay {...stateInfo.stateProps} />
                 </div>
             ) : (
-                <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-8 mt-2">
+                <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-20 mt-2">
                     <div className='grid gap-3 w-full max-w-md grid-cols-1'>
                         {variedades.map(variedad => (
                             <VariedadButtonWithValue
