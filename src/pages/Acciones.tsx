@@ -35,8 +35,8 @@ function Acciones() {
 
     return (
         <>
-            <div className='w-full left-0 right-0 h-fit flex justify-center pb-4'>
-                <div className='text-left w-full'>
+            <header className='relative w-full h-fit flex justify-center mb-4'>
+                <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {fincaNombre.replace(/-/g, ' ')}
                     </h1>
@@ -44,11 +44,12 @@ function Acciones() {
                         Selecciona una acción
                     </p>
                 </div>
-                <div className='right-4 top-0 bottom-0 flex'>
-                    <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
+                <div className='absolute right-4 top-0 bottom-0 flex items-center cursor-pointer'
+                    onClick={() => navigate('/fincas')}>
+                    <CircleChevronLeft className='h-full w-auto stroke-1 opacity-10' />
                 </div>
-            </div >
-            <div className="flex flex-col h-full gap-4 w-full overflow-y-auto pb-8 scrollbar-none">
+            </header >
+            <div className="flex flex-col h-full gap-4 w-full overflow-y-auto pb-8">
                 {accionItems.map((item) => (
                     <Button className='w-full text-lg capitalize h-18'
                         onClick={() => handleAccionSelect(item)} key={item.id}>

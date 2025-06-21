@@ -2,10 +2,10 @@ import { useVariedades } from '@/hooks/useVariedades'
 import { StateDisplay } from '@/components/StateDisplay'
 import { VariedadButtonWithValue } from '@/components/VariedadButtonWithValue'
 import { ActionBadge } from '@/components/ActionBadge'
-import { BackButton } from '@/components/BackButton'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { BloquesService } from '@/services/bloques.service'
+import { CircleChevronLeft } from 'lucide-react'
 
 // Use the component interface to match what VariedadButtonWithValue expects
 interface ComponentBloque {
@@ -102,16 +102,19 @@ function Variedades() {
         return <StateDisplay {...stateInfo.stateProps} />
     } return (
         <>
-            <div className='absolute w-full left-0 right-0 h-fit flex justify-center'>
+            <header className='relative w-full h-fit flex justify-center pb-4'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {displayName} • {bloque.nombre}
                     </h1>
                     <p className='text-gray-600'>Selecciona una variedad</p>
-                    <ActionBadge action={accion} />
                 </div>
-                <BackButton to={`/bloques/${fincaId}/${fincaNombre}/${accion}`} />
-            </div>
+                <div className='absolute right-4 top-0 bottom-0 flex items-center cursor-pointer'
+                    onClick={() => navigate(`/bloques/${fincaId}/${fincaNombre}/${accion}`)}>
+                    <CircleChevronLeft className='h-full w-auto stroke-1 opacity-10' />
+                </div>
+            </header>
+            <ActionBadge action={accion} />
             <div className='flex-1 flex flex-col gap-4 items-center justify-center w-full h-full'>
                 <div className='grid gap-3 w-full grid-cols-1'>
                     {variedades.map(variedad => (
