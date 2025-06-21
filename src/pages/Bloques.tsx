@@ -21,6 +21,14 @@ function Bloques() {
         bloque.finca_id === (fincaId ? parseInt(fincaId) : 0)
     )
 
+    // Debug logging
+    console.log('🔍 Bloques Debug:')
+    console.log('fincaId from URL:', fincaId)
+    console.log('fincaId parsed:', fincaId ? parseInt(fincaId) : 0)
+    console.log('All bloques:', allBloques)
+    console.log('Filtered bloques:', bloques)
+    console.log('All bloque finca_ids:', allBloques.map(b => b.finca_id))
+
     if (!fincaId || !fincaNombre || !accion) {
         navigate('/fincas')
         return null
@@ -39,7 +47,7 @@ function Bloques() {
                     </h1>
                     <p className='text-gray-600'>Selecciona un bloque</p>
                 </div>
-                <BackButton to={`/acciones/${fincaId}/${fincaNombre}`} />
+                <BackButton to={`/fincas/${accion}`} />
             </header>
             <ActionBadge action={accion} />
             {stateInfo.shouldRender && stateInfo.stateProps ? (
