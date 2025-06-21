@@ -9,7 +9,6 @@ function Acciones() {
     const { fincaId, fincaNombre } = useParams<{ fincaId: string; fincaNombre: string }>()
     const { columns, getStateInfo } = useAcciones()
 
-    // Redirect if missing required params
     if (!fincaId || !fincaNombre) {
         navigate('/fincas')
         return null
@@ -49,16 +48,13 @@ function Acciones() {
                     <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
                 </div>
             </div >
-            <div className='flex flex-col h-full gap-4 w-full overflow-y-auto pb-12'>
-                {/* <div className='flex flex-col items-center justify-center h-full gap-4 w-full overflow-hidden '> */}
-                {
-                    accionItems.map((item) => (
-                        <Button className='w-full text-lg capitalize h-18'
-                            onClick={() => handleAccionSelect(item)} key={item.id}>
-                            {item.nombre}
-                        </Button>
-                    ))
-                }
+            <div className="flex flex-col h-full gap-4 w-full overflow-y-auto pb-8 scrollbar-none">
+                {accionItems.map((item) => (
+                    <Button className='w-full text-lg capitalize h-18'
+                        onClick={() => handleAccionSelect(item)} key={item.id}>
+                        {item.nombre}
+                    </Button>
+                ))}
             </div >
             <span
                 className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-transparent to-white"
