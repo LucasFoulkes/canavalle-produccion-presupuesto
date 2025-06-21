@@ -49,7 +49,8 @@ function Acciones() {
                     <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
                 </div>
             </div >
-            <div className='flex flex-col items-center justify-center h-full gap-4 w-full overflow-hidden'>
+            <div className='flex flex-col h-full gap-4 w-full overflow-y-auto pb-12'>
+                {/* <div className='flex flex-col items-center justify-center h-full gap-4 w-full overflow-hidden '> */}
                 {
                     accionItems.map((item) => (
                         <Button className='w-full text-lg capitalize h-18'
@@ -59,6 +60,9 @@ function Acciones() {
                     ))
                 }
             </div >
+            <span
+                className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-transparent to-white"
+            ></span>
         </>
     )
 }
