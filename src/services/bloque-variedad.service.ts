@@ -4,12 +4,25 @@ export interface BloqueVariedad {
     id: number
     bloque_id: number
     variedad_id: number
-    created_at?: string
 }
 
 export interface CreateBloqueVariedadData {
     bloque_id: number
     variedad_id: number
+}
+
+export interface UpdateBloqueVariedadData {
+    bloque_id?: number
+    variedad_id?: number
+}
+
+export interface BloqueVariedadWithNames {
+    id: number
+    bloque_id: number
+    variedad_id: number
+    bloque_nombre: string
+    variedad_nombre: string
+    finca_nombre: string
 }
 
 export class BloqueVariedadService {
@@ -64,6 +77,73 @@ export class BloqueVariedadService {
             .select('*')
             .eq('id', id)
             .single()
+
+        return { data, error }
+    }
+
+    // READ - Get all bloque_variedad relationships with names
+    static async getAllBloqueVariedadesWithNames() {
+        const { data, error } = await supabase
+            .from('bloque_variedad')
+            .select(`
+                id,
+                bloque_id,
+                variedad_id,
+                bloques!bloque_id (
+                    nombre,
+                    fincas!finca_id (
+                        nombre
+                    )
+                ),
+                variedades!variedad_id (
+                    nombre
+                )
+            `)
+
+        if (error) return { data: null, error }
+
+        // Transform the data to flatten the joined names
+        const transformedData = data?.map(item => ({
+            id: item.id,
+            bloque_id: item.bloque_id,
+            variedad_id: item.variedad_id,
+            bloque_nombre: (item.bloques as any)?.nombre || 'Sin bloque',
+            variedad_nombre: (item.variedades as any)?.nombre || 'Sin variedad',
+            finca_nombre: (item.bloques as any)?.fincas?.nombre || 'Sin finca',
+        })) || []
+
+        return { data: transformedData, error: null }
+    }
+
+    // CREATE - Create new bloque_variedad relationship
+    static async createBloqueVariedad(data: CreateBloqueVariedadData) {
+        const { data: result, error } = await supabase
+            .from('bloque_variedad')
+            .insert([data])
+            .select('*')
+            .single()
+
+        return { data: result, error }
+    }
+
+    // UPDATE - Edit existing bloque_variedad relationship
+    static async updateBloqueVariedad(id: number, updates: UpdateBloqueVariedadData) {
+        const { data, error } = await supabase
+            .from('bloque_variedad')
+            .update(updates)
+            .eq('id', id)
+            .select('*')
+            .single()
+
+        return { data, error }
+    }
+
+    // DELETE - Remove bloque_variedad relationship
+    static async deleteBloqueVariedad(id: number) {
+        const { data, error } = await supabase
+            .from('bloque_variedad')
+            .delete()
+            .eq('id', id)
 
         return { data, error }
     }

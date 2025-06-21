@@ -14,6 +14,13 @@ export interface UpdateBloqueData {
     nombre?: string
 }
 
+export interface BloqueWithFinca {
+    id: number
+    nombre: string
+    finca_id: number
+    finca_nombre: string
+}
+
 export class BloquesService {
     // READ - Get all fincas
     static async getAllBloques() {
@@ -76,5 +83,31 @@ export class BloquesService {
             .eq('finca_id', fincaId)
 
         return { data, error }
+    }
+
+    // READ - Get all bloques with finca names
+    static async getAllBloquesWithFincas() {
+        const { data, error } = await supabase
+            .from('bloques')
+            .select(`
+                id, 
+                nombre, 
+                finca_id,
+                fincas!finca_id (
+                    nombre
+                )
+            `)
+
+        if (error) return { data: null, error }
+
+        // Transform the data to flatten the finca name
+        const transformedData = data?.map(bloque => ({
+            id: bloque.id,
+            nombre: bloque.nombre,
+            finca_id: bloque.finca_id,
+            finca_nombre: (bloque.fincas as any)?.nombre || 'Sin finca'
+        })) || []
+
+        return { data: transformedData, error: null }
     }
 }
