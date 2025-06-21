@@ -405,23 +405,23 @@ export function CrudTable<T extends { id: number }>({
                         </div>
                     )}
                 </div>
-            )}
-
-            {/* Table */}
-            <div className="flex flex-col flex-1 border rounded-md">
+            )}            {/* Table */}
+            <div className="flex flex-col flex-1 border rounded-md min-h-0">
                 {/* Fixed Header */}
-                <Table className="text-xs">
-                    <TableHeader className="bg-gray-50">
-                        <TableRow>
-                            {columns.map((column, index) => (
-                                <TableHead key={index} className="text-center">
-                                    {column.label}
-                                </TableHead>
-                            ))}
-                            <TableHead className="text-center">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                </Table>
+                <div className="border-b bg-gray-50">
+                    <Table className="text-xs">
+                        <TableHeader>
+                            <TableRow>
+                                {columns.map((column, index) => (
+                                    <TableHead key={index} className="text-center">
+                                        {column.label}
+                                    </TableHead>
+                                ))}
+                                <TableHead className="text-center">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                    </Table>
+                </div>
 
                 {/* Scrollable Body */}
                 <div className="flex-1 overflow-y-auto">

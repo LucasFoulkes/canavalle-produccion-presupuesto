@@ -21,6 +21,15 @@ function Configuracion() {
 
     return (
         <div className="flex flex-col h-full">
+            <header className='relative w-full h-fit flex justify-center mb-4'>
+                <div className='text-center'>
+                    <h1 className='text-2xl capitalize font-semibold'>
+                        Configuración
+                    </h1>
+                    <p className='text-gray-600'>Gestión de datos del sistema</p>
+                </div>
+            </header>
+
             <div className="flex-1 overflow-hidden pb-20">
                 <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">
                     <TabsList className="grid w-full grid-cols-4 mb-4">
@@ -28,7 +37,7 @@ function Configuracion() {
                         <TabsTrigger value="bloques">Bloques</TabsTrigger>
                         <TabsTrigger value="variedades">Variedades</TabsTrigger>
                         <TabsTrigger value="bloque-variedad">Relaciones</TabsTrigger>
-                    </TabsList>                    <TabsContent value="fincas" className="flex-1 overflow-hidden">
+                    </TabsList><TabsContent value="fincas" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Fincas"
                             data={fincasHook.fincas}
