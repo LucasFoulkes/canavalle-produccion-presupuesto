@@ -8,6 +8,12 @@
   /* font-family: "Quicksand", sans-serif; */
   /* font-family: "Raleway", sans-serif; */
   /* font-family: "Roboto Mono", monospace; */
+  /* box-sizing: border-box; */
   margin: 0 auto;
   text-align: center;
+  /*  */
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  height: 100vh;
 }

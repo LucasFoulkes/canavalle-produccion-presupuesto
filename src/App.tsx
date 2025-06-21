@@ -25,10 +25,9 @@ function App() {
       setPinValue('')
     }
   }, [error])
-
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home')
+      navigate('/fincas')
     }
   }, [isAuthenticated, navigate])
 

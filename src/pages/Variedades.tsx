@@ -1,51 +1,131 @@
 import { useVariedades } from '@/hooks/useVariedades'
 import { StateDisplay } from '@/components/StateDisplay'
 import { VariedadButtonWithValue } from '@/components/VariedadButtonWithValue'
-import { ActionButton } from '@/components/ActionButton'
+import { ActionBadge } from '@/components/ActionBadge'
 import { BackButton } from '@/components/BackButton'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { BloquesService } from '@/services/bloques.service'
+
+// Use the component interface to match what VariedadButtonWithValue expects
+interface ComponentBloque {
+    id: number;
+    nombre: string;
+    finca_id: number;
+}
+
+// Interface for the finca object needed by VariedadButtonWithValue
+interface ComponentFinca {
+    id: number;
+    nombre: string;
+}
 
 function Variedades() {
-    const location = useLocation()
     const navigate = useNavigate()
+    const { fincaId, fincaNombre, accion, bloqueId } = useParams<{
+        fincaId: string;
+        fincaNombre: string;
+        accion: string;
+        bloqueId: string
+    }>()
 
-    const finca = location.state?.finca
-    const accion = location.state?.accion
-    const bloque = location.state?.bloque
+    const [bloque, setBloque] = useState<ComponentBloque | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
-    const { variedades, getStateInfo } = useVariedades(bloque?.id)
+    const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)
 
-    if (!finca || !bloque) {
-        navigate('/home')
+    // Fetch only bloque data (finca name comes from URL)
+    useEffect(() => {
+        const fetchBloque = async () => {
+            if (!fincaId || !fincaNombre || !bloqueId || !accion) {
+                navigate('/fincas')
+                return
+            }
+
+            setLoading(true)
+            setError(null)
+
+            try {
+                const bloqueResult = await BloquesService.getBloqueById(parseInt(bloqueId))
+
+                if (bloqueResult.error || !bloqueResult.data) {
+                    setError('Bloque no encontrado')
+                    return
+                }
+
+                // Verify that bloque belongs to finca
+                if (bloqueResult.data.finca_id !== parseInt(fincaId)) {
+                    setError('El bloque no pertenece a esta finca')
+                    return
+                }
+
+                setBloque({
+                    id: bloqueResult.data.id,
+                    nombre: bloqueResult.data.nombre,
+                    finca_id: bloqueResult.data.finca_id || parseInt(fincaId)
+                })
+            } catch (err) {
+                setError('Error cargando datos')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchBloque()
+    }, [fincaId, fincaNombre, bloqueId, accion, navigate])
+
+    // Redirect if missing required params
+    if (!fincaId || !fincaNombre || !bloqueId || !accion) {
+        navigate('/fincas')
         return null
+    }
+
+    // Convert URL-safe name back to display format
+    const displayName = fincaNombre.replace(/-/g, ' ')
+
+    // Create finca object from URL params for component compatibility
+    const finca: ComponentFinca = {
+        id: parseInt(fincaId),
+        nombre: displayName
+    }
+
+    // Show loading or error states
+    if (loading) {
+        return <StateDisplay message="Cargando datos..." type="loading" />
+    } if (error || !bloque) {
+        return <StateDisplay message={error || "Datos no encontrados"} type="error" />
     }
 
     const stateInfo = getStateInfo()
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
     } return (
-        <div className="flex flex-col p-4 gap-4 h-screen">
-            <BackButton to="/bloques" state={{ finca, accion }} />
-            <header className='flex flex-col gap-2 justify-center items-center absolute top-4 left-0 right-0'>
-                <h1 className='text-2xl font-bold capitalize'>
-                    {finca.nombre} • {bloque.nombre}
-                </h1>
-                <span>Selecciona una variedad</span>
-                <ActionButton action={accion} />
-            </header>
-            <div className="flex-1 flex items-center justify-center">                <div className="grid gap-3 w-full grid-cols-1">
-                {variedades.map(variedad => (
-                    <VariedadButtonWithValue
-                        key={variedad.id}
-                        finca={finca}
-                        bloque={bloque}
-                        variedad={variedad}
-                        accion={accion || ''}
-                    />
-                ))}
+        <>
+            <div className='absolute w-full left-0 right-0 h-fit flex justify-center'>
+                <div className='text-center'>
+                    <h1 className='text-2xl capitalize font-semibold'>
+                        {displayName} • {bloque.nombre}
+                    </h1>
+                    <p className='text-gray-600'>Selecciona una variedad</p>
+                    <ActionBadge action={accion} />
+                </div>
+                <BackButton to={`/bloques/${fincaId}/${fincaNombre}/${accion}`} />
             </div>
+            <div className='flex-1 flex flex-col gap-4 items-center justify-center w-full h-full'>
+                <div className='grid gap-3 w-full grid-cols-1'>
+                    {variedades.map(variedad => (
+                        <VariedadButtonWithValue
+                            key={variedad.id}
+                            finca={finca}
+                            bloque={bloque}
+                            variedad={variedad}
+                            accion={accion || ''}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+        </>
     )
 }
 

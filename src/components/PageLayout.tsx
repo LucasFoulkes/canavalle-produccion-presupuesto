@@ -22,45 +22,31 @@ function PageLayout({ items, title, onItemSelect, columns = 2, mainTitle, action
         }
     }
 
-    return (<div className="flex flex-col p-4 gap-4 h-screen">
-        {mainTitle ? (
-            <header className={`flex flex-col gap-2 justify-center items-center ${absoluteHeader ? 'absolute left-0 right-0 top-4 z-10' : ''
-                }`}>
-                <h1 className='text-2xl font-bold capitalize'>
-                    {mainTitle}
-                </h1>
-                <span>
+    return (
+        <div className="flex flex-col p-4 gap-4 h-screen">
+            {mainTitle ? (
+                <header className={`flex flex-col gap-2 justify-center items-center ${absoluteHeader ? 'absolute left-0 right-0 top-4 z-10' : ''
+                    }`}>
+                    <h1 className='text-2xl font-bold capitalize'>
+                        {mainTitle}
+                    </h1>
+                    <span>
+                        Selecciona una {title}
+                    </span>
+                    {actionComponent}
+                </header>
+            ) : (
+                <h1 className={`text-center capitalize ${absoluteHeader ? 'absolute top-4 left-0 right-0 z-1' : ''
+                    }`}>
                     Selecciona una {title}
-                </span>
-                {actionComponent}
-            </header>
-        ) : (
-            <h1 className={`text-center capitalize ${absoluteHeader ? 'absolute top-4 left-0 right-0 z-1' : ''
-                }`}>
-                Selecciona una {title}
-            </h1>
-        )}            {absoluteHeader ? (
-            <div className="grid gap-3 w-full mt-auto mb-auto">
-                <div className={`grid gap-3 ${getGridCols()}`}>
-                    {items.map(item => (
-                        <Button
-                            key={item.id}
-                            className={`w-full h-full capitalize text-lg ${columns === 1 ? 'h-20' : 'aspect-square'}`}
-                            onClick={() => onItemSelect(item)}
-                        >
-                            {item.nombre}
-                        </Button>
-                    ))}
-                </div>
-            </div>
-        ) : (
-            <div className="flex-1 flex flex-col min-h-0">                <ScrollArea className="flex-1 overflow-hidden [&>[data-slot=scroll-area-scrollbar]]:hidden">
-                <div className="flex items-center justify-center min-h-full py-4">
-                    <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
+                </h1>
+            )}            {absoluteHeader ? (
+                <div className="grid gap-3 w-full mt-auto mb-auto">
+                    <div className={`grid gap-3 ${getGridCols()}`}>
                         {items.map(item => (
                             <Button
                                 key={item.id}
-                                className={`w-full capitalize text-lg ${columns === 1 ? 'h-20' : 'min-h-[80px] aspect-square'}`}
+                                className={`w-full h-full capitalize text-lg ${columns === 1 ? 'h-20' : 'aspect-square'}`}
                                 onClick={() => onItemSelect(item)}
                             >
                                 {item.nombre}
@@ -68,10 +54,25 @@ function PageLayout({ items, title, onItemSelect, columns = 2, mainTitle, action
                         ))}
                     </div>
                 </div>
-            </ScrollArea>
-            </div>
-        )}
-    </div>
+            ) : (
+                <div className="flex-1 flex flex-col min-h-0">                <ScrollArea className="flex-1 overflow-hidden [&>[data-slot=scroll-area-scrollbar]]:hidden">
+                    <div className="flex items-center justify-center min-h-full py-4">
+                        <div className={`grid gap-3 w-full max-w-2xl ${getGridCols()}`}>
+                            {items.map(item => (
+                                <Button
+                                    key={item.id}
+                                    className={`w-full capitalize text-lg ${columns === 1 ? 'h-20' : 'min-h-[80px] aspect-square'}`}
+                                    onClick={() => onItemSelect(item)}
+                                >
+                                    {item.nombre}
+                                </Button>
+                            ))}
+                        </div>
+                    </div>
+                </ScrollArea>
+                </div>
+            )}
+        </div>
     )
 }
 

@@ -1,14 +1,14 @@
-import { ChevronLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
-import { Button } from './ui/button';
+import { CircleChevronLeft } from 'lucide-react';
 
-export function BackButton({ to, state }: { to?: string; state?: any }) {
-    const navigate = useNavigate(); return (<Button
-        variant="outline"
-        className={'absolute right-4 top-4 rounded-full size-16 border-2 z-20'}
-        onClick={() => to ? navigate(to, { state }) : navigate(-1)}
-    >
-        <ChevronLeft className='size-10 text-zinc-300' />
-    </Button>
+export function BackButton({ to }: { to?: string }) {
+    const navigate = useNavigate();
+
+    return (
+        <div className='absolute right-4 top-0 bottom-0 flex'
+            onClick={() => to ? navigate(to) : navigate(-1)}
+        >
+            <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
+        </div>
     );
 }

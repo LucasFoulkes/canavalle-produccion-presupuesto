@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { ActionButton } from '@/components/ActionButton'
+import { ActionBadge } from '@/components/ActionBadge'
 import { useState } from 'react'
 import { BloqueVariedadService } from '@/services/bloque-variedad.service'
 import { AccionesService } from '@/services/acciones.service'
@@ -109,7 +109,7 @@ export function VariedadAmountDialog({
                 </DialogHeader>
 
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                    <ActionButton action={accion} />
+                    <ActionBadge action={accion} />
                     <Input
                         id="amount"
                         type="number"
