@@ -23,9 +23,6 @@ function AccionesSelection() {
         <>
             <header className='relative w-full h-fit flex justify-center mb-2'>
                 <div className='text-center'>
-                    <h1 className='text-2xl capitalize font-semibold'>
-                        Actividades
-                    </h1>
                     <p className='text-gray-600'>
                         Selecciona una actividad
                     </p>
