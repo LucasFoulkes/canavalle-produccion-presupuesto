@@ -86,8 +86,7 @@ function Configuracion() {
                             onDelete={bloquesHook.remove}
                             crudLoading={bloquesHook.loading}
                             searchable={true}
-                            searchPlaceholder="Buscar bloques..."
-                            filters={[
+                            searchPlaceholder="Buscar bloques..." filters={[
                                 {
                                     key: 'finca_id',
                                     label: 'Filtrar por Finca',
@@ -96,7 +95,7 @@ function Configuracion() {
                                         return Array.from(uniqueFincas).map(fincaId => {
                                             const finca = fincasHook.fincas.find(f => f.id === fincaId)
                                             return {
-                                                value: finca?.nombre?.toLowerCase() || '',
+                                                value: String(fincaId), // Use the actual finca_id as the filter value
                                                 label: finca?.nombre || 'Sin finca'
                                             }
                                         })
