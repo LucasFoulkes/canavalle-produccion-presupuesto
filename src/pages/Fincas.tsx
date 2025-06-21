@@ -26,9 +26,7 @@ function Fincas() {
                         }}
                     >
                         {finca.nombre}
-                    </Button>
-                    ))}
-                </div>
+                    </Button>))}                </div>
             </div>
         </>
     )
