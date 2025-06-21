@@ -2,8 +2,7 @@ import { useAcciones } from '@/hooks/useAcciones'
 import { StateDisplay } from '@/components/StateDisplay'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { BackButton } from '@/components/BackButton'
-import { ScrollArea } from '@radix-ui/react-scroll-area'
+import { CircleChevronLeft } from 'lucide-react'
 
 function Acciones() {
     const navigate = useNavigate()
@@ -37,8 +36,8 @@ function Acciones() {
 
     return (
         <>
-            <div className='absolute w-full left-0 right-0 h-fit flex justify-center'>
-                <div className='text-center'>
+            <div className='w-full left-0 right-0 h-fit flex justify-center pb-4'>
+                <div className='text-left w-full'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {fincaNombre.replace(/-/g, ' ')}
                     </h1>
@@ -46,19 +45,19 @@ function Acciones() {
                         Selecciona una acción
                     </p>
                 </div>
-                <BackButton to='/fincas' />
-            </div>
-            <div className='flex flex-col items-center justify-center h-full '>
-                <ScrollArea className='flex flex-col items-center justify-center w-full h-1/2 gap-2 bg-red-100 overflow-hidden'>
-                    {
-                        accionItems.map((item) => (
-                            <Button className='w-full text-lg capitalize h-18'
-                                onClick={() => handleAccionSelect(item)} key={item.id}>
-                                {item.nombre}
-                            </Button>
-                        ))
-                    }
-                </ScrollArea>
+                <div className='right-4 top-0 bottom-0 flex'>
+                    <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
+                </div>
+            </div >
+            <div className='flex flex-col items-center justify-center h-full gap-4 w-full overflow-hidden'>
+                {
+                    accionItems.map((item) => (
+                        <Button className='w-full text-lg capitalize h-18'
+                            onClick={() => handleAccionSelect(item)} key={item.id}>
+                            {item.nombre}
+                        </Button>
+                    ))
+                }
             </div >
         </>
     )
