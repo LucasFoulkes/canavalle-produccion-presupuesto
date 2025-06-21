@@ -37,14 +37,12 @@ function Configuracion() {
                         <TabsTrigger value="bloques">Bloques</TabsTrigger>
                         <TabsTrigger value="variedades">Variedades</TabsTrigger>
                         <TabsTrigger value="bloque-variedad">Relaciones</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="fincas" className="flex-1 overflow-hidden">
+                    </TabsList>                    <TabsContent value="fincas" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Fincas"
                             data={fincasHook.fincas}
                             columns={[
-                                { key: 'nombre', label: 'Nombre' }
+                                { key: 'nombre', label: 'Nombre', filterable: true }
                             ]}
                             formFields={[
                                 { key: 'nombre', label: 'Nombre', required: true }
@@ -58,20 +56,23 @@ function Configuracion() {
                             onUpdate={fincasHook.update}
                             onDelete={fincasHook.remove}
                             crudLoading={fincasHook.loading}
+                            searchable={true}
+                            searchPlaceholder="Buscar fincas..."
                         />
                     </TabsContent>                    <TabsContent value="bloques" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Bloques"
                             data={bloquesHook.bloques}
                             columns={[
-                                { key: 'nombre', label: 'Nombre' },
+                                { key: 'nombre', label: 'Nombre', filterable: true },
                                 {
                                     key: 'finca_id',
                                     label: 'Finca',
                                     render: (bloque) => {
                                         const finca = fincasHook.fincas.find(f => f.id === bloque.finca_id)
                                         return finca?.nombre || 'Sin finca'
-                                    }
+                                    },
+                                    filterable: true
                                 }
                             ]}
                             formFields={[
@@ -93,15 +94,31 @@ function Configuracion() {
                             onUpdate={bloquesHook.update}
                             onDelete={bloquesHook.remove}
                             crudLoading={bloquesHook.loading}
+                            searchable={true}
+                            searchPlaceholder="Buscar bloques..."
+                            filters={[
+                                {
+                                    key: 'finca_id',
+                                    label: 'Filtrar por Finca',
+                                    getUniqueValues: (data) => {
+                                        const uniqueFincas = new Set(data.map(item => item.finca_id).filter(Boolean))
+                                        return Array.from(uniqueFincas).map(fincaId => {
+                                            const finca = fincasHook.fincas.find(f => f.id === fincaId)
+                                            return {
+                                                value: finca?.nombre?.toLowerCase() || '',
+                                                label: finca?.nombre || 'Sin finca'
+                                            }
+                                        })
+                                    }
+                                }
+                            ]}
                         />
-                    </TabsContent>
-
-                    <TabsContent value="variedades" className="flex-1 overflow-hidden">
+                    </TabsContent>                    <TabsContent value="variedades" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Variedades"
                             data={variedadesHook.variedades}
                             columns={[
-                                { key: 'nombre', label: 'Nombre' }
+                                { key: 'nombre', label: 'Nombre', filterable: true }
                             ]}
                             formFields={[
                                 { key: 'nombre', label: 'Nombre', required: true }
@@ -115,17 +132,17 @@ function Configuracion() {
                             onUpdate={variedadesHook.update}
                             onDelete={variedadesHook.remove}
                             crudLoading={variedadesHook.loading}
+                            searchable={true}
+                            searchPlaceholder="Buscar variedades..."
                         />
-                    </TabsContent>
-
-                    <TabsContent value="bloque-variedad" className="flex-1 overflow-hidden">
+                    </TabsContent>                    <TabsContent value="bloque-variedad" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Relaciones Bloque-Variedad"
                             data={bloqueVariedadesHook.bloqueVariedades}
                             columns={[
-                                { key: 'finca_nombre', label: 'Finca' },
-                                { key: 'bloque_nombre', label: 'Bloque' },
-                                { key: 'variedad_nombre', label: 'Variedad' }
+                                { key: 'finca_nombre', label: 'Finca', filterable: true },
+                                { key: 'bloque_nombre', label: 'Bloque', filterable: true },
+                                { key: 'variedad_nombre', label: 'Variedad', filterable: true }
                             ]}
                             formFields={[{
                                 key: 'bloque_id',
@@ -167,6 +184,43 @@ function Configuracion() {
                             }}
                             onDelete={bloqueVariedadesHook.remove}
                             crudLoading={bloqueVariedadesHook.loading}
+                            searchable={true}
+                            searchPlaceholder="Buscar relaciones..."
+                            filters={[
+                                {
+                                    key: 'finca_nombre',
+                                    label: 'Filtrar por Finca',
+                                    getUniqueValues: (data) => {
+                                        const uniqueValues = [...new Set(data.map(item => item.finca_nombre).filter(Boolean))]
+                                        return uniqueValues.map(value => ({
+                                            value: value.toLowerCase(),
+                                            label: value
+                                        }))
+                                    }
+                                },
+                                {
+                                    key: 'bloque_nombre',
+                                    label: 'Filtrar por Bloque',
+                                    getUniqueValues: (data) => {
+                                        const uniqueValues = [...new Set(data.map(item => item.bloque_nombre).filter(Boolean))]
+                                        return uniqueValues.map(value => ({
+                                            value: value.toLowerCase(),
+                                            label: value
+                                        }))
+                                    }
+                                },
+                                {
+                                    key: 'variedad_nombre',
+                                    label: 'Filtrar por Variedad',
+                                    getUniqueValues: (data) => {
+                                        const uniqueValues = [...new Set(data.map(item => item.variedad_nombre).filter(Boolean))]
+                                        return uniqueValues.map(value => ({
+                                            value: value.toLowerCase(),
+                                            label: value
+                                        }))
+                                    }
+                                }
+                            ]}
                         />
                     </TabsContent>
                 </Tabs>
