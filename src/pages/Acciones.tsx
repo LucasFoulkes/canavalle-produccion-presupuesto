@@ -2,7 +2,7 @@ import { useAcciones } from '@/hooks/useAcciones'
 import { StateDisplay } from '@/components/StateDisplay'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { CircleChevronLeft } from 'lucide-react'
+import { BackButton } from '@/components/BackButton'
 
 function Acciones() {
     const navigate = useNavigate()
@@ -35,7 +35,7 @@ function Acciones() {
 
     return (
         <>
-            <header className='relative w-full h-fit flex justify-center mb-4'>
+            <header className='relative w-full h-fit flex justify-center mb-2'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {fincaNombre.replace(/-/g, ' ')}
@@ -44,12 +44,9 @@ function Acciones() {
                         Selecciona una acción
                     </p>
                 </div>
-                <div className='absolute right-4 top-0 bottom-0 flex items-center cursor-pointer'
-                    onClick={() => navigate('/fincas')}>
-                    <CircleChevronLeft className='h-full w-auto stroke-1 opacity-10' />
-                </div>
+                <BackButton to='/fincas' />
             </header >
-            <div className="flex flex-col h-full gap-4 w-full overflow-y-auto pb-8">
+            <div className="flex flex-col h-full gap-2 w-full overflow-y-auto pb-8">
                 {accionItems.map((item) => (
                     <Button className='w-full text-lg capitalize h-18'
                         onClick={() => handleAccionSelect(item)} key={item.id}>

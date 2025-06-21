@@ -5,7 +5,7 @@ import { ActionBadge } from '@/components/ActionBadge'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { BloquesService } from '@/services/bloques.service'
-import { CircleChevronLeft } from 'lucide-react'
+import { BackButton } from '@/components/BackButton'
 
 // Use the component interface to match what VariedadButtonWithValue expects
 interface ComponentBloque {
@@ -35,7 +35,6 @@ function Variedades() {
 
     const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)
 
-    // Fetch only bloque data (finca name comes from URL)
     useEffect(() => {
         const fetchBloque = async () => {
             if (!fincaId || !fincaNombre || !bloqueId || !accion) {
@@ -54,7 +53,6 @@ function Variedades() {
                     return
                 }
 
-                // Verify that bloque belongs to finca
                 if (bloqueResult.data.finca_id !== parseInt(fincaId)) {
                     setError('El bloque no pertenece a esta finca')
                     return
@@ -75,22 +73,18 @@ function Variedades() {
         fetchBloque()
     }, [fincaId, fincaNombre, bloqueId, accion, navigate])
 
-    // Redirect if missing required params
     if (!fincaId || !fincaNombre || !bloqueId || !accion) {
         navigate('/fincas')
         return null
     }
 
-    // Convert URL-safe name back to display format
     const displayName = fincaNombre.replace(/-/g, ' ')
 
-    // Create finca object from URL params for component compatibility
     const finca: ComponentFinca = {
         id: parseInt(fincaId),
         nombre: displayName
     }
 
-    // Show loading or error states
     if (loading) {
         return <StateDisplay message="Cargando datos..." type="loading" />
     } if (error || !bloque) {
@@ -102,20 +96,17 @@ function Variedades() {
         return <StateDisplay {...stateInfo.stateProps} />
     } return (
         <>
-            <header className='relative w-full h-fit flex justify-center pb-4'>
+            <header className='relative w-full h-fit flex justify-center mb-4'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {displayName} • {bloque.nombre}
                     </h1>
                     <p className='text-gray-600'>Selecciona una variedad</p>
                 </div>
-                <div className='absolute right-4 top-0 bottom-0 flex items-center cursor-pointer'
-                    onClick={() => navigate(`/bloques/${fincaId}/${fincaNombre}/${accion}`)}>
-                    <CircleChevronLeft className='h-full w-auto stroke-1 opacity-10' />
-                </div>
+                <BackButton to={`/bloques/${fincaId}/${fincaNombre}/${accion}`} />
             </header>
             <ActionBadge action={accion} />
-            <div className='flex-1 flex flex-col gap-4 items-center justify-center w-full h-full'>
+            <div className='flex-1 flex flex-col items-center justify-center w-full h-full'>
                 <div className='grid gap-3 w-full grid-cols-1'>
                     {variedades.map(variedad => (
                         <VariedadButtonWithValue
