@@ -28,7 +28,7 @@ function App() {
   }, [error])
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/fincas')
+      navigate('/acciones')
     }
   }, [isAuthenticated, navigate])
 

@@ -10,6 +10,7 @@ import Bloques from './pages/Bloques.tsx'
 import Acciones from './pages/Acciones.tsx'
 import Variedades from './pages/Variedades.tsx'
 import Configuracion from './pages/Configuracion.tsx'
+import Reportes from './pages/Reportes.tsx'
 import AccionesSelection from './pages/AccionesSelection.tsx'
 
 createRoot(document.getElementById('root')!).render(
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/bloques/:fincaId/:fincaNombre/:accion" element={<Bloques />} />
             <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<Variedades />} />
             <Route path="/configuracion" element={<Configuracion />} />
+            <Route path="/reportes" element={<Reportes />} />
           </Route>
           <Route path="*" element={<div>404 Not Found</div>} />
         </Routes>

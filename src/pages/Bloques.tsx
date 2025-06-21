@@ -7,20 +7,24 @@ import { BackButton } from '@/components/BackButton'
 // working
 function Bloques() {
     const navigate = useNavigate()
+
     const { fincaId, fincaNombre, accion } = useParams<{
         fincaId: string;
         fincaNombre: string;
         accion: string
     }>()
 
-    const { bloques, getStateInfo } = useBloques(fincaId ? parseInt(fincaId) : undefined)
+    const { bloques: allBloques, getStateInfo } = useBloques()
+
+    // Filter bloques by fincaId
+    const bloques = allBloques.filter(bloque =>
+        bloque.finca_id === (fincaId ? parseInt(fincaId) : 0)
+    )
 
     if (!fincaId || !fincaNombre || !accion) {
         navigate('/fincas')
         return null
-    }
-
-    const stateInfo = getStateInfo(`No hay bloques configurados para la finca ${fincaNombre.replace(/-/g, ' ')}`)
+    } const stateInfo = getStateInfo()
 
     const handleBloqueSelect = (bloque: any) => {
         navigate(`/variedades/${fincaId}/${fincaNombre}/${accion}/${bloque.id}`)

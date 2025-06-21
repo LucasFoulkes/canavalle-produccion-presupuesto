@@ -16,20 +16,27 @@ export function BottomNavbar() {
     }
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white h-18">
+        <div className="fixed bottom-0 left-0 right-0 bg-white h-18 flex">
             <Button
                 variant={isActive('/acciones') ? 'default' : 'ghost'}
-                className=" w-1/2 h-full rounded-none "
+                className="flex-1 h-full rounded-none"
                 onClick={() => navigate('/acciones')}
             >
                 Actividad
             </Button>
             <Button
                 variant={isActive('/configuracion') ? 'default' : 'ghost'}
-                className="w-1/2 h-full rounded-none"
+                className="flex-1 h-full rounded-none"
                 onClick={() => navigate('/configuracion')}
             >
                 Configuración
+            </Button>
+            <Button
+                variant={isActive('/reportes') ? 'default' : 'ghost'}
+                className="flex-1 h-full rounded-none"
+                onClick={() => navigate('/reportes')}
+            >
+                Reportes
             </Button>
         </div>
     )

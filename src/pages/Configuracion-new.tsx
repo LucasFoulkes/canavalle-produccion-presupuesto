@@ -81,16 +81,15 @@ function Configuracion() {
                             error={bloquesHook.error}
                             isEmpty={bloquesStateInfo.shouldRender && bloquesStateInfo.stateProps?.type === 'empty'}
                             emptyMessage="No hay bloques configurados"
-                            loadingMessage="Cargando bloques..."
-                            onCreate={async (data) => {
+                            loadingMessage="Cargando bloques..." onCreate={async (_data) => {
                                 // Note: For bloques, we need to handle the creation differently
                                 // since the hook returns BloqueWithFinca but create expects CreateBloqueData
                                 alert('Funcionalidad de bloques pendiente de implementar correctamente')
                             }}
-                            onUpdate={async (id, data) => {
+                            onUpdate={async (_id, _data) => {
                                 alert('Funcionalidad de bloques pendiente de implementar correctamente')
                             }}
-                            onDelete={async (id) => {
+                            onDelete={async (_id) => {
                                 alert('Funcionalidad de bloques pendiente de implementar correctamente')
                             }}
                             crudLoading={bloquesHook.loading}
