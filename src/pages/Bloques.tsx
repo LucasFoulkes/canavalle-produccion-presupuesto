@@ -15,7 +15,6 @@ function Bloques() {
 
     const { bloques, getStateInfo } = useBloques(fincaId ? parseInt(fincaId) : undefined)
 
-    // Redirect if missing required params
     if (!fincaId || !fincaNombre || !accion) {
         navigate('/fincas')
         return null
