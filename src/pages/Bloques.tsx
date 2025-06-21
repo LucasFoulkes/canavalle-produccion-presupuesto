@@ -37,14 +37,13 @@ function Bloques() {
                     <p className='text-gray-600'>Selectiona un bloque</p>
                 </div>
                 <BackButton to={`/acciones/${fincaId}/${fincaNombre}`} />
-            </header>
-            <ActionBadge action={accion} />
-            <div className="flex flex-col h-full gap-2 w-full overflow-y-auto pb-8 mt-2">
+            </header>            <ActionBadge action={accion} />
+            <div className="flex-1 flex flex-col gap-2 w-full overflow-y-auto pb-8 mt-2">
                 <div className='grid grid-cols-4 gap-2 w-full'>
                     {bloques.map((bloque) => (
                         <Button
                             key={bloque.id}
-                            className=' aspect-square h-full text-xl capitalize'
+                            className='aspect-square text-xl capitalize'
                             onClick={() => handleBloqueSelect(bloque)}
                         >
                             {bloque.nombre}
