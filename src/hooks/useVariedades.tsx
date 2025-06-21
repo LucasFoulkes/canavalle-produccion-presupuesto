@@ -25,8 +25,8 @@ export const useVariedades = (bloqueId?: number) => {
         service
     )
 
-    const getVariedadesStateInfo = (title: string = 'Selecciona una variedad') =>
-        getStateInfo(title, 'Cargando variedades...')
+    const getVariedadesStateInfo = (emptyMessage: string = 'No hay variedades disponibles') =>
+        getStateInfo('Cargando variedades...', emptyMessage)
 
     return {
         variedades,

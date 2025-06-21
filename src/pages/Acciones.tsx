@@ -44,15 +44,16 @@ function Acciones() {
                         Selecciona una acción
                     </p>
                 </div>
-                <BackButton to='/fincas' />
-            </header >
-            <div className="flex flex-col h-full gap-2 w-full overflow-y-auto pb-8">
-                {accionItems.map((item) => (
-                    <Button className='w-full text-lg capitalize h-18'
-                        onClick={() => handleAccionSelect(item)} key={item.id}>
-                        {item.nombre}
-                    </Button>
-                ))}
+                <BackButton to='/fincas' />            </header >
+            <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-8">
+                <div className="flex flex-col gap-2 w-full max-w-md">
+                    {accionItems.map((item) => (
+                        <Button className='w-full text-lg capitalize h-18'
+                            onClick={() => handleAccionSelect(item)} key={item.id}>
+                            {item.nombre}
+                        </Button>
+                    ))}
+                </div>
             </div >
             <span
                 className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-transparent to-white"

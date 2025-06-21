@@ -35,6 +35,7 @@ function Variedades() {
 
     const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)
 
+    // Fetch only bloque data (finca name comes from URL)
     useEffect(() => {
         const fetchBloque = async () => {
             if (!fincaId || !fincaNombre || !bloqueId || !accion) {
@@ -53,6 +54,7 @@ function Variedades() {
                     return
                 }
 
+                // Verify that bloque belongs to finca
                 if (bloqueResult.data.finca_id !== parseInt(fincaId)) {
                     setError('El bloque no pertenece a esta finca')
                     return
@@ -73,52 +75,60 @@ function Variedades() {
         fetchBloque()
     }, [fincaId, fincaNombre, bloqueId, accion, navigate])
 
+    // Redirect if missing required params
     if (!fincaId || !fincaNombre || !bloqueId || !accion) {
         navigate('/fincas')
         return null
     }
 
+    // Convert URL-safe name back to display format
     const displayName = fincaNombre.replace(/-/g, ' ')
 
+    // Create finca object from URL params for component compatibility
     const finca: ComponentFinca = {
         id: parseInt(fincaId),
         nombre: displayName
     }
 
+    // Show loading or error states
     if (loading) {
         return <StateDisplay message="Cargando datos..." type="loading" />
     } if (error || !bloque) {
         return <StateDisplay message={error || "Datos no encontrados"} type="error" />
     }
 
-    const stateInfo = getStateInfo()
-    if (stateInfo.shouldRender && stateInfo.stateProps) {
-        return <StateDisplay {...stateInfo.stateProps} />
-    } return (
+    const stateInfo = getStateInfo(`No hay variedades configuradas para el bloque ${bloque.nombre}`)
+
+    return (
         <>
             <header className='relative w-full h-fit flex justify-center mb-4'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
                         {displayName} • {bloque.nombre}
                     </h1>
-                    <p className='text-gray-600'>Selecciona una variedad</p>
-                </div>
+                    <p className='text-gray-600'>Selecciona una variedad</p>                </div>
                 <BackButton to={`/bloques/${fincaId}/${fincaNombre}/${accion}`} />
             </header>
             <ActionBadge action={accion} />
-            <div className='flex-1 flex flex-col items-center justify-center w-full h-full'>
-                <div className='grid gap-3 w-full grid-cols-1'>
-                    {variedades.map(variedad => (
-                        <VariedadButtonWithValue
-                            key={variedad.id}
-                            finca={finca}
-                            bloque={bloque}
-                            variedad={variedad}
-                            accion={accion || ''}
-                        />
-                    ))}
+            {stateInfo.shouldRender && stateInfo.stateProps ? (
+                <div className="flex-1 flex items-center justify-center">
+                    <StateDisplay {...stateInfo.stateProps} />
                 </div>
-            </div>
+            ) : (
+                <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-8 mt-2">
+                    <div className='grid gap-3 w-full max-w-md grid-cols-1'>
+                        {variedades.map(variedad => (
+                            <VariedadButtonWithValue
+                                key={variedad.id}
+                                finca={finca}
+                                bloque={bloque}
+                                variedad={variedad}
+                                accion={accion || ''}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </>
     )
 }

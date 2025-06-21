@@ -95,7 +95,7 @@ export function VariedadButtonWithValue({
             accion={accion}
             onValueUpdate={handleValueUpdate}
         >
-            <Button className="w-full h-20 text-lg flex justify-between items-center px-4">
+            <Button className="w-full h-18 text-lg flex justify-between items-center px-4">
                 <span className="capitalize text-left">{variedad.nombre}</span>
                 <span className="font-bold text-xl">
                     {loading ? '...' : currentValue}
