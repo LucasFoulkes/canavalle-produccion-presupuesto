@@ -10,15 +10,16 @@ import Bloques from './pages/Bloques.tsx'
 import Acciones from './pages/Acciones.tsx'
 import Variedades from './pages/Variedades.tsx'
 import Configuracion from './pages/Configuracion.tsx'
+import AccionesSelection from './pages/AccionesSelection.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<App />} />
-          <Route element={<Layout />}>
-            <Route path="/fincas" element={<Fincas />} />
+          <Route path="/" element={<App />} />          <Route element={<Layout />}>
+            <Route path="/acciones" element={<AccionesSelection />} />
+            <Route path="/fincas/:accion" element={<Fincas />} />
             <Route path="/acciones/:fincaId/:fincaNombre" element={<Acciones />} />
             <Route path="/bloques/:fincaId/:fincaNombre/:accion" element={<Bloques />} />
             <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<Variedades />} />

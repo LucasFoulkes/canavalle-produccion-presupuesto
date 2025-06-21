@@ -47,7 +47,7 @@ function Bloques() {
                         {bloques.map((bloque) => (
                             <Button
                                 key={bloque.id}
-                                className='aspect-square h-20 text-xl capitalize'
+                                className='aspect-square w-full h-full text-xl capitalize'
                                 onClick={() => handleBloqueSelect(bloque)}
                             >
                                 {bloque.nombre}

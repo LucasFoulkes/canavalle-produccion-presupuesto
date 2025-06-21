@@ -6,8 +6,8 @@ export function BottomNavbar() {
     const location = useLocation()
 
     const isActive = (path: string) => {
-        if (path === '/fincas') {
-            return location.pathname === '/fincas' ||
+        if (path === '/acciones') {
+            return location.pathname === '/acciones' ||
                 location.pathname.startsWith('/acciones/') ||
                 location.pathname.startsWith('/bloques/') ||
                 location.pathname.startsWith('/variedades/')
@@ -16,23 +16,21 @@ export function BottomNavbar() {
     }
 
     return (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-            <div className="flex">
-                <Button
-                    variant={isActive('/fincas') ? 'default' : 'ghost'}
-                    className="flex-1 h-16 rounded-none border-r border-gray-200"
-                    onClick={() => navigate('/fincas')}
-                >
-                    Fincas
-                </Button>
-                <Button
-                    variant={isActive('/configuracion') ? 'default' : 'ghost'}
-                    className="flex-1 h-16 rounded-none"
-                    onClick={() => navigate('/configuracion')}
-                >
-                    Configuración
-                </Button>
-            </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-white h-18">
+            <Button
+                variant={isActive('/acciones') ? 'default' : 'ghost'}
+                className=" w-1/2 h-full rounded-none "
+                onClick={() => navigate('/acciones')}
+            >
+                Actividad
+            </Button>
+            <Button
+                variant={isActive('/configuracion') ? 'default' : 'ghost'}
+                className="w-1/2 h-full rounded-none"
+                onClick={() => navigate('/configuracion')}
+            >
+                Configuración
+            </Button>
         </div>
     )
 }
