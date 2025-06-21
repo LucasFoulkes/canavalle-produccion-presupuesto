@@ -6,8 +6,7 @@ export function BackButton({ to }: { to?: string }) {
 
     return (
         <div className='absolute right-4 top-0 bottom-0 flex'
-            onClick={() => to ? navigate(to) : navigate(-1)}
-        >
+            onClick={() => to ? navigate(to) : navigate(-1)} >
             <CircleChevronLeft className='h-full w-full stroke-1 opacity-10' />
         </div>
     );

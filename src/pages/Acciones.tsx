@@ -3,6 +3,7 @@ import { StateDisplay } from '@/components/StateDisplay'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { BackButton } from '@/components/BackButton'
+import { ScrollArea } from '@radix-ui/react-scroll-area'
 
 function Acciones() {
     const navigate = useNavigate()
@@ -47,16 +48,18 @@ function Acciones() {
                 </div>
                 <BackButton to='/fincas' />
             </div>
-            <div className='flex flex-col items-center justify-center h-full gap-2'>
-                {
-                    accionItems.map((item) => (
-                        <Button className='w-full text-lg capitalize h-18'
-                            onClick={() => handleAccionSelect(item)} key={item.id}>
-                            {item.nombre}
-                        </Button>
-                    ))
-                }
-            </div>
+            <div className='flex flex-col items-center justify-center h-full '>
+                <ScrollArea className='flex flex-col items-center justify-center w-full h-1/2 gap-2 bg-red-100 overflow-hidden'>
+                    {
+                        accionItems.map((item) => (
+                            <Button className='w-full text-lg capitalize h-18'
+                                onClick={() => handleAccionSelect(item)} key={item.id}>
+                                {item.nombre}
+                            </Button>
+                        ))
+                    }
+                </ScrollArea>
+            </div >
         </>
     )
 }
