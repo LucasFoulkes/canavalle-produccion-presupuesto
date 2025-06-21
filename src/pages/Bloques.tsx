@@ -41,18 +41,18 @@ function Bloques() {
             {stateInfo.shouldRender && stateInfo.stateProps ? (
                 <div className="flex-1 flex items-center justify-center">
                     <StateDisplay {...stateInfo.stateProps} />
-                </div>
-            ) : (
-                <div className="flex-1 flex flex-col gap-2 w-full overflow-y-auto pb-8 mt-2">
-                    <div className='grid grid-cols-4 gap-2 w-full'>                        {bloques.map((bloque) => (
-                        <Button
-                            key={bloque.id}
-                            className='aspect-square h-20 text-xl capitalize w-full h-full'
-                            onClick={() => handleBloqueSelect(bloque)}
-                        >
-                            {bloque.nombre}
-                        </Button>
-                    ))}
+                </div>) : (
+                <div className="flex-1 overflow-y-auto pb-8 mt-2">
+                    <div className='grid grid-cols-4 gap-2 w-full'>
+                        {bloques.map((bloque) => (
+                            <Button
+                                key={bloque.id}
+                                className='aspect-square h-20 text-xl capitalize'
+                                onClick={() => handleBloqueSelect(bloque)}
+                            >
+                                {bloque.nombre}
+                            </Button>
+                        ))}
                     </div>
                 </div>
             )}

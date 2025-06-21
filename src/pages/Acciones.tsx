@@ -37,10 +37,9 @@ function Acciones() {
                         Selecciona una acción
                     </p>
                 </div>
-                <BackButton to='/fincas' />
-            </header>
-            <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-8">
-                <div className="flex flex-col gap-2 w-full max-w-md">
+                <BackButton to='/fincas' />            </header>
+            <div className="flex-1 overflow-y-auto pb-8">
+                <div className="flex flex-col gap-2 w-full max-w-md mx-auto">
                     {accionItems.map((item) => (
                         <Button className='w-full text-lg capitalize h-18'
                             onClick={() => handleAccionSelect(item)} key={item.id}>
