@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ActionBadge } from '@/components/ActionBadge'
 import { BackButton } from '@/components/BackButton'
-
+// working
 function Bloques() {
     const navigate = useNavigate()
     const { fincaId, fincaNombre, accion } = useParams<{
