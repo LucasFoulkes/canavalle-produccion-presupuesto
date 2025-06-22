@@ -1,7 +1,9 @@
 import { Outlet } from 'react-router-dom'
-import { BottomNavbar } from '@/components/BottomNavbar'
+import { BottomNavbarDiagnostic } from '@/components/BottomNavbarDiagnostic'
 
 export function Layout() {
+    console.log('🔧 DIAGNOSTIC: Layout rendering')
+
     return (
         <div className="h-screen flex flex-col">
             <main className="flex-1 flex flex-col p-4 pb-0 overflow-hidden">
@@ -9,7 +11,7 @@ export function Layout() {
                     <Outlet />
                 </div>
             </main>
-            <BottomNavbar />
+            <BottomNavbarDiagnostic />
         </div>
     )
 }

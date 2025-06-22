@@ -8,7 +8,8 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import App from './App.tsx'
 import Fincas from './pages/Fincas.tsx'
 import Bloques from './pages/Bloques.tsx'
-import Variedades from './pages/Variedades.tsx'
+// import Variedades from './pages/Variedades.tsx'
+import VariedadesDiagnostic from './pages/VariedadesDiagnostic.tsx'
 // import VariedadesTest from './pages/VariedadesTest.tsx'
 import Configuracion from './pages/Configuracion.tsx'
 import Reportes from './pages/Reportes.tsx'
@@ -33,7 +34,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/acciones" element={<AccionesSelection />} />
             <Route path="/fincas/:accion" element={<Fincas />} />
             <Route path="/bloques/:fincaId/:fincaNombre/:accion" element={<Bloques />} />
-            <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<Variedades />} />
+            <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<VariedadesDiagnostic />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/reportes" element={<Reportes />} />
           </Route>
