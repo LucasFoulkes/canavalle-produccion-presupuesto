@@ -146,13 +146,12 @@ function Configuracion() {
                             { key: 'COSECHA', label: 'Cosecha' },
                             { key: 'TOTAL DIAS CICLO', label: 'Total Días Ciclo' },
                             { key: 'ESPIGA', label: 'Espiga' },
-                            { key: 'ARROZ', label: 'Arroz' },
-                            {
+                            { key: 'ARROZ', label: 'Arroz' }, {
                                 key: 'bloque_variedad_id',
                                 label: 'Bloque-Variedad',
                                 render: (estado) => {
                                     const bloqueVariedad = bloqueVariedadesHook.bloqueVariedades.find(bv => bv.id === estado.bloque_variedad_id)
-                                    return bloqueVariedad ? `${bloqueVariedad.bloque_nombre} - ${bloqueVariedad.variedad_nombre}` : 'Sin asignar'
+                                    return bloqueVariedad ? `${bloqueVariedad.finca_nombre} > ${bloqueVariedad.bloque_nombre} - ${bloqueVariedad.variedad_nombre}` : 'Sin asignar'
                                 },
                                 filterable: true
                             }
