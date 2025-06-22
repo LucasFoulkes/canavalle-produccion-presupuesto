@@ -403,75 +403,68 @@ export function CrudTable<T extends { id: number }>({
                         </div>
                     )}
                 </div>
-            )}            {/* Table */}
-            <div className="flex flex-col flex-1 border rounded-md min-h-0">
-                {/* Fixed Header */}
-                <div className="border-b bg-gray-50">
-                    <Table className="text-xs">
-                        <TableHeader>
+            )}            {/* Table - Single unified table with proper scrolling */}
+            <div className="flex-1 overflow-auto mobile-scroll border rounded-md">
+                <Table className="text-xs w-full">
+                    <TableHeader className="sticky top-0 bg-white z-10 border-b">
+                        <TableRow>
+                            {columns.map((column, index) => (
+                                <TableHead key={index} className="text-center bg-gray-50 border-r last:border-r-0 whitespace-nowrap px-2 py-3 text-xs font-medium">
+                                    {column.label}
+                                </TableHead>
+                            ))}
+                            <TableHead className="text-center bg-gray-50 whitespace-nowrap px-2 py-3 text-xs font-medium w-20">
+                                Acciones
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredData.length === 0 ? (
                             <TableRow>
-                                {columns.map((column, index) => (
-                                    <TableHead key={index} className="text-center">
-                                        {column.label}
-                                    </TableHead>
-                                ))}
-                                <TableHead className="text-center">Acciones</TableHead>
+                                <TableCell
+                                    colSpan={columns.length + 1}
+                                    className="text-center py-8 text-gray-500"
+                                >
+                                    {searchTerm || Object.keys(activeFilters).length > 0
+                                        ? "No se encontraron resultados"
+                                        : emptyMessage}
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                    </Table>
-                </div>
-
-                {/* Scrollable Body */}
-                <div className="flex-1 overflow-y-auto mobile-scroll">
-                    <Table className="text-xs">
-                        <TableBody>
-                            {filteredData.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length + 1}
-                                        className="text-center py-8 text-gray-500"
-                                    >
-                                        {searchTerm || Object.keys(activeFilters).length > 0
-                                            ? "No se encontraron resultados"
-                                            : emptyMessage}
+                        ) : (
+                            filteredData.map((item) => (
+                                <TableRow key={item.id} className="hover:bg-gray-50">
+                                    {columns.map((column, colIndex) => (
+                                        <TableCell key={colIndex} className="text-center border-r last:border-r-0 whitespace-nowrap px-2 py-2 text-xs">
+                                            {column.render
+                                                ? column.render(item)
+                                                : String((item as any)[column.key] || '')}
+                                        </TableCell>
+                                    ))}
+                                    <TableCell className="text-center whitespace-nowrap px-2 py-2 w-20">
+                                        <div className="flex gap-1 justify-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEdit(item)}
+                                                className="h-6 w-6 p-0"
+                                            >
+                                                <EditIcon className="h-3 w-3" />
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleDelete(item)}
+                                                className="h-6 w-6 p-0"
+                                            >
+                                                <TrashIcon className="h-3 w-3" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : (
-                                filteredData.map((item) => (
-                                    <TableRow key={item.id}>
-                                        {columns.map((column, colIndex) => (
-                                            <TableCell key={colIndex} className="capitalize">
-                                                {column.render
-                                                    ? column.render(item)
-                                                    : String((item as any)[column.key] || '')}
-                                            </TableCell>
-                                        ))}
-                                        <TableCell>
-                                            <div className="flex gap-1 justify-center">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleEdit(item)}
-                                                    className="h-6 w-6 p-0"
-                                                >
-                                                    <EditIcon className="h-3 w-3" />
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() => handleDelete(item)}
-                                                    className="h-6 w-6 p-0"
-                                                >
-                                                    <TrashIcon className="h-3 w-3" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
             </div>
 
             {/* CRUD Dialog */}
