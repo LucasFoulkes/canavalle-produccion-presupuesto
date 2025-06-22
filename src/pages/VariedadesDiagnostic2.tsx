@@ -10,10 +10,10 @@ interface ComponentBloque {
     finca_id: number;
 }
 
-interface ComponentFinca {
-    id: number;
-    nombre: string;
-}
+// interface ComponentFinca {
+//     id: number;
+//     nombre: string;
+// }
 
 function VariedadesDiagnostic2() {
     const navigate = useNavigate()
@@ -35,7 +35,7 @@ function VariedadesDiagnostic2() {
     useEffect(() => {
         const fetchBloque = async () => {
             console.log('🔧 DIAGNOSTIC 2: Starting async data fetch')
-            
+
             if (!fincaId || !fincaNombre || !bloqueId || !accion) {
                 navigate('/fincas')
                 return
@@ -46,7 +46,7 @@ function VariedadesDiagnostic2() {
 
             try {
                 const bloqueResult = await BloquesService.getBloqueById(parseInt(bloqueId))
-                
+
                 if (bloqueResult.error || !bloqueResult.data) {
                     setError('Bloque no encontrado')
                     return
@@ -75,13 +75,13 @@ function VariedadesDiagnostic2() {
     if (!fincaId || !fincaNombre || !bloqueId || !accion) {
         navigate('/fincas')
         return null
-    }
+    } const displayName = fincaNombre.replace(/-/g, ' ')
 
-    const displayName = fincaNombre.replace(/-/g, ' ')
-    const finca: ComponentFinca = {
-        id: parseInt(fincaId),
-        nombre: displayName
-    }
+    // Commented out for now since we're not using it in this diagnostic
+    // const finca: ComponentFinca = {
+    //     id: parseInt(fincaId),
+    //     nombre: displayName
+    // }
 
     const stateInfo = getStateInfo(`No hay variedades configuradas para el bloque ${bloque?.nombre}`)
 
@@ -118,14 +118,14 @@ function VariedadesDiagnostic2() {
                 <h2>{displayName} • {bloque.nombre}</h2>
                 <p>Loaded {variedades.length} variedades</p>
             </div>
-            
+
             <div style={{ marginBottom: '20px' }}>
                 <h3>Variedades:</h3>
                 <ul>
                     {variedades.map(variedad => (
                         <li key={variedad.id} style={{ marginBottom: '10px' }}>
                             <strong>{variedad.nombre}</strong>
-                            <div style={{ 
+                            <div style={{
                                 display: 'inline-block',
                                 marginLeft: '10px',
                                 padding: '5px 10px',
@@ -139,13 +139,13 @@ function VariedadesDiagnostic2() {
                 </ul>
             </div>
 
-            <button 
+            <button
                 onClick={() => navigate(-1)}
-                style={{ 
-                    padding: '10px 20px', 
-                    backgroundColor: '#007bff', 
-                    color: 'white', 
-                    border: 'none', 
+                style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
                     borderRadius: '4px',
                     cursor: 'pointer'
                 }}

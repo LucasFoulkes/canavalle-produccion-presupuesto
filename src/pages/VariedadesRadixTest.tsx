@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button'
 
 export default function VariedadesRadixTest() {
     console.log('🧪 RADIX TEST: VariedadesRadixTest component rendering')
-    
+
     const { fincaId, fincaNombre, accion, bloqueId } = useParams()
-    
+
     if (!fincaId || !fincaNombre || !accion || !bloqueId) {
         console.error('🚨 Missing required parameters:', { fincaId, fincaNombre, accion, bloqueId })
         return <div>Error: Missing parameters</div>
@@ -18,10 +18,10 @@ export default function VariedadesRadixTest() {
 
     const { variedades, loading, error } = useVariedades(parseInt(bloqueId))
 
-    console.log('🧪 RADIX TEST: Hook results:', { 
-        variedadesCount: variedades?.length, 
-        loading, 
-        error 
+    console.log('🧪 RADIX TEST: Hook results:', {
+        variedadesCount: variedades?.length,
+        loading,
+        error
     })
 
     if (loading) {
@@ -52,7 +52,7 @@ export default function VariedadesRadixTest() {
         <div>
             <div className="text-lg font-semibold mb-4">Variedades</div>
             <BackButton />
-            
+
             <div className="flex-1 flex flex-col space-y-4">
                 <div className="text-sm text-gray-600">
                     Finca: {fincaNombre} | Bloque: {bloqueId}
@@ -65,12 +65,12 @@ export default function VariedadesRadixTest() {
                                 <div className="text-lg font-medium">
                                     {variedad.nombre}
                                 </div>
-                                
+
                                 {/* TEST: Simple Button component */}
                                 <Button>
                                     Test Button
                                 </Button>
-                                
+
                                 <div className="text-sm text-gray-500">
                                     ID: {variedad.id}
                                 </div>
