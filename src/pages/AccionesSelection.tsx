@@ -20,7 +20,7 @@ function AccionesSelection() {
     }
 
     return (
-        <>
+        <div className="flex flex-col h-full">
             <header className='relative w-full h-fit flex justify-center mb-2'>
                 <div className='text-center'>
                     <p className='text-gray-600'>
@@ -38,7 +38,7 @@ function AccionesSelection() {
                     ))}
                 </div>
             </div>
-        </>
+        </div>
     )
 }
 

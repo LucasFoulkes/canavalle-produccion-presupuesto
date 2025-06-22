@@ -13,14 +13,14 @@ function Fincas() {
     if (!accion) {
         navigate('/acciones')
         return null
-    }
-
-    const stateInfo = getStateInfo()
+    } const stateInfo = getStateInfo()
 
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
-    } return (
-        <>
+    }
+
+    return (
+        <div className="flex flex-col h-full">
             <header className='relative w-full h-fit flex justify-center mb-2'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
@@ -46,7 +46,7 @@ function Fincas() {
                 ))}
                 </div>
             </div>
-        </>
+        </div>
     )
 }
 

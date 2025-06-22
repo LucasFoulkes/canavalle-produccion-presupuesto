@@ -136,7 +136,7 @@ function Variedades() {
     const stateInfo = getStateInfo(`No hay variedades configuradas para el bloque ${bloque.nombre}`)
 
     return (
-        <>
+        <div className="flex flex-col h-full">
             <header className='relative w-full h-fit flex justify-center mb-4'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
@@ -166,7 +166,7 @@ function Variedades() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     )
 }
 

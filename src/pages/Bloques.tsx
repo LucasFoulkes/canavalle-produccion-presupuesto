@@ -57,7 +57,7 @@ function Bloques() {
     }
 
     return (
-        <>
+        <div className="flex flex-col h-full">
             <header className='relative w-full h-fit flex justify-center mb-2'>
                 <div className='text-center'>
                     <h1 className='text-2xl capitalize font-semibold'>
@@ -86,7 +86,7 @@ function Bloques() {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     )
 }
 
