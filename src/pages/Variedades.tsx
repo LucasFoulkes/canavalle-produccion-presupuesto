@@ -121,24 +121,24 @@ function Variedades() {
                 <div className="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium capitalize">
                     {accion.replace(/_/g, ' ')}
                 </div>
-            </div>
-
-            {stateInfo.shouldRender && stateInfo.stateProps ? (
+            </div>            {stateInfo.shouldRender && stateInfo.stateProps ? (
                 <div className="flex-1 flex items-center justify-center">
                     <StateDisplay {...stateInfo.stateProps} />
                 </div>
             ) : (
-                <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-20 mt-2">
-                    <div className='grid gap-3 w-full max-w-md grid-cols-1'>
-                        {variedades.map(variedad => (
-                            <VariedadButtonWithValue
-                                key={variedad.id}
-                                finca={finca}
-                                bloque={bloque}
-                                variedad={variedad}
-                                accion={accion || ''}
-                            />
-                        ))}
+                <div className="flex-1 overflow-y-auto pb-20 mt-2 mobile-scroll">
+                    <div className='flex justify-center w-full'>
+                        <div className='grid gap-3 w-full max-w-md grid-cols-1 px-4'>
+                            {variedades.map(variedad => (
+                                <VariedadButtonWithValue
+                                    key={variedad.id}
+                                    finca={finca}
+                                    bloque={bloque}
+                                    variedad={variedad}
+                                    accion={accion || ''}
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}

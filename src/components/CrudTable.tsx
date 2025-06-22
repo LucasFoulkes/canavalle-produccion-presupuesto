@@ -306,7 +306,6 @@ export function CrudTable<T extends { id: number }>({
                     <h3 className="text-lg font-semibold">{title} (0)</h3>
                     <Button onClick={handleCreate} className="flex items-center gap-2">
                         <PlusIcon className="h-4 w-4" />
-                        Crear
                     </Button>
                 </div>
                 <StateDisplay message={emptyMessage} type="empty" />
@@ -323,7 +322,6 @@ export function CrudTable<T extends { id: number }>({
                 </h3>
                 <Button onClick={handleCreate} className="flex items-center gap-2">
                     <PlusIcon className="h-4 w-4" />
-                    Crear
                 </Button>
             </div>
 
@@ -424,7 +422,7 @@ export function CrudTable<T extends { id: number }>({
                 </div>
 
                 {/* Scrollable Body */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto mobile-scroll">
                     <Table className="text-xs">
                         <TableBody>
                             {filteredData.length === 0 ? (

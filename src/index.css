@@ -117,5 +117,40 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Mobile scroll improvements */
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+
+  /* Fix for mobile scroll containers */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+    transform: translate3d(0, 0, 0);
+    will-change: scroll-position;
+    touch-action: pan-y;
+  }
+
+  /* Prevent scroll issues on mobile */
+  @media (max-width: 768px) {
+    body {
+      overflow-x: hidden;
+    }
+
+    /* Improve touch responsiveness */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    /* Allow text selection for input elements */
+    input,
+    textarea,
+    [contenteditable] {
+      -webkit-user-select: text;
+      user-select: text;
+    }
   }
 }
