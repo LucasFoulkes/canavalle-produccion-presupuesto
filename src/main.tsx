@@ -23,8 +23,6 @@ window.addEventListener('unhandledrejection', (event) => {
 })
 
 createRoot(document.getElementById('root')!).render(
-  // Temporarily disabled StrictMode to debug mobile navigation issue
-  // <StrictMode>
   <AuthProvider>
     <BrowserRouter>
       <ErrorBoundary>
@@ -43,5 +41,4 @@ createRoot(document.getElementById('root')!).render(
       </ErrorBoundary>
     </BrowserRouter>
   </AuthProvider>
-  // </StrictMode>
 )
