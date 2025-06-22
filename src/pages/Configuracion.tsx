@@ -6,6 +6,7 @@ import { useBloques } from '@/hooks/useBloques'
 import { useBloquesWithFincas } from '@/hooks/useBloquesWithFincas'
 import { useBloqueVariedadesWithNames } from '@/hooks/useBloqueVariedadesWithNames'
 import { useEstadosFenologicos } from '@/hooks/useEstadosFenologicos'
+import { useDatosProductivos } from '@/hooks/useDatosProductivos'
 
 function Configuracion() {
     const fincasHook = useFincas()
@@ -14,6 +15,7 @@ function Configuracion() {
     const bloquesWithFincasHook = useBloquesWithFincas() // For dropdown options
     const bloqueVariedadesHook = useBloqueVariedadesWithNames()
     const estadosFenologicosHook = useEstadosFenologicos()
+    const datosProductivosHook = useDatosProductivos()
 
     // Get state info
     const fincasStateInfo = fincasHook.getStateInfo()
@@ -21,16 +23,18 @@ function Configuracion() {
     const bloquesStateInfo = bloquesHook.getStateInfo()
     const bloqueVariedadesStateInfo = bloqueVariedadesHook.getStateInfo()
     const estadosFenologicosStateInfo = estadosFenologicosHook.getStateInfo()
+    const datosProductivosStateInfo = datosProductivosHook.getStateInfo()
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-hidden pb-20">                <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">                <TabsList className="grid w-full grid-cols-5 mb-4 text-xs">
-                <TabsTrigger value="fincas" className="text-xs">Fincas</TabsTrigger>
-                <TabsTrigger value="bloques" className="text-xs">Bloques</TabsTrigger>
-                <TabsTrigger value="variedades" className="text-xs">Variedades</TabsTrigger>
-                <TabsTrigger value="estados" className="text-xs">Estados</TabsTrigger>
-                <TabsTrigger value="bloque-variedad" className="text-xs">Relaciones</TabsTrigger>
-            </TabsList>
+            <div className="flex-1 overflow-hidden pb-20">                <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">                <TabsList className="grid w-full grid-cols-6 mb-4 text-xs">
+                    <TabsTrigger value="fincas" className="text-xs">Fincas</TabsTrigger>
+                    <TabsTrigger value="bloques" className="text-xs">Bloques</TabsTrigger>
+                    <TabsTrigger value="variedades" className="text-xs">Variedades</TabsTrigger>
+                    <TabsTrigger value="estados" className="text-xs">Estados</TabsTrigger>
+                    <TabsTrigger value="datos" className="text-xs">Datos</TabsTrigger>
+                    <TabsTrigger value="bloque-variedad" className="text-xs">Relaciones</TabsTrigger>
+                </TabsList>
                 <TabsContent value="fincas" className="flex-1 overflow-hidden">
                     <CrudTable
                         title="Fincas"
@@ -214,7 +218,95 @@ function Configuracion() {
                         onDelete={estadosFenologicosHook.remove}
                         crudLoading={estadosFenologicosHook.loading}
                         searchable={true}
-                        searchPlaceholder="Buscar estados fenológicos..."
+                        searchPlaceholder="Buscar estados fenológicos..."                    />
+                </TabsContent>
+                <TabsContent value="datos" className="flex-1 overflow-hidden">
+                    <CrudTable
+                        title="Datos Productivos"
+                        data={datosProductivosHook.datosProductivos}
+                        columns={[
+                            {
+                                key: 'bloque_variedad_id',
+                                label: 'Bloque-Variedad',
+                                render: (dato) => {
+                                    const bloqueVariedad = bloqueVariedadesHook.bloqueVariedades.find(bv => bv.id === dato.bloque_variedad_id)
+                                    return bloqueVariedad ? `${bloqueVariedad.finca_nombre} > ${bloqueVariedad.bloque_nombre} - ${bloqueVariedad.variedad_nombre}` : 'Sin asignar'
+                                },
+                                filterable: true
+                            },
+                            { key: 'estado', label: 'Estado', filterable: true },
+                            { key: 'numero_de_plantas', label: 'Número de Plantas' },
+                            { key: 'numero_de_camas', label: 'Número de Camas' },
+                            { key: 'area', label: 'Área' },
+                            { key: 'pdn_ideal_m2_ano', label: 'PDN Ideal m²/Año' },
+                            { key: 'pdn_ideal_semana', label: 'PDN Ideal/Semana' },
+                            { key: 'ciclo', label: 'Ciclo' },
+                            { key: 'ciclo_sema', label: 'Ciclo Sema' },
+                            { key: 'densidad', label: 'Densidad' },
+                            { key: 'porcentaje_deciegos', label: 'Porcentaje Deciegos' }
+                        ]}
+                        formFields={[
+                            {
+                                key: 'bloque_variedad_id',
+                                label: 'Bloque-Variedad',
+                                type: 'select',
+                                options: bloqueVariedadesHook.bloqueVariedades.map(bv => ({
+                                    value: bv.id,
+                                    label: `${bv.bloque_nombre} - ${bv.variedad_nombre} (${bv.finca_nombre})`
+                                }))
+                            },
+                            { key: 'estado', label: 'Estado', type: 'text' },
+                            { key: 'numero_de_plantas', label: 'Número de Plantas', type: 'number' },
+                            { key: 'numero_de_camas', label: 'Número de Camas', type: 'number' },
+                            { key: 'area', label: 'Área', type: 'number' },
+                            { key: 'pdn_ideal_m2_ano', label: 'PDN Ideal m²/Año', type: 'number' },
+                            { key: 'pdn_ideal_semana', label: 'PDN Ideal/Semana', type: 'number' },
+                            { key: 'ciclo', label: 'Ciclo', type: 'number' },
+                            { key: 'ciclo_sema', label: 'Ciclo Sema', type: 'number' },
+                            { key: 'densidad', label: 'Densidad', type: 'number' },
+                            { key: 'porcentaje_deciegos', label: 'Porcentaje Deciegos', type: 'number' }
+                        ]}
+                        loading={datosProductivosHook.loading}
+                        error={datosProductivosHook.error}
+                        isEmpty={datosProductivosStateInfo.shouldRender && datosProductivosStateInfo.stateProps?.type === 'empty'}
+                        emptyMessage="No hay datos productivos configurados"
+                        loadingMessage="Cargando datos productivos..."
+                        onCreate={async (data) => {
+                            const processedData = {
+                                ...Object.fromEntries(
+                                    Object.entries(data).map(([key, value]) => {
+                                        if (key === 'bloque_variedad_id') {
+                                            return [key, value ? parseInt(value as string) : undefined]
+                                        }
+                                        if (key === 'estado') {
+                                            return [key, value || undefined]
+                                        }
+                                        return [key, value ? parseInt(value as string) : undefined]
+                                    })
+                                )
+                            }
+                            await datosProductivosHook.create(processedData)
+                        }}
+                        onUpdate={async (id, data) => {
+                            const processedData = {
+                                ...Object.fromEntries(
+                                    Object.entries(data).map(([key, value]) => {
+                                        if (key === 'bloque_variedad_id') {
+                                            return [key, value ? parseInt(value as string) : undefined]
+                                        }
+                                        if (key === 'estado') {
+                                            return [key, value || undefined]
+                                        }
+                                        return [key, value ? parseInt(value as string) : undefined]
+                                    })
+                                )
+                            }
+                            await datosProductivosHook.update(id, processedData)
+                        }}
+                        onDelete={datosProductivosHook.remove}
+                        crudLoading={datosProductivosHook.loading}
+                        searchable={true}
+                        searchPlaceholder="Buscar datos productivos..."
                     />
                 </TabsContent>
                 <TabsContent value="bloque-variedad" className="flex-1 overflow-hidden">

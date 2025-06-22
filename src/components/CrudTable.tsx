@@ -190,6 +190,7 @@ export function CrudTable<T extends { id: number }>({
     const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'delete' | null>(null)
     const [selectedItem, setSelectedItem] = useState<T | null>(null)
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [actionDialogOpen, setActionDialogOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
     const [activeFilters, setActiveFilters] = useState<Record<string, string>>({})
 
@@ -207,9 +208,7 @@ export function CrudTable<T extends { id: number }>({
                     return value.toLowerCase().includes(searchTerm.toLowerCase())
                 })
             })
-        }
-
-        // Apply filters
+        }        // Apply filters
         Object.entries(activeFilters).forEach(([filterKey, filterValue]) => {
             if (filterValue) {
                 result = result.filter(item => {
@@ -228,16 +227,23 @@ export function CrudTable<T extends { id: number }>({
         setDialogOpen(true)
     }
 
+    const handleRowClick = (item: T) => {
+        setSelectedItem(item)
+        setActionDialogOpen(true)
+    }
+
     const handleEdit = (item: T) => {
         setSelectedItem(item)
         setDialogMode('edit')
         setDialogOpen(true)
+        setActionDialogOpen(false)
     }
 
     const handleDelete = (item: T) => {
         setSelectedItem(item)
         setDialogMode('delete')
         setDialogOpen(true)
+        setActionDialogOpen(false)
     }
 
     const handleSave = async (data: any) => {
@@ -405,34 +411,32 @@ export function CrudTable<T extends { id: number }>({
                 </div>
             )}            {/* Table - Single unified table with proper scrolling */}
             <div className="flex-1 overflow-auto mobile-scroll border rounded-md">
-                <Table className="text-xs w-full">
-                    <TableHeader className="sticky top-0 bg-white z-10 border-b">
+                <Table className="text-xs w-full">                    <TableHeader className="sticky top-0 bg-white z-10 border-b">
                         <TableRow>
                             {columns.map((column, index) => (
                                 <TableHead key={index} className="text-center bg-gray-50 border-r last:border-r-0 whitespace-nowrap px-2 py-3 text-xs font-medium">
                                     {column.label}
                                 </TableHead>
                             ))}
-                            <TableHead className="text-center bg-gray-50 whitespace-nowrap px-2 py-3 text-xs font-medium w-20">
-                                Acciones
-                            </TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody>
-                        {filteredData.length === 0 ? (
+                    <TableBody>                        {filteredData.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={columns.length + 1}
+                                    colSpan={columns.length}
                                     className="text-center py-8 text-gray-500"
                                 >
                                     {searchTerm || Object.keys(activeFilters).length > 0
                                         ? "No se encontraron resultados"
                                         : emptyMessage}
                                 </TableCell>
-                            </TableRow>
-                        ) : (
+                            </TableRow>) : (
                             filteredData.map((item) => (
-                                <TableRow key={item.id} className="hover:bg-gray-50">
+                                <TableRow 
+                                    key={item.id} 
+                                    className="hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => handleRowClick(item)}
+                                >
                                     {columns.map((column, colIndex) => (
                                         <TableCell key={colIndex} className="text-center border-r last:border-r-0 whitespace-nowrap px-2 py-2 text-xs">
                                             {column.render
@@ -440,32 +444,43 @@ export function CrudTable<T extends { id: number }>({
                                                 : String((item as any)[column.key] || '')}
                                         </TableCell>
                                     ))}
-                                    <TableCell className="text-center whitespace-nowrap px-2 py-2 w-20">
-                                        <div className="flex gap-1 justify-center">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleEdit(item)}
-                                                className="h-6 w-6 p-0"
-                                            >
-                                                <EditIcon className="h-3 w-3" />
-                                            </Button>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleDelete(item)}
-                                                className="h-6 w-6 p-0"
-                                            >
-                                                <TrashIcon className="h-3 w-3" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
                                 </TableRow>
                             ))
                         )}
                     </TableBody>
-                </Table>
-            </div>
+                </Table>            </div>
+
+            {/* Action Selection Dialog */}
+            <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Seleccionar Acción</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <p className="text-sm text-gray-600">
+                            ¿Qué acción desea realizar con este elemento?
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                onClick={() => selectedItem && handleEdit(selectedItem)}
+                                className="flex-1 flex items-center gap-2"
+                                variant="outline"
+                            >
+                                <EditIcon className="h-4 w-4" />
+                                Editar
+                            </Button>
+                            <Button
+                                onClick={() => selectedItem && handleDelete(selectedItem)}
+                                className="flex-1 flex items-center gap-2"
+                                variant="destructive"
+                            >
+                                <TrashIcon className="h-4 w-4" />
+                                Eliminar
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* CRUD Dialog */}
             {dialogMode && (
