@@ -34,18 +34,19 @@ function Fincas() {
             </header>
             <ActionBadge action={accion} />
             <div className='flex-1 flex items-center justify-center'>
-                <div className='grid grid-cols-2 gap-3 w-full'>                    {fincas.map((finca) => (
-                    <Button
-                        key={finca.id}
-                        className='aspect-square h-full text-xl capitalize'
-                        onClick={() => {
-                            const urlSafeName = finca.nombre.toLowerCase().replace(/\s+/g, '-')
-                            navigate(`/bloques/${finca.id}/${urlSafeName}/${accion}`)
-                        }}
-                    >
-                        {finca.nombre}
-                    </Button>
-                ))}
+                <div className='grid grid-cols-2 gap-3 w-full'>
+                    {fincas.map((finca) => (
+                        <Button
+                            key={finca.id}
+                            className='aspect-square h-full text-xl capitalize'
+                            onClick={() => {
+                                const urlSafeName = finca.nombre.toLowerCase().replace(/\s+/g, '-')
+                                navigate(`/bloques/${finca.id}/${urlSafeName}/${accion}`)
+                            }}
+                        >
+                            {finca.nombre}
+                        </Button>
+                    ))}
                 </div>
             </div>
         </div>

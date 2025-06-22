@@ -9,7 +9,8 @@ import App from './App.tsx'
 import Fincas from './pages/Fincas.tsx'
 import Bloques from './pages/Bloques.tsx'
 // import Variedades from './pages/Variedades.tsx'
-import VariedadesDiagnostic from './pages/VariedadesDiagnostic.tsx'
+// import VariedadesDiagnostic from './pages/VariedadesDiagnostic.tsx'
+import VariedadesRadixTest from './pages/VariedadesRadixTest.tsx'
 // import VariedadesTest from './pages/VariedadesTest.tsx'
 import Configuracion from './pages/Configuracion.tsx'
 import Reportes from './pages/Reportes.tsx'
@@ -34,7 +35,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/acciones" element={<AccionesSelection />} />
             <Route path="/fincas/:accion" element={<Fincas />} />
             <Route path="/bloques/:fincaId/:fincaNombre/:accion" element={<Bloques />} />
-            <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<VariedadesDiagnostic />} />
+            <Route path="/variedades/:fincaId/:fincaNombre/:accion/:bloqueId" element={<VariedadesRadixTest />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/reportes" element={<Reportes />} />
           </Route>
