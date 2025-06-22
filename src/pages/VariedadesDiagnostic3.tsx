@@ -1,5 +1,6 @@
 import { useVariedades } from '@/hooks/useVariedades'
 import { StateDisplay } from '@/components/StateDisplay'
+import { VariedadButtonWithValue } from '@/components/VariedadButtonWithValue'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { BloquesService } from '@/services/bloques.service'
@@ -9,6 +10,11 @@ interface ComponentBloque {
     id: number;
     nombre: string;
     finca_id: number;
+}
+
+interface ComponentFinca {
+    id: number;
+    nombre: string;
 }
 
 function VariedadesDiagnostic3() {
@@ -73,9 +79,13 @@ function VariedadesDiagnostic3() {
     if (!fincaId || !fincaNombre || !bloqueId || !accion) {
         navigate('/fincas')
         return null
-    }
+    } const displayName = fincaNombre.replace(/-/g, ' ')
 
-    const displayName = fincaNombre.replace(/-/g, ' ')
+    // Create finca object from URL params for component compatibility
+    const finca: ComponentFinca = {
+        id: parseInt(fincaId),
+        nombre: displayName
+    }
 
     const stateInfo = getStateInfo(`No hay variedades configuradas para el bloque ${bloque?.nombre}`)
 
@@ -126,19 +136,19 @@ function VariedadesDiagnostic3() {
                 <div className="flex-1 flex items-center justify-center">
                     <StateDisplay {...stateInfo.stateProps} />
                 </div>
-            ) : (
-                <div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-20 mt-2">
-                    <div className='grid gap-3 w-full max-w-md grid-cols-1'>
-                        {variedades.map(variedad => (
-                            <div
-                                key={variedad.id}
-                                className="w-full p-4 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-                            >
-                                <span className="text-lg font-medium">{variedad.nombre}</span>
-                            </div>
-                        ))}
-                    </div>
+            ) : (<div className="flex-1 flex items-center justify-center w-full overflow-y-auto pb-20 mt-2">
+                <div className='grid gap-3 w-full max-w-md grid-cols-1'>
+                    {variedades.map(variedad => (
+                        <VariedadButtonWithValue
+                            key={variedad.id}
+                            finca={finca}
+                            bloque={bloque}
+                            variedad={variedad}
+                            accion={accion || ''}
+                        />
+                    ))}
                 </div>
+            </div>
             )}
         </div>
     )
