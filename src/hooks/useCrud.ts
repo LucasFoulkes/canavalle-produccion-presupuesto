@@ -58,7 +58,9 @@ export const useGenericCrud = <T extends { id: number }, CreateData, UpdateData>
                 shouldRender: true,
                 stateProps: { message: emptyMessage, type: "empty" as const }
             }
-        } return { shouldRender: false, stateProps: null }
+        }
+
+        return { shouldRender: false, stateProps: null }
     }
 
     const getAll = () => executeAction(

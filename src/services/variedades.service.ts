@@ -65,7 +65,9 @@ export class VariedadesService {
             .eq('id', id)
 
         return { data, error }
-    }    // READ - Get all variedades for a given bloque (through junction table)
+    }
+
+    // READ - Get all variedades for a given bloque (through junction table)
     static async getVariedadesByBloqueId(bloqueId: number) {
         const { data, error } = await supabase
             .from('bloque_variedad')

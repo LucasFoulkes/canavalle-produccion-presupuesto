@@ -124,11 +124,15 @@ export class AccionesService {
                 return { data: { value: 0 }, error: null }
             }
             return { data: null, error }
-        } return {
+        }
+
+        return {
             data: { value: (data as any)[actionColumn] || 0 },
             error: null
         }
-    }    // CREATE OR UPDATE - Create new entry or update today's entry if it exists
+    }
+
+    // CREATE OR UPDATE - Create new entry or update today's entry if it exists
     static async createOrUpdateTodayAccion(
         bloqueVariedadId: number,
         actionColumn: string,

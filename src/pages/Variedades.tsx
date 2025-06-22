@@ -33,7 +33,9 @@ function Variedades() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)    // Fetch only bloque data (finca name comes from URL)
+    const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)
+
+    // Fetch only bloque data (finca name comes from URL)
     useEffect(() => {
         const fetchBloque = async () => {
             console.log('🔍 Variedades useEffect - Starting fetch')
@@ -114,7 +116,9 @@ function Variedades() {
     const finca: ComponentFinca = {
         id: parseInt(fincaId),
         nombre: displayName
-    }    // Show loading or error states
+    }
+
+    // Show loading or error states
     if (loading) {
         console.log('🔄 Showing loading state')
         return (
