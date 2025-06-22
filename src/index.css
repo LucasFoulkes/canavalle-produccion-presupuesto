@@ -131,6 +131,23 @@
     touch-action: pan-y;
   }
 
+  /* Navigation layout improvements */
+  @media (max-width: 767px) {
+
+    /* Add bottom padding for mobile bottom navigation */
+    body {
+      padding-bottom: 72px;
+    }
+  }
+
+  @media (min-width: 768px) {
+
+    /* Remove any bottom padding on desktop */
+    body {
+      padding-bottom: 0;
+    }
+  }
+
   /* Prevent scroll issues on mobile */
   @media (max-width: 768px) {
     body {
