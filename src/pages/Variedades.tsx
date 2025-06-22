@@ -142,7 +142,8 @@ function Variedades() {
                     <h1 className='text-2xl capitalize font-semibold'>
                         {displayName} • {bloque.nombre}
                     </h1>
-                    <p className='text-gray-600'>Selecciona una variedad</p>                </div>
+                    <p className='text-gray-600'>Selecciona una variedad</p>
+                </div>
                 <BackButton to={`/bloques/${fincaId}/${fincaNombre}/${accion}`} />
             </header>
             <ActionBadge action={accion} />
