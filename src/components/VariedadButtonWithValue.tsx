@@ -88,15 +88,16 @@ export function VariedadButtonWithValue({
         }
     }
 
-    return (
-        <VariedadAmountDialog
+    return (        <VariedadAmountDialog
             finca={finca}
             bloque={bloque}
             variedad={variedad}
             accion={accion}
             onValueUpdate={handleValueUpdate}
-        >            <Button className="w-full h-18 text-lg flex justify-between items-center px-4">
-                <span className="capitalize text-left">{variedad.nombre}</span>                <span className="font-bold text-xl">
+        >
+            <Button className="w-full h-18 text-lg flex justify-between items-center px-4">
+                <span className="capitalize text-left">{variedad.nombre}</span>
+                <span className="font-bold text-xl">
                     {loading ? <Spinner size="sm" /> : currentValue}
                 </span>
             </Button>

@@ -28,7 +28,8 @@ function Configuracion() {
                         <TabsTrigger value="bloques">Bloques</TabsTrigger>
                         <TabsTrigger value="variedades">Variedades</TabsTrigger>
                         <TabsTrigger value="bloque-variedad">Relaciones</TabsTrigger>
-                    </TabsList><TabsContent value="fincas" className="flex-1 overflow-hidden">
+                    </TabsList>
+                    <TabsContent value="fincas" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Fincas"
                             data={fincasHook.fincas}
@@ -50,7 +51,8 @@ function Configuracion() {
                             searchable={true}
                             searchPlaceholder="Buscar fincas..."
                         />
-                    </TabsContent>                    <TabsContent value="bloques" className="flex-1 overflow-hidden">
+                    </TabsContent>
+                    <TabsContent value="bloques" className="flex-1 overflow-hidden">
                         <CrudTable
                             title="Bloques"
                             data={bloquesHook.bloques}

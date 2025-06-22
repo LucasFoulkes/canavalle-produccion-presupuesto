@@ -120,7 +120,9 @@ export function VariedadAmountDialog({
                         placeholder='Ingrese la cantidad'
                         autoFocus
                     />
-                </div>                <DialogFooter className="flex flex-col gap-2">                    <Button
+                </div>
+                <DialogFooter className="flex flex-col gap-2">
+                    <Button
                     onClick={handleConfirm}
                     disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
                     className="w-full h-14 text-lg flex items-center justify-center gap-2"
