@@ -28,13 +28,13 @@ function Configuracion() {
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 overflow-hidden pb-20">                <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">                <TabsList className="grid w-full grid-cols-6 mb-4 text-xs">
-                    <TabsTrigger value="fincas" className="text-xs">Fincas</TabsTrigger>
-                    <TabsTrigger value="bloques" className="text-xs">Bloques</TabsTrigger>
-                    <TabsTrigger value="variedades" className="text-xs">Variedades</TabsTrigger>
-                    <TabsTrigger value="estados" className="text-xs">Estados</TabsTrigger>
-                    <TabsTrigger value="datos" className="text-xs">Datos</TabsTrigger>
-                    <TabsTrigger value="bloque-variedad" className="text-xs">Relaciones</TabsTrigger>
-                </TabsList>
+                <TabsTrigger value="fincas" className="text-xs">Fincas</TabsTrigger>
+                <TabsTrigger value="bloques" className="text-xs">Bloques</TabsTrigger>
+                <TabsTrigger value="variedades" className="text-xs">Variedades</TabsTrigger>
+                <TabsTrigger value="estados" className="text-xs">Estados</TabsTrigger>
+                <TabsTrigger value="datos" className="text-xs">Datos</TabsTrigger>
+                <TabsTrigger value="bloque-variedad" className="text-xs">Relaciones</TabsTrigger>
+            </TabsList>
                 <TabsContent value="fincas" className="flex-1 overflow-hidden">
                     <CrudTable
                         title="Fincas"
@@ -218,7 +218,7 @@ function Configuracion() {
                         onDelete={estadosFenologicosHook.remove}
                         crudLoading={estadosFenologicosHook.loading}
                         searchable={true}
-                        searchPlaceholder="Buscar estados fenológicos..."                    />
+                        searchPlaceholder="Buscar estados fenológicos..." />
                 </TabsContent>
                 <TabsContent value="datos" className="flex-1 overflow-hidden">
                     <CrudTable

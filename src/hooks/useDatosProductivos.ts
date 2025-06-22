@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { 
-    DatosProductivosService, 
-    DatoProductivo, 
-    CreateDatoProductivoData, 
-    UpdateDatoProductivoData 
+import {
+    DatosProductivosService,
+    DatoProductivo,
+    CreateDatoProductivoData,
+    UpdateDatoProductivoData
 } from '@/services/datos-productivos.service'
 
 export function useDatosProductivos() {
@@ -17,7 +17,7 @@ export function useDatosProductivos() {
             setLoading(true)
             setError(null)
             const result = await DatosProductivosService.getAllDatosProductivos()
-            
+
             if (result.error) {
                 setError(`Error cargando datos productivos: ${result.error.message}`)
                 setDatosProductivos([])
@@ -38,7 +38,7 @@ export function useDatosProductivos() {
             setLoading(true)
             setError(null)
             const result = await DatosProductivosService.createDatoProductivo(datoData)
-            
+
             if (result.error) {
                 setError(`Error creando dato productivo: ${result.error.message}`)
                 return { success: false, error: result.error.message }
@@ -64,14 +64,14 @@ export function useDatosProductivos() {
             setLoading(true)
             setError(null)
             const result = await DatosProductivosService.updateDatoProductivo(id, updates)
-            
+
             if (result.error) {
                 setError(`Error actualizando dato productivo: ${result.error.message}`)
                 return { success: false, error: result.error.message }
             } else {
                 // Update the dato in the list
                 if (result.data) {
-                    setDatosProductivos(prev => 
+                    setDatosProductivos(prev =>
                         prev.map(dato => dato.id === id ? result.data! : dato)
                     )
                 }
@@ -92,7 +92,7 @@ export function useDatosProductivos() {
             setLoading(true)
             setError(null)
             const result = await DatosProductivosService.deleteDatoProductivo(id)
-            
+
             if (result.error) {
                 setError(`Error eliminando dato productivo: ${result.error.message}`)
                 return { success: false, error: result.error.message }

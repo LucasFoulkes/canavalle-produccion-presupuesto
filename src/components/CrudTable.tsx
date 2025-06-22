@@ -104,7 +104,7 @@ function CrudDialog<T extends { id: number }>({
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh] overflow-y-auto mx-4 my-auto sm:mx-auto sm:my-auto top-[50%] sm:top-[50%] translate-y-[-50%] max-w-[calc(100vw-2rem)] sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
@@ -117,8 +117,8 @@ function CrudDialog<T extends { id: number }>({
                 ) : (
                     <div className="grid gap-4 py-4">
                         {fields.map(field => (
-                            <div key={field.key} className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor={field.key} className="text-right">
+                            <div key={field.key} className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                                <Label htmlFor={field.key} className="text-left sm:text-right font-medium">
                                     {field.label} {field.required && '*'}
                                 </Label>
                                 {field.type === 'select' ? (
@@ -126,7 +126,7 @@ function CrudDialog<T extends { id: number }>({
                                         id={field.key}
                                         value={formData[field.key] || ''}
                                         onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                        className="col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="col-span-1 sm:col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         <option value="">Seleccionar...</option>
                                         {field.options?.map(option => (
@@ -141,7 +141,7 @@ function CrudDialog<T extends { id: number }>({
                                         type={field.type || 'text'}
                                         value={formData[field.key] || ''}
                                         onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                        className="col-span-3"
+                                        className="col-span-1 sm:col-span-3"
                                         placeholder={`Ingresa ${field.label.toLowerCase()}`}
                                     />
                                 )}
@@ -412,58 +412,78 @@ export function CrudTable<T extends { id: number }>({
             )}            {/* Table - Single unified table with proper scrolling */}
             <div className="flex-1 overflow-auto mobile-scroll border rounded-md">
                 <Table className="text-xs w-full">                    <TableHeader className="sticky top-0 bg-white z-10 border-b">
-                        <TableRow>
-                            {columns.map((column, index) => (
-                                <TableHead key={index} className="text-center bg-gray-50 border-r last:border-r-0 whitespace-nowrap px-2 py-3 text-xs font-medium">
-                                    {column.label}
-                                </TableHead>
-                            ))}
-                        </TableRow>
-                    </TableHeader>
+                    <TableRow>
+                        {columns.map((column, index) => (
+                            <TableHead key={index} className="text-center bg-gray-50 border-r last:border-r-0 whitespace-nowrap px-2 py-3 text-xs font-medium">
+                                {column.label}
+                            </TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
                     <TableBody>                        {filteredData.length === 0 ? (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className="text-center py-8 text-gray-500"
-                                >
-                                    {searchTerm || Object.keys(activeFilters).length > 0
-                                        ? "No se encontraron resultados"
-                                        : emptyMessage}
-                                </TableCell>
-                            </TableRow>) : (
-                            filteredData.map((item) => (
-                                <TableRow 
-                                    key={item.id} 
-                                    className="hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => handleRowClick(item)}
-                                >
-                                    {columns.map((column, colIndex) => (
-                                        <TableCell key={colIndex} className="text-center border-r last:border-r-0 whitespace-nowrap px-2 py-2 text-xs">
-                                            {column.render
-                                                ? column.render(item)
-                                                : String((item as any)[column.key] || '')}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
-                        )}
+                        <TableRow>
+                            <TableCell
+                                colSpan={columns.length}
+                                className="text-center py-8 text-gray-500"
+                            >
+                                {searchTerm || Object.keys(activeFilters).length > 0
+                                    ? "No se encontraron resultados"
+                                    : emptyMessage}
+                            </TableCell>
+                        </TableRow>) : (
+                        filteredData.map((item) => (
+                            <TableRow
+                                key={item.id}
+                                className="hover:bg-gray-50 cursor-pointer"
+                                onClick={() => handleRowClick(item)}
+                            >
+                                {columns.map((column, colIndex) => (
+                                    <TableCell key={colIndex} className="text-center border-r last:border-r-0 whitespace-nowrap px-2 py-2 text-xs">
+                                        {column.render
+                                            ? column.render(item)
+                                            : String((item as any)[column.key] || '')}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))
+                    )}
                     </TableBody>
-                </Table>            </div>
-
-            {/* Action Selection Dialog */}
+                </Table>            </div>            {/* Action Selection Dialog */}
             <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto mx-4 my-auto sm:mx-auto sm:my-auto top-[50%] sm:top-[50%] translate-y-[-50%] max-w-[calc(100vw-2rem)]">
                     <DialogHeader>
                         <DialogTitle>Seleccionar Acción</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
+                        {selectedItem && (
+                            <div className="bg-gray-50 p-3 sm:p-4 rounded-md border">
+                                <p className="text-sm font-medium text-gray-700 mb-3">Elemento seleccionado:</p>
+                                <div className="space-y-2">
+                                    {columns.slice(0, 3).map((column, index) => {
+                                        const value = column.render
+                                            ? column.render(selectedItem)
+                                            : String((selectedItem as any)[column.key] || '')
+                                        return (
+                                            <div key={index} className="text-sm flex flex-col sm:flex-row">
+                                                <span className="font-medium text-gray-600 mb-1 sm:mb-0 sm:min-w-0 sm:flex-shrink-0 sm:mr-2">
+                                                    {column.label}:
+                                                </span>
+                                                <span className="text-gray-800 break-words">
+                                                    {value}
+                                                </span>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
                         <p className="text-sm text-gray-600">
                             ¿Qué acción desea realizar con este elemento?
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                             <Button
                                 onClick={() => selectedItem && handleEdit(selectedItem)}
-                                className="flex-1 flex items-center gap-2"
+                                className="flex-1 flex items-center justify-center gap-2"
                                 variant="outline"
                             >
                                 <EditIcon className="h-4 w-4" />
@@ -471,7 +491,7 @@ export function CrudTable<T extends { id: number }>({
                             </Button>
                             <Button
                                 onClick={() => selectedItem && handleDelete(selectedItem)}
-                                className="flex-1 flex items-center gap-2"
+                                className="flex-1 flex items-center justify-center gap-2"
                                 variant="destructive"
                             >
                                 <TrashIcon className="h-4 w-4" />

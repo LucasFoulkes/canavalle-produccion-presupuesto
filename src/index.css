@@ -137,6 +137,24 @@
       overflow-x: hidden;
     }
 
+    /* Improve dialog positioning on mobile */
+    [data-radix-dialog-content] {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      max-height: 90vh !important;
+      max-width: calc(100vw - 2rem) !important;
+      overflow-y: auto !important;
+      margin: 0 !important;
+    }
+
+    /* Ensure dialog overlay covers full screen */
+    [data-radix-dialog-overlay] {
+      position: fixed !important;
+      inset: 0 !important;
+    }
+
     /* Improve touch responsiveness */
     * {
       -webkit-tap-highlight-color: transparent;
