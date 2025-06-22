@@ -170,4 +170,31 @@
       user-select: text;
     }
   }
+
+  /* Scrollbar hiding utilities */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+  }
+
+  /* Smooth scrolling for tabs */
+  .tabs-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Enhanced mobile tab styling */
+  @media (max-width: 768px) {
+    .tabs-container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
 }

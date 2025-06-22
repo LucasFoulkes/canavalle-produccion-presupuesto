@@ -26,15 +26,28 @@ function Configuracion() {
     const datosProductivosStateInfo = datosProductivosHook.getStateInfo()
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-hidden pb-20">                <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">                <TabsList className="grid w-full grid-cols-6 mb-4 text-xs">
-                <TabsTrigger value="fincas" className="text-xs">Fincas</TabsTrigger>
-                <TabsTrigger value="bloques" className="text-xs">Bloques</TabsTrigger>
-                <TabsTrigger value="variedades" className="text-xs">Variedades</TabsTrigger>
-                <TabsTrigger value="estados" className="text-xs">Estados</TabsTrigger>
-                <TabsTrigger value="datos" className="text-xs">Datos</TabsTrigger>
-                <TabsTrigger value="bloque-variedad" className="text-xs">Relaciones</TabsTrigger>
-            </TabsList>
+        <div className="flex flex-col h-full">            <div className="flex-1 overflow-hidden pb-20">
+            <Tabs defaultValue="fincas" className="w-full flex flex-col h-full">                    <div className="w-full overflow-x-auto mb-4 scrollbar-hide tabs-scroll">
+                <TabsList className="flex w-fit min-w-full gap-1 p-1 tabs-container"><TabsTrigger value="fincas" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                    Fincas
+                </TabsTrigger>
+                    <TabsTrigger value="bloques" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                        Bloques
+                    </TabsTrigger>
+                    <TabsTrigger value="variedades" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                        Variedades
+                    </TabsTrigger>
+                    <TabsTrigger value="estados" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                        Estados
+                    </TabsTrigger>
+                    <TabsTrigger value="datos" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                        Datos
+                    </TabsTrigger>
+                    <TabsTrigger value="bloque-variedad" className="flex-shrink-0 px-6 py-3 text-sm font-medium">
+                        Relaciones
+                    </TabsTrigger>
+                </TabsList>
+            </div>
                 <TabsContent value="fincas" className="flex-1 overflow-hidden">
                     <CrudTable
                         title="Fincas"
@@ -97,7 +110,7 @@ function Configuracion() {
                         searchPlaceholder="Buscar bloques..." filters={[
                             {
                                 key: 'finca_id',
-                                label: 'Filtrar por Finca',
+                                label: 'Finca',
                                 getUniqueValues: (data) => {
                                     const uniqueFincas = new Set(data.map(item => item.finca_id).filter(Boolean))
                                     return Array.from(uniqueFincas).map(fincaId => {
@@ -360,45 +373,42 @@ function Configuracion() {
                         crudLoading={bloqueVariedadesHook.loading}
                         searchable={true}
                         searchPlaceholder="Buscar relaciones..."
-                        filters={[
-                            {
-                                key: 'finca_nombre',
-                                label: 'Filtrar por Finca',
-                                getUniqueValues: (data) => {
-                                    const uniqueValues = [...new Set(data.map(item => item.finca_nombre).filter(Boolean))]
-                                    return uniqueValues.map(value => ({
-                                        value: value.toLowerCase(),
-                                        label: value
-                                    }))
-                                }
-                            },
-                            {
-                                key: 'bloque_nombre',
-                                label: 'Filtrar por Bloque',
-                                getUniqueValues: (data) => {
-                                    const uniqueValues = [...new Set(data.map(item => item.bloque_nombre).filter(Boolean))]
-                                    return uniqueValues.map(value => ({
-                                        value: value.toLowerCase(),
-                                        label: value
-                                    }))
-                                }
-                            },
-                            {
-                                key: 'variedad_nombre',
-                                label: 'Filtrar por Variedad',
-                                getUniqueValues: (data) => {
-                                    const uniqueValues = [...new Set(data.map(item => item.variedad_nombre).filter(Boolean))]
-                                    return uniqueValues.map(value => ({
-                                        value: value.toLowerCase(),
-                                        label: value
-                                    }))
-                                }
+                        filters={[{
+                            key: 'finca_nombre',
+                            label: 'Finca',
+                            getUniqueValues: (data) => {
+                                const uniqueValues = [...new Set(data.map(item => item.finca_nombre).filter(Boolean))]
+                                return uniqueValues.map(value => ({
+                                    value: value.toLowerCase(),
+                                    label: value
+                                }))
                             }
+                        }, {
+                            key: 'bloque_nombre',
+                            label: 'Bloque',
+                            getUniqueValues: (data) => {
+                                const uniqueValues = [...new Set(data.map(item => item.bloque_nombre).filter(Boolean))]
+                                return uniqueValues.map(value => ({
+                                    value: value.toLowerCase(),
+                                    label: value
+                                }))
+                            }
+                        }, {
+                            key: 'variedad_nombre',
+                            label: 'Variedad',
+                            getUniqueValues: (data) => {
+                                const uniqueValues = [...new Set(data.map(item => item.variedad_nombre).filter(Boolean))]
+                                return uniqueValues.map(value => ({
+                                    value: value.toLowerCase(),
+                                    label: value
+                                }))
+                            }
+                        }
                         ]}
                     />
                 </TabsContent>
             </Tabs>
-            </div>
+        </div>
         </div>
     )
 }

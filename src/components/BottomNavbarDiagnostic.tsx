@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Activity, Settings, BarChart3 } from 'lucide-react'
 
 interface BottomNavbarDiagnosticProps {
     variant?: 'mobile' | 'desktop'
@@ -21,150 +22,80 @@ export function BottomNavbarDiagnostic({ variant = 'mobile' }: BottomNavbarDiagn
         return location.pathname === path
     }
 
-    // Mobile bottom navigation styles
-    const mobileButtonStyle = {
-        flex: 1,
-        height: '72px',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '14px',
-        borderRadius: 0
-    }
-
-    const mobileActiveStyle = {
-        ...mobileButtonStyle,
-        backgroundColor: '#007bff',
-        color: 'white'
-    }
-
-    const mobileInactiveStyle = {
-        ...mobileButtonStyle,
-        backgroundColor: 'white',
-        color: '#6b7280'
-    }    // Desktop side navigation styles
-    const desktopButtonStyle = {
-        width: '100%',
-        height: '56px',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '14px',
-        borderRadius: '8px',
-        margin: '4px 0',
-        padding: '0 16px',
-        textAlign: 'left' as const,
-        transition: 'all 0.2s ease'
-    }
-
-    const desktopActiveStyle = {
-        ...desktopButtonStyle,
-        backgroundColor: '#007bff',
-        color: 'white'
-    }
-
-    const desktopInactiveStyle = {
-        ...desktopButtonStyle,
-        backgroundColor: 'transparent',
-        color: '#6b7280'
-    }
-
-    const handleDesktopButtonMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (!isActive(e.currentTarget.dataset.path || '')) {
-            e.currentTarget.style.backgroundColor = '#f3f4f6'
+    const navigationItems = [
+        {
+            path: '/acciones',
+            label: 'Actividad',
+            icon: Activity
+        },
+        {
+            path: '/configuracion',
+            label: 'Configuración',
+            icon: Settings
+        },
+        {
+            path: '/reportes',
+            label: 'Reportes',
+            icon: BarChart3
         }
-    }
-
-    const handleDesktopButtonMouseLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (!isActive(e.currentTarget.dataset.path || '')) {
-            e.currentTarget.style.backgroundColor = 'transparent'
-        }
-    }
+    ]
 
     return (
         <>
             {variant === 'mobile' && (
                 /* Mobile Bottom Navigation */
-                <div style={{
-                    position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'white',
-                    height: '72px',
-                    display: 'flex',
-                    borderTop: '1px solid #e5e7eb',
-                    zIndex: 50
-                }}>
-                    <button
-                        style={isActive('/acciones') ? mobileActiveStyle : mobileInactiveStyle}
-                        onClick={() => navigate('/acciones')}
-                    >
-                        Actividad
-                    </button>
-                    <button
-                        style={isActive('/configuracion') ? mobileActiveStyle : mobileInactiveStyle}
-                        onClick={() => navigate('/configuracion')}
-                    >
-                        Configuración
-                    </button>
-                    <button
-                        style={isActive('/reportes') ? mobileActiveStyle : mobileInactiveStyle}
-                        onClick={() => navigate('/reportes')}
-                    >
-                        Reportes
-                    </button>
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 h-[72px] flex z-50 shadow-lg">
+                    {navigationItems.map((item) => {
+                        const Icon = item.icon
+                        return (
+                            <button
+                                key={item.path}
+                                className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 px-1 transition-all duration-200 ${isActive(item.path)
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                                    }`}
+                                onClick={() => navigate(item.path)}
+                            >
+                                <Icon size={20} className="stroke-current" />
+                                <span className="text-xs font-medium">{item.label}</span>
+                            </button>
+                        )
+                    })}
                 </div>
             )}
 
             {variant === 'desktop' && (
                 /* Desktop Side Navigation */
-                <div style={{
-                    width: '220px',
-                    height: '100vh',
-                    backgroundColor: 'white',
-                    borderRight: '1px solid #e5e7eb',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column'
-                }}>
-                    <div style={{ marginBottom: '24px' }}>
-                        <h2 style={{
-                            fontSize: '18px',
-                            fontWeight: '600',
-                            color: '#1f2937',
-                            margin: '0 0 16px 0'
-                        }}>
-                            Navegación
+                <div className="w-60 h-screen bg-white border-r border-gray-200 flex flex-col shadow-sm">
+                    <div className="p-6 border-b border-gray-100">
+                        <h2 className="text-xl font-bold text-gray-800 mb-1">
+                            CañanValle
                         </h2>
+                        <p className="text-sm text-gray-500">Sistema de Producción</p>
                     </div>
-                    <nav style={{ flex: 1 }}>
-                        <button
-                            style={isActive('/acciones') ? desktopActiveStyle : desktopInactiveStyle}
-                            onClick={() => navigate('/acciones')}
-                            data-path="/acciones"
-                            onMouseEnter={handleDesktopButtonMouseEnter}
-                            onMouseLeave={handleDesktopButtonMouseLeave}
-                        >
-                            Actividad
-                        </button>
-                        <button
-                            style={isActive('/configuracion') ? desktopActiveStyle : desktopInactiveStyle}
-                            onClick={() => navigate('/configuracion')}
-                            data-path="/configuracion"
-                            onMouseEnter={handleDesktopButtonMouseEnter}
-                            onMouseLeave={handleDesktopButtonMouseLeave}
-                        >
-                            Configuración
-                        </button>
-                        <button
-                            style={isActive('/reportes') ? desktopActiveStyle : desktopInactiveStyle}
-                            onClick={() => navigate('/reportes')}
-                            data-path="/reportes"
-                            onMouseEnter={handleDesktopButtonMouseEnter}
-                            onMouseLeave={handleDesktopButtonMouseLeave}
-                        >
-                            Reportes
-                        </button>
+                    <nav className="flex-1 p-4 space-y-2">
+                        {navigationItems.map((item) => {
+                            const Icon = item.icon
+                            return (
+                                <button
+                                    key={item.path}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${isActive(item.path)
+                                            ? 'bg-blue-600 text-white shadow-md'
+                                            : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                                        }`}
+                                    onClick={() => navigate(item.path)}
+                                >
+                                    <Icon size={20} className="stroke-current" />
+                                    <span className="font-medium">{item.label}</span>
+                                </button>
+                            )
+                        })}
                     </nav>
+                    <div className="p-4 border-t border-gray-100">
+                        <div className="text-xs text-gray-400 text-center">
+                            v1.0.0
+                        </div>
+                    </div>
                 </div>
             )}
         </>
