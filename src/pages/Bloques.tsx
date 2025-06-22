@@ -1,8 +1,8 @@
 import { useBloques } from '@/hooks/useBloques'
 import { StateDisplay } from '@/components/StateDisplay'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { ActionBadge } from '@/components/ActionBadge'
+// import { Button } from '@/components/ui/button'
+// import { ActionBadge } from '@/components/ActionBadge'
 import { BackButton } from '@/components/BackButton'
 import { useState } from 'react'
 // working
@@ -67,22 +67,26 @@ function Bloques() {
                 </div>
                 <BackButton to={`/fincas/${accion}`} />
             </header>
-            <ActionBadge action={accion} />
+            {/* <ActionBadge action={accion} /> */}
+            <div className="w-full flex justify-center items-center top-0">
+                <span className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground capitalize">
+                    {accion?.replace(/_/g, ' ')}
+                </span>
+            </div>
             {stateInfo.shouldRender && stateInfo.stateProps ? (
                 <div className="flex-1 flex items-center justify-center">
                     <StateDisplay {...stateInfo.stateProps} />
                 </div>) : (
                 <div className="flex-1 overflow-y-auto pb-20 mt-2">
-                    <div className='grid grid-cols-4 gap-2 w-full'>
-                        {bloques.map((bloque) => (
-                            <Button
-                                key={bloque.id}
-                                className='aspect-square w-full h-full text-xl capitalize'
-                                onClick={() => handleBloqueSelect(bloque)}
-                            >
-                                {bloque.nombre}
-                            </Button>
-                        ))}
+                    <div className='grid grid-cols-4 gap-2 w-full'>                        {bloques.map((bloque) => (
+                        <button
+                            key={bloque.id}
+                            className='aspect-square w-full h-full text-xl capitalize bg-primary text-primary-foreground rounded-md hover:bg-primary/90'
+                            onClick={() => handleBloqueSelect(bloque)}
+                        >
+                            {bloque.nombre}
+                        </button>
+                    ))}
                     </div>
                 </div>
             )}

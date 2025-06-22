@@ -13,7 +13,9 @@ function Fincas() {
     if (!accion) {
         navigate('/acciones')
         return null
-    } const stateInfo = getStateInfo()
+    }
+
+    const stateInfo = getStateInfo()
 
     if (stateInfo.shouldRender && stateInfo.stateProps) {
         return <StateDisplay {...stateInfo.stateProps} />
