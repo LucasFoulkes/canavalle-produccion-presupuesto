@@ -33,12 +33,14 @@ function Variedades() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)
-
-    // Fetch only bloque data (finca name comes from URL)
+    const { variedades, getStateInfo } = useVariedades(bloqueId ? parseInt(bloqueId) : undefined)    // Fetch only bloque data (finca name comes from URL)
     useEffect(() => {
         const fetchBloque = async () => {
+            console.log('🔍 Variedades useEffect - Starting fetch')
+            console.log('Params:', { fincaId, fincaNombre, bloqueId, accion })
+
             if (!fincaId || !fincaNombre || !bloqueId || !accion) {
+                console.log('❌ Missing required params, redirecting to /fincas')
                 navigate('/fincas')
                 return
             }
@@ -47,27 +49,51 @@ function Variedades() {
             setError(null)
 
             try {
+                console.log('📡 Fetching bloque with ID:', bloqueId)
                 const bloqueResult = await BloquesService.getBloqueById(parseInt(bloqueId))
 
-                if (bloqueResult.error || !bloqueResult.data) {
+                console.log('📋 Bloque result:', bloqueResult)
+
+                if (bloqueResult.error) {
+                    console.log('❌ Bloque fetch error:', bloqueResult.error)
+                    setError(`Error al cargar bloque: ${bloqueResult.error.message}`)
+                    return
+                }
+
+                if (!bloqueResult.data) {
+                    console.log('❌ No bloque data found')
                     setError('Bloque no encontrado')
                     return
                 }
 
                 // Verify that bloque belongs to finca
-                if (bloqueResult.data.finca_id !== parseInt(fincaId)) {
+                const expectedFincaId = parseInt(fincaId)
+                const actualFincaId = bloqueResult.data.finca_id
+
+                console.log('🔍 Finca ID validation:', {
+                    expected: expectedFincaId,
+                    actual: actualFincaId
+                })
+
+                if (actualFincaId !== expectedFincaId) {
+                    console.log('❌ Bloque does not belong to finca')
                     setError('El bloque no pertenece a esta finca')
                     return
                 }
 
+                console.log('✅ Setting bloque data:', bloqueResult.data)
                 setBloque({
                     id: bloqueResult.data.id,
                     nombre: bloqueResult.data.nombre,
                     finca_id: bloqueResult.data.finca_id || parseInt(fincaId)
                 })
+
+                console.log('✅ Variedades page loaded successfully')
             } catch (err) {
-                setError('Error cargando datos')
+                console.log('❌ Exception in fetchBloque:', err)
+                setError(`Error cargando datos: ${err instanceof Error ? err.message : 'Error desconocido'}`)
             } finally {
+                console.log('🔄 Setting loading to false')
                 setLoading(false)
             }
         }
@@ -88,13 +114,23 @@ function Variedades() {
     const finca: ComponentFinca = {
         id: parseInt(fincaId),
         nombre: displayName
+    }    // Show loading or error states
+    if (loading) {
+        console.log('🔄 Showing loading state')
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <StateDisplay message="Cargando datos..." type="loading" />
+            </div>
+        )
     }
 
-    // Show loading or error states
-    if (loading) {
-        return <StateDisplay message="Cargando datos..." type="loading" />
-    } if (error || !bloque) {
-        return <StateDisplay message={error || "Datos no encontrados"} type="error" />
+    if (error || !bloque) {
+        console.log('❌ Showing error state:', { error, bloque })
+        return (
+            <div className="flex-1 flex items-center justify-center">
+                <StateDisplay message={error || "Datos no encontrados"} type="error" />
+            </div>
+        )
     }
 
     const stateInfo = getStateInfo(`No hay variedades configuradas para el bloque ${bloque.nombre}`)

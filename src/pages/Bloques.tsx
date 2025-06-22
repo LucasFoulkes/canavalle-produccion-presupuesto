@@ -4,9 +4,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ActionBadge } from '@/components/ActionBadge'
 import { BackButton } from '@/components/BackButton'
+import { useState } from 'react'
 // working
 function Bloques() {
     const navigate = useNavigate()
+    const [isNavigating, setIsNavigating] = useState(false)
 
     const { fincaId, fincaNombre, accion } = useParams<{
         fincaId: string;
@@ -32,10 +34,26 @@ function Bloques() {
     if (!fincaId || !fincaNombre || !accion) {
         navigate('/fincas')
         return null
-    } const stateInfo = getStateInfo()
+    }
+
+    const stateInfo = getStateInfo()
 
     const handleBloqueSelect = (bloque: any) => {
-        navigate(`/variedades/${fincaId}/${fincaNombre}/${accion}/${bloque.id}`)
+        // Prevent multiple rapid clicks
+        if (isNavigating) {
+            console.log('⚠️ Already navigating, ignoring click')
+            return
+        }
+
+        console.log('🔄 Bloque selected:', bloque)
+        console.log('📍 Navigating to:', `/variedades/${fincaId}/${fincaNombre}/${accion}/${bloque.id}`)
+
+        setIsNavigating(true)
+
+        // Add a small delay to ensure the click event has finished processing
+        setTimeout(() => {
+            navigate(`/variedades/${fincaId}/${fincaNombre}/${accion}/${bloque.id}`)
+        }, 10)
     }
 
     return (
