@@ -99,8 +99,8 @@ export function BloqueVariedadCrudDialog({
                 ) : (
                     <div className="grid gap-4 py-4">
                         <div className="grid grid-cols-4 items-center gap-4">                            <Label htmlFor="bloque" className="text-right">
-                                Bloque *
-                            </Label>
+                            Bloque *
+                        </Label>
                             <Select
                                 value={formData.bloque_id?.toString() || ''}
                                 onValueChange={(value: string) => setFormData(prev => ({ ...prev, bloque_id: parseInt(value) }))}
@@ -117,8 +117,8 @@ export function BloqueVariedadCrudDialog({
                         </div>
 
                         <div className="grid grid-cols-4 items-center gap-4">                            <Label htmlFor="variedad" className="text-right">
-                                Variedad *
-                            </Label>
+                            Variedad *
+                        </Label>
                             <Select
                                 value={formData.variedad_id?.toString() || ''}
                                 onValueChange={(value: string) => setFormData(prev => ({ ...prev, variedad_id: parseInt(value) }))}

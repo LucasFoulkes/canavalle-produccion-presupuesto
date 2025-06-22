@@ -123,13 +123,13 @@ export function VariedadAmountDialog({
                 </div>
                 <DialogFooter className="flex flex-col gap-2">
                     <Button
-                    onClick={handleConfirm}
-                    disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
-                    className="w-full h-14 text-lg flex items-center justify-center gap-2"
-                >
-                    {isLoading && <Spinner size="sm" />}
-                    {isLoading ? 'Guardando...' : 'Confirmar'}
-                </Button>
+                        onClick={handleConfirm}
+                        disabled={!amount || parseFloat(amount) < 0 || isNaN(parseFloat(amount)) || isLoading}
+                        className="w-full h-14 text-lg flex items-center justify-center gap-2"
+                    >
+                        {isLoading && <Spinner size="sm" />}
+                        {isLoading ? 'Guardando...' : 'Confirmar'}
+                    </Button>
                     <Button
                         variant="destructive"
                         onClick={handleCancel}
