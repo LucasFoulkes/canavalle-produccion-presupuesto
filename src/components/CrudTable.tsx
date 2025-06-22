@@ -102,70 +102,69 @@ function CrudDialog<T extends { id: number }>({
         setFormData(prev => ({ ...prev, [key]: value }))
     }
 
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="max-h-[90vh] overflow-y-auto mx-4 my-auto sm:mx-auto sm:my-auto top-[50%] sm:top-[50%] translate-y-[-50%] max-w-[calc(100vw-2rem)] sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
-                </DialogHeader>
+    return (<Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-auto sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
 
-                {mode === 'delete' ? (
-                    <div className="py-4">
-                        <p>¿Estás seguro de que quieres eliminar este elemento?</p>
-                        <p className="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 py-4">
-                        {fields.map(field => (
-                            <div key={field.key} className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                                <Label htmlFor={field.key} className="text-left sm:text-right font-medium">
-                                    {field.label} {field.required && '*'}
-                                </Label>
-                                {field.type === 'select' ? (
-                                    <select
-                                        id={field.key}
-                                        value={formData[field.key] || ''}
-                                        onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                        className="col-span-1 sm:col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        {field.options?.map(option => (
-                                            <option key={option.value} value={option.value}>
-                                                {option.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <Input
-                                        id={field.key}
-                                        type={field.type || 'text'}
-                                        value={formData[field.key] || ''}
-                                        onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                        className="col-span-1 sm:col-span-3"
-                                        placeholder={`Ingresa ${field.label.toLowerCase()}`}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
+            {mode === 'delete' ? (
+                <div className="py-4">
+                    <p>¿Estás seguro de que quieres eliminar este elemento?</p>
+                    <p className="text-sm text-gray-500 mt-2">Esta acción no se puede deshacer.</p>
+                </div>
+            ) : (
+                <div className="grid gap-4 py-4">
+                    {fields.map(field => (
+                        <div key={field.key} className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                            <Label htmlFor={field.key} className="text-left sm:text-right font-medium">
+                                {field.label} {field.required && '*'}
+                            </Label>
+                            {field.type === 'select' ? (
+                                <select
+                                    id={field.key}
+                                    value={formData[field.key] || ''}
+                                    onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                    className="col-span-1 sm:col-span-3 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {field.options?.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <Input
+                                    id={field.key}
+                                    type={field.type || 'text'}
+                                    value={formData[field.key] || ''}
+                                    onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                    className="col-span-1 sm:col-span-3"
+                                    placeholder={`Ingresa ${field.label.toLowerCase()}`}
+                                />
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant={mode === 'delete' ? 'destructive' : 'default'}
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        className="flex items-center gap-2"
-                    >
-                        {loading && <Spinner size="sm" />}
-                        {mode === 'delete' ? 'Eliminar' : 'Guardar'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                    Cancelar
+                </Button>
+                <Button
+                    variant={mode === 'delete' ? 'destructive' : 'default'}
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="flex items-center gap-2"
+                >
+                    {loading && <Spinner size="sm" />}
+                    {mode === 'delete' ? 'Eliminar' : 'Guardar'}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     )
 }
 
@@ -450,7 +449,7 @@ export function CrudTable<T extends { id: number }>({
                     </TableBody>
                 </Table>            </div>            {/* Action Selection Dialog */}
             <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto mx-4 my-auto sm:mx-auto sm:my-auto top-[50%] sm:top-[50%] translate-y-[-50%] max-w-[calc(100vw-2rem)]">
+                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto w-[calc(100vw-2rem)] sm:w-auto">
                     <DialogHeader>
                         <DialogTitle>Seleccionar Acción</DialogTitle>
                     </DialogHeader>
