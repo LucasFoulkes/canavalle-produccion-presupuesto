@@ -23,7 +23,7 @@ export default function Variedades() {
                 <h1 className="capitalize text-lg font-semibold">{state?.fincaNombre} • {state?.nombre}</h1>
                 <p>Selecione una variedad</p>
                 <ChevronLeftCircle
-                    className="stroke-1 text-zinc-300 cursor-pointer size-full w-fit absolute right-0 top-0 p-4"
+                    className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4"
                     onClick={() => navigate('/bloques', { state: { fincaId: state?.fincaId, nombre: state?.fincaNombre } })}
                 />
             </header>

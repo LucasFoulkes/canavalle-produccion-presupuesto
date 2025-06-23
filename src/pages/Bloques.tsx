@@ -23,7 +23,7 @@ export default function Bloques() {
                 <h1 className="capitalize text-lg font-semibold">{state?.nombre}</h1>
                 <p>Selecione un bloque</p>
                 <ChevronLeftCircle
-                    className="stroke-1 text-zinc-300 cursor-pointer size-full w-fit absolute right-0 top-0 p-4 "
+                    className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4 "
                     onClick={() => navigate('/fincas')}
                 />
             </header>
