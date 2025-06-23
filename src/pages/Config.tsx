@@ -11,6 +11,7 @@ const TABLES = [
     { key: 'variedades', label: 'Variedades' },
     { key: 'bloque_variedad', label: 'Bloque Variedad' },
     { key: 'estados_fenologicos', label: 'Estados Fenológicos' },
+    { key: 'datos_productivos', label: 'Datos Productivos' },
 ];
 
 export default function Config() {
