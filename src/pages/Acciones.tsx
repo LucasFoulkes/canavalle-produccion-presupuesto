@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useAcciones } from "@/hooks/useAcciones";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import BottomNav from "@/components/bottom-nav";
 
 export default function Acciones() {
     const { getColumns } = useAcciones();
@@ -24,9 +25,8 @@ export default function Acciones() {
                         onClick={() => navigate('/fincas', { state: { accion } })}>
                         {accion.replace('_', ' ')}
                     </Button>
-                ))}
-            </div>
-            <nav className="bg-zinc-700 h-16 m-4 rounded-full"></nav>
+                ))}            </div>
+            <BottomNav currentPage="acciones" />
         </div>
     );
 }

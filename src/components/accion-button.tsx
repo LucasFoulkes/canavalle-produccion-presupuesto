@@ -11,6 +11,7 @@
 //         </Button>
 //     );
 // }
+import { useNavigate } from "react-router-dom";
 
 interface AccionButtonProps {
     accion?: string;
@@ -18,8 +19,10 @@ interface AccionButtonProps {
 
 export default function AccionButton({ accion }: AccionButtonProps) {
     const words = accion?.replace(/_/g, " ").split(" ") || [];
+    const navigate = useNavigate();
 
-    return (<div className="absolute top-2 left-2 size-20 bg-blue-500 text-white rounded-full flex flex-col items-center justify-center text-[10px] font-medium capitalize leading-none p-3">
+    return (<div className="absolute top-2 left-2 size-20 bg-blue-500 text-white rounded-full flex flex-col items-center justify-center text-[10px] font-medium capitalize leading-none p-3"
+        onClick={() => navigate('/acciones')}>
         {words.map((word, index) => (
             <span key={index}>{word}</span>
         ))}

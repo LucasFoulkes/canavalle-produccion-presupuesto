@@ -53,8 +53,9 @@ export default function VariedadUpdateDialog({
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         placeholder="Enter value"
+                        className="w-full h-16 text-lg"
                     />
-                    <Button onClick={handleSave} className="w-full">
+                    <Button onClick={handleSave} className="w-full h-16 text-lg">
                         Save
                     </Button>
                 </div>

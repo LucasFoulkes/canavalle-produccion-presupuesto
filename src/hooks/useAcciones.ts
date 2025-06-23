@@ -16,16 +16,13 @@ export const useAcciones = () => ({
     getColumns: async (tableName: string) => {
         const { data, error } = await supabase
             .rpc('column_names', { p_table: tableName });
-
         if (error) {
             console.error(error);                // helps the next time
             return [];
         }
-
         const filtered = (data as string[]).filter(col =>
             !['id', 'created_at', 'bloque_variedad_id'].includes(col)
         );
-
         return filtered;               // already ordered
     },
     getLatest: async (accion: string, bloqueVariedadId: string) => {
@@ -40,14 +37,39 @@ export const useAcciones = () => ({
     },
 
     update: async (accion: string, bloqueVariedadId: string, value: number) => {
-        const { error } = await supabase
+        // Get today's date in YYYY-MM-DD format
+        const today = new Date().toISOString().split('T')[0];
+
+        // Check if there's already an entry for today
+        const { data: existingEntry } = await supabase
             .from('acciones')
-            .insert({
-                [accion]: value,
-                bloque_variedad_id: bloqueVariedadId
-            })
-        return !error
+            .select('id')
+            .eq('bloque_variedad_id', bloqueVariedadId)
+            .gte('created_at', `${today}T00:00:00.000Z`)
+            .lt('created_at', `${today}T23:59:59.999Z`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (existingEntry) {
+            // Update existing entry
+            const { error } = await supabase
+                .from('acciones')
+                .update({ [accion]: value })
+                .eq('id', existingEntry.id);
+            return !error;
+        } else {
+            // Create new entry
+            const { error } = await supabase
+                .from('acciones')
+                .insert({
+                    [accion]: value,
+                    bloque_variedad_id: bloqueVariedadId
+                });
+            return !error;
+        }
     },
+
     getLatestBatch: async (accion: string, bloqueVariedadIds: string[]) => {
         if (!bloqueVariedadIds.length) return {};
 

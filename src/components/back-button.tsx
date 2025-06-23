@@ -11,7 +11,7 @@ export default function BackButton({ path, state }: BackButtonProps) {
 
     return (
         <ChevronLeftCircle
-            className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4"
+            className="stroke-1 text-zinc-200 cursor-pointer size-20 absolute right-0 top-0 p-4"
             onClick={() => navigate(path, state ? { state } : undefined)}
         />
     );
