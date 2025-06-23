@@ -1,71 +1,37 @@
-import './App.css'
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+// App.tsx
+import "./App.css";
+import { useState } from "react";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { useAuth } from '@/contexts/AuthContext'
-import { Spinner } from '@/components/ui/spinner'
+} from "@/components/ui/input-otp";
 
-function App() {
-  const maxLength = 6
-  const [pinValue, setPinValue] = useState('')
-  const { authenticateWithPin, isLoading, error, isAuthenticated } = useAuth()
-  const navigate = useNavigate()
-
-  const handleComplete = async (value: string) => {
-    if (value.length === maxLength) {
-      await authenticateWithPin(value)
-    }
-  }
-
-  useEffect(() => {
-    if (error) {
-      setPinValue('')
-    }
-  }, [error])
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/acciones')
-    }
-  }, [isAuthenticated, navigate])
+export default function App() {
+  const maxLength = 6;
+  const [pinValue, setPinValue] = useState("");
 
   return (
-    <div className="flex justify-center items-center min-h-screen flex-col gap-4">
+    <div className="flex h-full flex-col justify-between items-stretch">
+      <h1 className="p-4 text-2xl">Ingrese código</h1>
+
       <InputOTP
         maxLength={maxLength}
         value={pinValue}
         onChange={setPinValue}
-        onComplete={handleComplete}
       >
-        <InputOTPGroup>
-          {Array.from({ length: maxLength }, (_, i) =>
-            <InputOTPSlot key={i} index={i} className='size-14 border-zinc-300' />
-          )}
+        <InputOTPGroup
+          className="w-full justify-center ">
+          {Array.from({ length: maxLength }, (_, i) => (
+            <InputOTPSlot
+              key={i}
+              index={i}
+              className="size-14 text-lg bg-white"
+            />
+          ))}
         </InputOTPGroup>
       </InputOTP>
-
-      <div className="text-center text-sm">
-        {(() => {
-          switch (true) {
-            case isLoading:
-              return (
-                <span className="text-blue-600 flex items-center justify-center gap-2">
-                  <Spinner size="sm" className="text-blue-600" />
-                  Verificando...
-                </span>
-              )
-            case !!error:
-              return <span className="text-red-500">{error} trata de nuevo</span>
-            default:
-              return <span>Ingresa el código de verificación</span>
-          }
-        })()}
-      </div>
-    </div>
-  )
+      <span></span>
+    </div >
+  );
 }
-
-export default App
