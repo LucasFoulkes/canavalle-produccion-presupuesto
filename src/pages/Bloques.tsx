@@ -26,11 +26,12 @@ export default function Bloques() {
                     className="stroke-1 text-zinc-300 cursor-pointer size-full w-fit absolute right-0 top-0 p-4 "
                     onClick={() => navigate('/fincas')}
                 />
-            </header>            <div className="gap-2 max-h-full grid overflow-y-auto mx-4 grid-cols-4">
+            </header>
+            <div className="gap-2 max-h-full grid overflow-y-auto mx-4 grid-cols-4">
                 {bloques.map((bloque, index) => (
                     <Button
                         key={index}
-                        className="capitalize aspect-square h-full w-full"
+                        className="capitalize aspect-square h-full w-full text-xl"
                         onClick={() => navigate('/variedades', {
                             state: {
                                 bloqueId: bloque.id,

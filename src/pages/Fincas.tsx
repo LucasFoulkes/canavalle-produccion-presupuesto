@@ -21,7 +21,7 @@ export default function Fincas() {
                 {fincas.map((finca, index) => (
                     <Button
                         key={index}
-                        className="capitalize aspect-square h-full w-full"
+                        className="capitalize aspect-square h-full w-full text-xl"
                         onClick={() => navigate('/bloques', { state: { fincaId: finca.id, nombre: finca.nombre } })}
                     >
                         {finca.nombre}
