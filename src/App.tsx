@@ -17,7 +17,7 @@ export default function App() {
   useEffect(() => {
     if (pinValue.length === maxLength) {
       login(pinValue).then((user) => {
-        if (user) navigate("/fincas", { state: { user } });
+        if (user) navigate("/acciones", { state: { user } });
         else setPinValue("");
       });
     }

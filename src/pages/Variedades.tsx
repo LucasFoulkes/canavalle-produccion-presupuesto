@@ -3,6 +3,7 @@ import { useVariedades } from "@/hooks/useVariedades";
 import { ChevronLeftCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 export default function Variedades() {
     const { getByBloque } = useVariedades();
@@ -20,16 +21,18 @@ export default function Variedades() {
     return (
         <div className="flex flex-col h-full justify-between">
             <header className="relative h-20 p-4">
-                <h1 className="capitalize text-lg font-semibold">{state?.fincaNombre} • {state?.nombre}</h1>
+                <h1 className="capitalize text-lg font-semibold">
+                    <Badge>{state?.accion}</Badge> • {state?.fincaNombre} • {state?.nombre}
+                </h1>
                 <p>Selecione una variedad</p>
                 <ChevronLeftCircle
                     className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4"
-                    onClick={() => navigate('/bloques', { state: { fincaId: state?.fincaId, nombre: state?.fincaNombre } })}
+                    onClick={() => navigate('/bloques', { state: { fincaId: state?.fincaId, nombre: state?.fincaNombre, accion: state?.accion } })}
                 />
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
                 {variedades.map((variedad, index) => (
-                    <Button key={index} className="capitalize h-16 w-full text-xl">
+                    <Button key={index} className="capitalize h-16 w-full text-xl   ">
                         {variedad.nombre}
                     </Button>
                 ))}
