@@ -29,7 +29,7 @@ export default function Variedades() {
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
                 {variedades.map((variedad, index) => (
-                    <Button key={index} className="capitalize h-16 w-full">
+                    <Button key={index} className="capitalize h-16 w-full text-xl">
                         {variedad.nombre}
                     </Button>
                 ))}
