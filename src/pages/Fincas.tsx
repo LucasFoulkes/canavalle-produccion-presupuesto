@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AccionButton from "@/components/accion-button";
 import BackButton from "@/components/back-button";
+import BottomNav from "@/components/bottom-nav";
 
 export default function Fincas() {
     const { getAll } = useFincas();
@@ -30,9 +31,8 @@ export default function Fincas() {
                     >
                         {finca.nombre}
                     </Button>
-                ))}
-            </div>
-            <nav className="bg-zinc-700 h-16 m-4 rounded-full"></nav>
+                ))}            </div>
+            <BottomNav currentPage="acciones" />
         </div>
     );
 }

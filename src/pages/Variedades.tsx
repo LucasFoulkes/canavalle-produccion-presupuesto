@@ -6,6 +6,7 @@ import { useLocation } from "react-router-dom";
 import AccionButton from "@/components/accion-button";
 import BackButton from "@/components/back-button";
 import VariedadUpdateDialog from "@/components/variedad-update-dialog";
+import BottomNav from "@/components/bottom-nav";
 
 export default function Variedades() {
     const { getByBloque } = useVariedades();
@@ -60,10 +61,9 @@ export default function Variedades() {
                             {values[variedad.bloque_variedad_id] ?? 0}
                         </span>
                     </Button>
-                </VariedadUpdateDialog>
-                ))}
+                </VariedadUpdateDialog>))}
             </div>
-            <nav className="bg-zinc-700 h-16 m-4 rounded-full"></nav>
+            <BottomNav currentPage="acciones" />
         </div>
     );
 }

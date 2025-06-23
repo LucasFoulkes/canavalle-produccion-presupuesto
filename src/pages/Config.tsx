@@ -1,42 +1,77 @@
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BottomNav from "@/components/bottom-nav";
+import DataTable from "@/components/data-table";
+import { useDataService } from "@/hooks/useDataService";
+
+const TABLES = [
+    { key: 'acciones', label: 'Acciones' },
+    { key: 'fincas', label: 'Fincas' },
+    { key: 'bloques', label: 'Bloques' },
+    { key: 'variedades', label: 'Variedades' },
+    { key: 'bloque_variedad', label: 'Bloque Variedad' },
+];
 
 export default function Config() {
-    const navigate = useNavigate();
+    const { getAllFromTable } = useDataService();
+    const [tableData, setTableData] = useState<Record<string, any[]>>({});
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadAllTables = async () => {
+            setLoading(true);
+            const data: Record<string, any[]> = {};
+
+            for (const table of TABLES) {
+                data[table.key] = await getAllFromTable(table.key);
+            }
+
+            setTableData(data);
+            setLoading(false);
+        };
+
+        loadAllTables();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col h-full justify-between">
+                <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                        <p>Loading database tables...</p>
+                    </div>
+                </div>
+                <BottomNav currentPage="config" />
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col h-full justify-between">
-            <header className="relative h-20 p-4 items-center justify-center flex">
-                <Button
-                    variant="ghost"
-                    className="absolute left-4 p-2"
-                    onClick={() => navigate('/acciones')}
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                </Button>
-                <p className="text-xl font-medium">Configuración</p>
-            </header>
-
-            <div className="flex-1 flex flex-col items-center justify-center mx-4 text-center">
-                <div className="mb-8">
-                    <svg className="w-24 h-24 mx-auto text-gray-400 mb-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-700 mb-2">En Construcción</h2>
-                <p className="text-gray-500 mb-6">
-                    La página de configuración está siendo desarrollada.
-                </p>
-                <div className="animate-pulse flex space-x-1">
-                    <div className="rounded-full bg-gray-400 h-2 w-2"></div>
-                    <div className="rounded-full bg-gray-400 h-2 w-2"></div>
-                    <div className="rounded-full bg-gray-400 h-2 w-2"></div>
-                </div>
-            </div>
+        < div className="flex flex-col h-full justify-between">
+            < div className="flex-1 overflow-hidden" >
+                <Tabs defaultValue="acciones" className="h-full flex flex-col">
+                    <div className="overflow-x-auto ">
+                        <TabsList className="inline-flex w-max min-w-full bg-zinc-200 rounded-none">
+                            {TABLES.map((table) => (
+                                <TabsTrigger key={table.key} value={table.key} className="text-sm whitespace-nowrap px-4">
+                                    {table.label}
+                                </TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </div>
+                    <div className="flex-1 overflow-hidden px-4 pt-2">
+                        {TABLES.map((table) => (
+                            <TabsContent key={table.key} value={table.key} className="h-full overflow-y-auto bg-white rounded-lg p-2">
+                                <DataTable
+                                    data={tableData[table.key] || []}
+                                />
+                            </TabsContent>
+                        ))}
+                    </div>
+                </Tabs>
+            </ div>
             <BottomNav currentPage="config" />
-        </div>
+        </div >
     );
 }
