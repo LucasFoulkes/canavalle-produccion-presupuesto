@@ -14,7 +14,7 @@ export default function Acciones() {
 
     return (
         <div className="flex flex-col h-full justify-between">
-            <header className="relative h-20 p-4">
+            <header className="relative h-20 p-4 items-center justify-center flex">
                 <p>Selecione una acción</p>
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4">

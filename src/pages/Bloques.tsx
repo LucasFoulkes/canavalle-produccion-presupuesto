@@ -20,9 +20,9 @@ export default function Bloques() {
 
     return (
         <div className="flex flex-col h-full justify-between">
-            <header className="relative h-20 p-4">
-                <h1 className="capitalize text-lg font-semibold"><Badge>{state?.accion}</Badge> • {state?.nombre}</h1>
-                <p>Selecione un bloque</p>
+            <header className="relative h-20 p-4 flex items-center justify-center flex-col">
+                <Badge className="capitalize">{state?.accion.replace(/_/g, " ")}</Badge>
+                <p className="capitalize">{state?.nombre}</p>
                 <ChevronLeftCircle
                     className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4 "
                     onClick={() => navigate('/fincas', { state: { accion: state?.accion } })}
