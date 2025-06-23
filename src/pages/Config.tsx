@@ -13,14 +13,19 @@ const TABLES = [
 ];
 
 export default function Config() {
-    const { getAllFromTable } = useDataService();
+    const { getAllFromTable, getLookupData } = useDataService();
     const [tableData, setTableData] = useState<Record<string, any[]>>({});
+    const [lookupData, setLookupData] = useState<Record<string, any>>({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadAllTables = async () => {
             setLoading(true);
             const data: Record<string, any[]> = {};
+
+            // Load lookup data first
+            const lookups = await getLookupData();
+            setLookupData(lookups);
 
             for (const table of TABLES) {
                 data[table.key] = await getAllFromTable(table.key);
@@ -60,14 +65,14 @@ export default function Config() {
                             ))}
                         </TabsList>
                     </div>
-                    <div className="flex-1 overflow-hidden px-4 pt-2">
-                        {TABLES.map((table) => (
-                            <TabsContent key={table.key} value={table.key} className="h-full overflow-y-auto bg-white rounded-lg p-2">
-                                <DataTable
-                                    data={tableData[table.key] || []}
-                                />
-                            </TabsContent>
-                        ))}
+                    <div className="flex-1 overflow-hidden px-4 pt-2">                        {TABLES.map((table) => (
+                        <TabsContent key={table.key} value={table.key} className="h-full overflow-y-auto bg-white rounded-lg p-2">
+                            <DataTable
+                                data={tableData[table.key] || []}
+                                lookupData={lookupData}
+                            />
+                        </TabsContent>
+                    ))}
                     </div>
                 </Tabs>
             </ div>
