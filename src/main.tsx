@@ -2,6 +2,9 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import App from './App'
+import Fincas from './pages/fincas'
+import Bloques from './pages/Bloques'
+import Variedades from './pages/Variedades'
 
 window.addEventListener('error', (event) => {
   console.error('🚨 Global error:', event.error)
@@ -16,7 +19,9 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        {/* <Route element={<Layout />}></Route> */}
+        <Route path="/fincas" element={<Fincas />} />
+        <Route path="/bloques" element={<Bloques />} />
+        <Route path="/variedades" element={<Variedades />} />
         <Route path="*" element={<div>404 Not Found</div>} />
       </Routes>
     </BrowserRouter>

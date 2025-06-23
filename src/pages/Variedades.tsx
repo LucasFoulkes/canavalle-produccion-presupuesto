@@ -1,0 +1,40 @@
+import { Button } from "@/components/ui/button";
+import { useVariedades } from "@/hooks/useVariedades";
+import { ChevronLeftCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
+export default function Variedades() {
+    const { getByBloque } = useVariedades();
+    const [variedades, setVariedades] = useState<any[]>([]);
+    const { state } = useLocation();
+    const bloqueId = state?.bloqueId;
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (bloqueId) {
+            getByBloque(bloqueId).then(data => setVariedades(data || []));
+        }
+    }, []);
+
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <header className="relative h-20 p-4">
+                <h1 className="capitalize text-lg font-semibold">{state?.fincaNombre} • {state?.nombre}</h1>
+                <p>Selecione una variedad</p>
+                <ChevronLeftCircle
+                    className="stroke-1 text-zinc-300 cursor-pointer size-full w-fit absolute right-0 top-0 p-4"
+                    onClick={() => navigate('/bloques', { state: { fincaId: state?.fincaId, nombre: state?.fincaNombre } })}
+                />
+            </header>
+            <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
+                {variedades.map((variedad, index) => (
+                    <Button key={index} className="capitalize h-16 w-full">
+                        {variedad.nombre}
+                    </Button>
+                ))}
+            </div>
+            <nav className="bg-zinc-700 h-16 m-4 rounded-full"></nav>
+        </div>
+    );
+}
