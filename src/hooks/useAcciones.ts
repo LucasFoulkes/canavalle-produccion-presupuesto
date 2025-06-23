@@ -27,5 +27,25 @@ export const useAcciones = () => ({
         );
 
         return filtered;               // already ordered
+    },
+    getLatest: async (accion: string, bloqueVariedadId: string) => {
+        const { data } = await supabase
+            .from('acciones')
+            .select(accion)
+            .eq('bloque_variedad_id', bloqueVariedadId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+        return (data as any)?.[accion] || null
+    },
+
+    update: async (accion: string, bloqueVariedadId: string, value: number) => {
+        const { error } = await supabase
+            .from('acciones')
+            .insert({
+                [accion]: value,
+                bloque_variedad_id: bloqueVariedadId
+            })
+        return !error
     }
 });
