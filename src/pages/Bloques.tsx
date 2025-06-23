@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useBloques } from "@/hooks/useBloques";
-import { ChevronLeftCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AccionButton from "@/components/accion-button";
+import BackButton from "@/components/back-button";
 
 export default function Bloques() {
     const { getByFinca } = useBloques();
@@ -23,9 +23,9 @@ export default function Bloques() {
             <header className="relative h-20 p-4 flex items-center justify-center flex-col">
                 <AccionButton accion={state?.accion} />
                 <p className="capitalize">{state?.nombre}</p>
-                <ChevronLeftCircle
-                    className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4 "
-                    onClick={() => navigate('/fincas', { state: { accion: state?.accion } })}
+                <BackButton
+                    path="/fincas"
+                    state={{ accion: state?.accion }}
                 />
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4 grid-cols-4">

@@ -2,8 +2,8 @@ import { Button } from "@/components/ui/button";
 import { useFincas } from "@/hooks/useFincas";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeftCircle } from "lucide-react";
 import AccionButton from "@/components/accion-button";
+import BackButton from "@/components/back-button";
 
 export default function Fincas() {
     const { getAll } = useFincas();
@@ -19,10 +19,7 @@ export default function Fincas() {
         <div className="flex flex-col h-full justify-between">
             <header className="relative h-20 p-4 flex items-center justify-center">
                 <AccionButton accion={state?.accion} />
-                <ChevronLeftCircle
-                    className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4 "
-                    onClick={() => navigate('/acciones',)}
-                />
+                <BackButton path="/acciones" />
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4 grid-cols-2">
                 {fincas.map((finca, index) => (

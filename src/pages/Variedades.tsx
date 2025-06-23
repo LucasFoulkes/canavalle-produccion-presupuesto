@@ -1,16 +1,15 @@
-import AccionButton from "@/components/accion-button";
 import { Button } from "@/components/ui/button";
 import { useVariedades } from "@/hooks/useVariedades";
-import { ChevronLeftCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import AccionButton from "@/components/accion-button";
+import BackButton from "@/components/back-button";
 
 export default function Variedades() {
     const { getByBloque } = useVariedades();
     const [variedades, setVariedades] = useState<any[]>([]);
     const { state } = useLocation();
     const bloqueId = state?.bloqueId;
-    const navigate = useNavigate();
 
     useEffect(() => {
         if (bloqueId) {
@@ -23,9 +22,9 @@ export default function Variedades() {
             <header className="relative h-20 p-4 flex items-center justify-center flex-col">
                 <AccionButton accion={state?.accion} />
                 <p className="capitalize">{state?.fincaNombre} • {state?.nombre}</p>
-                <ChevronLeftCircle
-                    className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4"
-                    onClick={() => navigate('/bloques', { state: { fincaId: state?.fincaId, nombre: state?.fincaNombre, accion: state?.accion } })}
+                <BackButton
+                    path="/bloques"
+                    state={{ fincaId: state?.fincaId, nombre: state?.fincaNombre, accion: state?.accion }}
                 />
             </header>
             <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
