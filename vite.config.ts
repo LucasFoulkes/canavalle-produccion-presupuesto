@@ -18,7 +18,8 @@ export default defineConfig({
       name: 'cananvalle-produccion-presupuesto',
       short_name: 'cananvalle-produccion-presupuesto',
       description: 'cananvalle-produccion-presupuesto',
-      theme_color: '#ffffff',
+      // theme_color: '#ffffff',
+      theme_color: '#f4f4f5', // bg-zinc-100
     },
 
     workbox: {

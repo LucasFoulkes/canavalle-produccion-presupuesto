@@ -12,9 +12,7 @@ export default function App() {
   const [pinValue, setPinValue] = useState("");
 
   return (
-    <div className="flex h-full flex-col justify-between items-stretch">
-      <h1 className="p-4 text-2xl">Ingrese código</h1>
-
+    <div className="flex h-full flex-col justify-center items-center ">
       <InputOTP
         maxLength={maxLength}
         value={pinValue}
@@ -31,7 +29,7 @@ export default function App() {
           ))}
         </InputOTPGroup>
       </InputOTP>
-      <span></span>
+      <h1 className="p-4 text-lg">Ingrese código</h1>
     </div >
   );
 }
