@@ -1,10 +1,13 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import CreateEntryDialog from "./create-entry-dialog";
 
 interface DataTableProps {
     data: any[];
     lookupData?: Record<string, any>;
+    tableName?: string;
+    onRefresh?: () => void;
 }
 
 const formatCellValue = (value: any, columnName: string, lookupData: Record<string, any> = {}): string => {
@@ -35,7 +38,7 @@ const formatCellValue = (value: any, columnName: string, lookupData: Record<stri
     return value.toString();
 };
 
-export default function DataTable({ data, lookupData = {} }: DataTableProps) {
+export default function DataTable({ data, lookupData = {}, tableName, onRefresh }: DataTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
     if (!data || data.length === 0) {
@@ -90,6 +93,15 @@ export default function DataTable({ data, lookupData = {} }: DataTableProps) {
                     </TableBody>
                 </Table>
             </div>
+
+            {tableName && onRefresh && (
+                <CreateEntryDialog
+                    tableName={tableName}
+                    columns={columns}
+                    lookupData={lookupData}
+                    onSuccess={onRefresh}
+                />
+            )}
         </div>
     );
 }

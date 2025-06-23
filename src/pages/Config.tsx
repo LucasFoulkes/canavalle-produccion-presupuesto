@@ -5,36 +5,35 @@ import DataTable from "@/components/data-table";
 import { useDataService } from "@/hooks/useDataService";
 
 const TABLES = [
-    { key: 'acciones', label: 'Acciones' },
+    // { key: 'acciones', label: 'Acciones' },
     { key: 'fincas', label: 'Fincas' },
     { key: 'bloques', label: 'Bloques' },
     { key: 'variedades', label: 'Variedades' },
     { key: 'bloque_variedad', label: 'Bloque Variedad' },
+    { key: 'estados_fenologicos', label: 'Estados Fenológicos' },
 ];
 
 export default function Config() {
     const { getAllFromTable, getLookupData } = useDataService();
     const [tableData, setTableData] = useState<Record<string, any[]>>({});
     const [lookupData, setLookupData] = useState<Record<string, any>>({});
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true); const loadAllTables = async () => {
+        setLoading(true);
+        const data: Record<string, any[]> = {};
+
+        // Load lookup data first
+        const lookups = await getLookupData();
+        setLookupData(lookups);
+
+        for (const table of TABLES) {
+            data[table.key] = await getAllFromTable(table.key);
+        }
+
+        setTableData(data);
+        setLoading(false);
+    };
 
     useEffect(() => {
-        const loadAllTables = async () => {
-            setLoading(true);
-            const data: Record<string, any[]> = {};
-
-            // Load lookup data first
-            const lookups = await getLookupData();
-            setLookupData(lookups);
-
-            for (const table of TABLES) {
-                data[table.key] = await getAllFromTable(table.key);
-            }
-
-            setTableData(data);
-            setLoading(false);
-        };
-
         loadAllTables();
     }, []);
 
@@ -55,7 +54,7 @@ export default function Config() {
     return (
         < div className="flex flex-col h-full justify-between">
             < div className="flex-1 overflow-hidden" >
-                <Tabs defaultValue="acciones" className="h-full flex flex-col">
+                <Tabs defaultValue="fincas" className="h-full flex flex-col">
                     <div className="overflow-x-auto ">
                         <TabsList className="inline-flex w-max min-w-full bg-zinc-200 rounded-none">
                             {TABLES.map((table) => (
@@ -70,6 +69,8 @@ export default function Config() {
                             <DataTable
                                 data={tableData[table.key] || []}
                                 lookupData={lookupData}
+                                tableName={table.key}
+                                onRefresh={loadAllTables}
                             />
                         </TabsContent>
                     ))}
