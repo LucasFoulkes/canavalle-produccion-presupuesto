@@ -47,5 +47,24 @@ export const useAcciones = () => ({
                 bloque_variedad_id: bloqueVariedadId
             })
         return !error
-    }
+    },
+    getLatestBatch: async (accion: string, bloqueVariedadIds: string[]) => {
+        if (!bloqueVariedadIds.length) return {};
+
+        const { data } = await supabase
+            .from('acciones')
+            .select(`bloque_variedad_id, ${accion}, created_at`)
+            .in('bloque_variedad_id', bloqueVariedadIds)
+            .order('created_at', { ascending: false });
+
+        // Get the latest value for each bloque_variedad_id
+        const latestValues: Record<string, any> = {};
+        (data as any)?.forEach((row: any) => {
+            if (!latestValues[row.bloque_variedad_id]) {
+                latestValues[row.bloque_variedad_id] = row[accion];
+            }
+        });
+
+        return latestValues;
+    },
 });

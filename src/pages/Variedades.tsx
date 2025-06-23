@@ -9,36 +9,23 @@ import VariedadUpdateDialog from "@/components/variedad-update-dialog";
 
 export default function Variedades() {
     const { getByBloque } = useVariedades();
-    const { getLatest, update } = useAcciones();
-    const [variedades, setVariedades] = useState<any[]>([]); const [values, setValues] = useState<Record<string, any>>({});
+    const { getLatestBatch } = useAcciones();
+    const [variedades, setVariedades] = useState<any[]>([]);
+    const [values, setValues] = useState<Record<string, any>>({});
     const { state } = useLocation();
-    const bloqueId = state?.bloqueId;
-
-    const loadValues = async (data: any[]) => {
+    const bloqueId = state?.bloqueId; const loadValues = async (data: any[]) => {
         if (state?.accion && data) {
-            const valuePromises = data.map(async (variedad) => {
-                const value = await getLatest(state.accion, variedad.bloque_variedad_id);
-                return { id: variedad.bloque_variedad_id, value };
-            });
-
-            const results = await Promise.all(valuePromises);
-            const valueMap = results.reduce((acc, { id, value }) => {
-                acc[id] = value;
-                return acc;
-            }, {} as Record<string, any>);
-
+            const bloqueVariedadIds = data.map(variedad => variedad.bloque_variedad_id);
+            const valueMap = await getLatestBatch(state.accion, bloqueVariedadIds);
             setValues(valueMap);
         }
-    }; const handleSave = async (variedad: any, value: number) => {
-        if (variedad && state?.accion) {
-            const success = await update(state.accion, variedad.bloque_variedad_id, value);
-            if (success) {
-                setValues(prev => ({
-                    ...prev,
-                    [variedad.bloque_variedad_id]: value
-                }));
-            }
-        }
+    };
+
+    const handleSaveSuccess = (bloqueVariedadId: string, value: number) => {
+        setValues(prev => ({
+            ...prev,
+            [bloqueVariedadId]: value
+        }));
     };
 
     useEffect(() => {
@@ -58,23 +45,22 @@ export default function Variedades() {
                 <BackButton
                     path="/bloques"
                     state={{ fincaId: state?.fincaId, nombre: state?.fincaNombre, accion: state?.accion }} />
-            </header>            <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
-                {variedades.map((variedad, index) => (
-                    <VariedadUpdateDialog
-                        key={index}
-                        variedad={variedad}
-                        currentValue={values[variedad.bloque_variedad_id] ?? 0}
-                        onSave={(value: number) => handleSave(variedad, value)}
-                    >
-                        <Button
-                            className="capitalize h-16 w-full text-lg flex justify-between items-center"
-                        >
-                            <span>{variedad.nombre}</span>
-                            <span className="text-sm opacity-75">
-                                {values[variedad.bloque_variedad_id] ?? 0}
-                            </span>
-                        </Button>
-                    </VariedadUpdateDialog>
+            </header>
+            <div className="gap-2 max-h-full grid overflow-y-auto mx-4">
+                {variedades.map((variedad, index) => (<VariedadUpdateDialog
+                    key={index}
+                    variedad={variedad}
+                    currentValue={values[variedad.bloque_variedad_id] ?? 0}
+                    accion={state?.accion}
+                    onSaveSuccess={handleSaveSuccess}
+                >
+                    <Button className="capitalize h-16 w-full text-lg flex justify-between items-center" >
+                        <span>{variedad.nombre}</span>
+                        <span className="text-sm opacity-75">
+                            {values[variedad.bloque_variedad_id] ?? 0}
+                        </span>
+                    </Button>
+                </VariedadUpdateDialog>
                 ))}
             </div>
             <nav className="bg-zinc-700 h-16 m-4 rounded-full"></nav>
