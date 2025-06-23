@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import CreateEntryDialog from "./create-entry-dialog";
+import EditEntryDialog from "./edit-entry-dialog";
 
 interface DataTableProps {
     data: any[];
@@ -40,6 +41,8 @@ const formatCellValue = (value: any, columnName: string, lookupData: Record<stri
 
 export default function DataTable({ data, lookupData = {}, tableName, onRefresh }: DataTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [editOpen, setEditOpen] = useState(false);
+    const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
     if (!data || data.length === 0) {
         return (
@@ -52,7 +55,10 @@ export default function DataTable({ data, lookupData = {}, tableName, onRefresh 
     // Extract column headers from the first object
     const columns = Object.keys(data[0])
         .filter(column => column !== 'id')
-        .filter(column => typeof data[0][column] !== 'object' || data[0][column] === null);
+        .filter(column => typeof data[0][column] !== 'object' || data[0][column] === null); const handleRowClick = (row: any) => {
+            setSelectedEntry(row);
+            setEditOpen(true);
+        };
 
     // Filter data based on search term
     const filteredData = data.filter(row =>
@@ -79,10 +85,13 @@ export default function DataTable({ data, lookupData = {}, tableName, onRefresh 
                                 </TableHead>
                             ))}
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                    </TableHeader>                    <TableBody>
                         {filteredData.map((row, index) => (
-                            <TableRow key={index}>
+                            <TableRow
+                                key={index}
+                                className="cursor-pointer hover:bg-gray-50"
+                                onClick={() => handleRowClick(row)}
+                            >
                                 {columns.map((column) => (
                                     <TableCell key={column} className="text-xs">
                                         {formatCellValue(row[column], column, lookupData)}
@@ -92,14 +101,28 @@ export default function DataTable({ data, lookupData = {}, tableName, onRefresh 
                         ))}
                     </TableBody>
                 </Table>
-            </div>
-
-            {tableName && onRefresh && (
+            </div>            {tableName && onRefresh && (
                 <CreateEntryDialog
                     tableName={tableName}
                     columns={columns}
                     lookupData={lookupData}
                     onSuccess={onRefresh}
+                />
+            )}
+
+            {selectedEntry && (
+                <EditEntryDialog
+                    open={editOpen}
+                    onOpenChange={setEditOpen}
+                    tableName={tableName || ''}
+                    entry={selectedEntry}
+                    columns={columns}
+                    lookupData={lookupData}
+                    onSuccess={() => {
+                        onRefresh?.();
+                        setEditOpen(false);
+                        setSelectedEntry(null);
+                    }}
                 />
             )}
         </div>
