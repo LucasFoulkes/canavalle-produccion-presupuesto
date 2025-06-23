@@ -3,7 +3,7 @@ import { useFincas } from "@/hooks/useFincas";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeftCircle } from "lucide-react";
-// import { Badge } from "@/components/ui/badge";
+import AccionButton from "@/components/accion-button";
 
 export default function Fincas() {
     const { getAll } = useFincas();
@@ -18,8 +18,7 @@ export default function Fincas() {
     return (
         <div className="flex flex-col h-full justify-between">
             <header className="relative h-20 p-4 flex items-center justify-center">
-                {/* <Badge className="capitalize">{state?.accion?.replace(/_/g, " ")}</Badge> */}
-                <Button className="capitalize absolute top-0 left-0 rounded-none rounded-br-xl text-xs p-2">{state?.accion?.replace(/_/g, " ")}</Button>
+                <AccionButton accion={state?.accion} />
                 <ChevronLeftCircle
                     className="stroke-1 text-zinc-300 cursor-pointer size-20 absolute right-0 top-0 p-4 "
                     onClick={() => navigate('/acciones',)}
