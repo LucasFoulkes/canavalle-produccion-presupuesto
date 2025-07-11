@@ -3,10 +3,18 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss(), VitePWA({
+  plugins: [tailwindcss(),
+  tanstackRouter({
+    target: 'react',
+    autoCodeSplitting: true,
+  }),
+  react(),
+  VitePWA({
     registerType: 'autoUpdate',
     injectRegister: false,
 
@@ -14,6 +22,7 @@ export default defineConfig({
       disabled: false,
       config: true,
     },
+
 
     manifest: {
       name: 'boilerplate-vite-pwa-typescript-shadcn-tanstackrouter',
