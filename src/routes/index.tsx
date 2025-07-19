@@ -9,17 +9,15 @@ export const Route = createFileRoute('/')({
   component: Index,
 })
 
+
 function Index() {
   return (
-    <div >
+    <div className='h-screen flex items-center justify-center'>
       <InputOTP maxLength={6}>
-        <InputOTPGroup>
-          <InputOTPSlot index={0} />
-          <InputOTPSlot index={1} />
-          <InputOTPSlot index={2} />
-          <InputOTPSlot index={3} />
-          <InputOTPSlot index={4} />
-          <InputOTPSlot index={5} />
+        <InputOTPGroup className='shadow-lg rounded-lg backdrop-blur-xl '>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <InputOTPSlot key={i} index={i} className='size-12 text-xl' />
+          ))}
         </InputOTPGroup>
       </InputOTP>
     </div>
