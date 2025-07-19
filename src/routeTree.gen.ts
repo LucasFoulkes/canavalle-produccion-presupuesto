@@ -9,38 +9,103 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppCompartirRouteImport } from './routes/app/compartir'
+import { Route as AppCamasRouteImport } from './routes/app/camas'
+import { Route as AppBloquesRouteImport } from './routes/app/bloques'
 
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCompartirRoute = AppCompartirRouteImport.update({
+  id: '/compartir',
+  path: '/compartir',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCamasRoute = AppCamasRouteImport.update({
+  id: '/camas',
+  path: '/camas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppBloquesRoute = AppBloquesRouteImport.update({
+  id: '/bloques',
+  path: '/bloques',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
+  '/app/bloques': typeof AppBloquesRoute
+  '/app/camas': typeof AppCamasRoute
+  '/app/compartir': typeof AppCompartirRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/bloques': typeof AppBloquesRoute
+  '/app/camas': typeof AppCamasRoute
+  '/app/compartir': typeof AppCompartirRoute
+  '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteRouteWithChildren
+  '/app/bloques': typeof AppBloquesRoute
+  '/app/camas': typeof AppCamasRoute
+  '/app/compartir': typeof AppCompartirRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/bloques'
+    | '/app/camas'
+    | '/app/compartir'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/app/bloques' | '/app/camas' | '/app/compartir' | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/bloques'
+    | '/app/camas'
+    | '/app/compartir'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +113,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/compartir': {
+      id: '/app/compartir'
+      path: '/compartir'
+      fullPath: '/app/compartir'
+      preLoaderRoute: typeof AppCompartirRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/camas': {
+      id: '/app/camas'
+      path: '/camas'
+      fullPath: '/app/camas'
+      preLoaderRoute: typeof AppCamasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/bloques': {
+      id: '/app/bloques'
+      path: '/bloques'
+      fullPath: '/app/bloques'
+      preLoaderRoute: typeof AppBloquesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
+interface AppRouteRouteChildren {
+  AppBloquesRoute: typeof AppBloquesRoute
+  AppCamasRoute: typeof AppCamasRoute
+  AppCompartirRoute: typeof AppCompartirRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppBloquesRoute: AppBloquesRoute,
+  AppCamasRoute: AppCamasRoute,
+  AppCompartirRoute: AppCompartirRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
