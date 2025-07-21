@@ -52,13 +52,11 @@ export const syncService = {
                 }
             }
 
-            // Process and store camas
+            // Skip cama syncing in general sync - let cama assignment service handle it exclusively
+            // This prevents conflicts between assignment sync and general sync that cause duplicates
             if (camasResult.status === 'fulfilled' && !camasResult.value.error) {
-                const camas = camasResult.value.data || []
-                if (camas.length > 0) {
-                    await db.camas.bulkPut(camas) // Uses upsert - updates existing, inserts new
-                    console.log(`Synced ${camas.length} camas`)
-                }
+                const serverCamas = camasResult.value.data || []
+                console.log(`Skipping general sync of ${serverCamas.length} camas - handled by cama assignment service`)
             }
 
             console.log('Full data sync completed')

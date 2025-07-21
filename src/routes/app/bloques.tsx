@@ -7,30 +7,44 @@ import { ChevronLeft } from 'lucide-react'
 type BloqueSearch = {
   fincaId: number
   fincaName: string
+  mode?: 'assign-camas'
 }
 
 export const Route = createFileRoute('/app/bloques')({
   component: BloquesComponent,
   validateSearch: (search): BloqueSearch => ({
     fincaId: Number(search.fincaId),
-    fincaName: String(search.fincaName || '')
+    fincaName: String(search.fincaName || ''),
+    mode: search.mode as 'assign-camas' | undefined
   })
 })
 
-const BloqueComponent = ({ bloque, fincaId, fincaName }: {
+const BloqueComponent = ({ bloque, fincaId, fincaName, mode }: {
   bloque: Bloque
   fincaId: number
   fincaName: string
+  mode?: 'assign-camas'
 }) => {
   const navigate = useNavigate()
+
+  const handleClick = () => {
+    if (mode === 'assign-camas') {
+      navigate({
+        to: '/app/assign-camas',
+        search: { fincaId, fincaName, bloqueId: bloque.id, bloqueName: bloque.nombre }
+      })
+    } else {
+      navigate({
+        to: '/app/camas',
+        search: { fincaId, fincaName, bloqueId: bloque.id, bloqueName: bloque.nombre }
+      })
+    }
+  }
 
   return (
     <Button
       className='aspect-square w-full h-full capitalize text-lg'
-      onClick={() => navigate({
-        to: '/app/camas',
-        search: { fincaId, fincaName, bloqueId: bloque.id, bloqueName: bloque.nombre }
-      })}
+      onClick={handleClick}
     >
       {bloque.nombre}
     </Button>
@@ -38,7 +52,7 @@ const BloqueComponent = ({ bloque, fincaId, fincaName }: {
 }
 
 function BloquesComponent() {
-  const { fincaId, fincaName } = useSearch({ from: '/app/bloques' })
+  const { fincaId, fincaName, mode } = useSearch({ from: '/app/bloques' })
   const navigate = useNavigate()
   const [bloques, setBloques] = useState<Bloque[]>([])
   const [loading, setLoading] = useState(true)
@@ -62,9 +76,14 @@ function BloquesComponent() {
       <div className="flex items-center justify-center relative">
         <ChevronLeft
           className="h-6 w-6 absolute left-2 cursor-pointer"
-          onClick={() => navigate({ to: '/app' })}
+          onClick={() => navigate({
+            to: '/app',
+            ...(mode && { search: { mode } })
+          })}
         />
-        <h1 className="capitalize text-2xl text-zinc-500 font-thin">{fincaName}</h1>
+        <h1 className="capitalize text-2xl text-zinc-500 font-thin">
+          {mode === 'assign-camas' ? `${fincaName} - Asignar camas` : fincaName}
+        </h1>
       </div>
       <div className='flex-1 overflow-y-auto'>
         <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
@@ -76,6 +95,7 @@ function BloquesComponent() {
               bloque={bloque}
               fincaId={fincaId}
               fincaName={fincaName}
+              mode={mode}
             />
           ))}
         </div>

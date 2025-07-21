@@ -12,9 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppReportesRouteImport } from './routes/app/reportes'
+import { Route as AppEstadosFenologicosRouteImport } from './routes/app/estados-fenologicos'
+import { Route as AppConfiguracionRouteImport } from './routes/app/configuracion'
 import { Route as AppCompartirRouteImport } from './routes/app/compartir'
 import { Route as AppCamasRouteImport } from './routes/app/camas'
+import { Route as AppCamaDetailRouteImport } from './routes/app/cama-detail'
 import { Route as AppBloquesRouteImport } from './routes/app/bloques'
+import { Route as AppAssignCamasRouteImport } from './routes/app/assign-camas'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
@@ -31,6 +36,21 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppReportesRoute = AppReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppEstadosFenologicosRoute = AppEstadosFenologicosRouteImport.update({
+  id: '/estados-fenologicos',
+  path: '/estados-fenologicos',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppConfiguracionRoute = AppConfiguracionRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppCompartirRoute = AppCompartirRouteImport.update({
   id: '/compartir',
   path: '/compartir',
@@ -41,34 +61,59 @@ const AppCamasRoute = AppCamasRouteImport.update({
   path: '/camas',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppCamaDetailRoute = AppCamaDetailRouteImport.update({
+  id: '/cama-detail',
+  path: '/cama-detail',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppBloquesRoute = AppBloquesRouteImport.update({
   id: '/bloques',
   path: '/bloques',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAssignCamasRoute = AppAssignCamasRouteImport.update({
+  id: '/assign-camas',
+  path: '/assign-camas',
   getParentRoute: () => AppRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/assign-camas': typeof AppAssignCamasRoute
   '/app/bloques': typeof AppBloquesRoute
+  '/app/cama-detail': typeof AppCamaDetailRoute
   '/app/camas': typeof AppCamasRoute
   '/app/compartir': typeof AppCompartirRoute
+  '/app/configuracion': typeof AppConfiguracionRoute
+  '/app/estados-fenologicos': typeof AppEstadosFenologicosRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/assign-camas': typeof AppAssignCamasRoute
   '/app/bloques': typeof AppBloquesRoute
+  '/app/cama-detail': typeof AppCamaDetailRoute
   '/app/camas': typeof AppCamasRoute
   '/app/compartir': typeof AppCompartirRoute
+  '/app/configuracion': typeof AppConfiguracionRoute
+  '/app/estados-fenologicos': typeof AppEstadosFenologicosRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/assign-camas': typeof AppAssignCamasRoute
   '/app/bloques': typeof AppBloquesRoute
+  '/app/cama-detail': typeof AppCamaDetailRoute
   '/app/camas': typeof AppCamasRoute
   '/app/compartir': typeof AppCompartirRoute
+  '/app/configuracion': typeof AppConfiguracionRoute
+  '/app/estados-fenologicos': typeof AppEstadosFenologicosRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -76,19 +121,39 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/assign-camas'
     | '/app/bloques'
+    | '/app/cama-detail'
     | '/app/camas'
     | '/app/compartir'
+    | '/app/configuracion'
+    | '/app/estados-fenologicos'
+    | '/app/reportes'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app/bloques' | '/app/camas' | '/app/compartir' | '/app'
+  to:
+    | '/'
+    | '/app/assign-camas'
+    | '/app/bloques'
+    | '/app/cama-detail'
+    | '/app/camas'
+    | '/app/compartir'
+    | '/app/configuracion'
+    | '/app/estados-fenologicos'
+    | '/app/reportes'
+    | '/app'
   id:
     | '__root__'
     | '/'
     | '/app'
+    | '/app/assign-camas'
     | '/app/bloques'
+    | '/app/cama-detail'
     | '/app/camas'
     | '/app/compartir'
+    | '/app/configuracion'
+    | '/app/estados-fenologicos'
+    | '/app/reportes'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -120,6 +185,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/reportes': {
+      id: '/app/reportes'
+      path: '/reportes'
+      fullPath: '/app/reportes'
+      preLoaderRoute: typeof AppReportesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/estados-fenologicos': {
+      id: '/app/estados-fenologicos'
+      path: '/estados-fenologicos'
+      fullPath: '/app/estados-fenologicos'
+      preLoaderRoute: typeof AppEstadosFenologicosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/configuracion': {
+      id: '/app/configuracion'
+      path: '/configuracion'
+      fullPath: '/app/configuracion'
+      preLoaderRoute: typeof AppConfiguracionRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/compartir': {
       id: '/app/compartir'
       path: '/compartir'
@@ -134,6 +220,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCamasRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/cama-detail': {
+      id: '/app/cama-detail'
+      path: '/cama-detail'
+      fullPath: '/app/cama-detail'
+      preLoaderRoute: typeof AppCamaDetailRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/bloques': {
       id: '/app/bloques'
       path: '/bloques'
@@ -141,20 +234,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBloquesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/assign-camas': {
+      id: '/app/assign-camas'
+      path: '/assign-camas'
+      fullPath: '/app/assign-camas'
+      preLoaderRoute: typeof AppAssignCamasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
 interface AppRouteRouteChildren {
+  AppAssignCamasRoute: typeof AppAssignCamasRoute
   AppBloquesRoute: typeof AppBloquesRoute
+  AppCamaDetailRoute: typeof AppCamaDetailRoute
   AppCamasRoute: typeof AppCamasRoute
   AppCompartirRoute: typeof AppCompartirRoute
+  AppConfiguracionRoute: typeof AppConfiguracionRoute
+  AppEstadosFenologicosRoute: typeof AppEstadosFenologicosRoute
+  AppReportesRoute: typeof AppReportesRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAssignCamasRoute: AppAssignCamasRoute,
   AppBloquesRoute: AppBloquesRoute,
+  AppCamaDetailRoute: AppCamaDetailRoute,
   AppCamasRoute: AppCamasRoute,
   AppCompartirRoute: AppCompartirRoute,
+  AppConfiguracionRoute: AppConfiguracionRoute,
+  AppEstadosFenologicosRoute: AppEstadosFenologicosRoute,
+  AppReportesRoute: AppReportesRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

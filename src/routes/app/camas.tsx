@@ -22,13 +22,30 @@ export const Route = createFileRoute('/app/camas')({
   })
 })
 
-const CamaComponent = ({ cama }: { cama: Cama }) => {
+const CamaComponent = ({ cama, fincaId, fincaName, bloqueId, bloqueName }: {
+  cama: Cama
+  fincaId: number
+  fincaName: string
+  bloqueId: number
+  bloqueName: string
+}) => {
+  const navigate = useNavigate()
+
   return (
     <Button
       className='aspect-square w-full h-full capitalize text-lg'
       onClick={() => {
-        console.log(`Selected cama: ${cama.nombre}`)
-        // TODO: Navigate to next level or show details
+        navigate({
+          to: '/app/cama-detail',
+          search: {
+            fincaId,
+            fincaName,
+            bloqueId,
+            bloqueName,
+            camaId: cama.id,
+            camaName: cama.nombre
+          }
+        })
       }}
     >
       {cama.nombre}
@@ -93,6 +110,10 @@ function CamasComponent() {
             <CamaComponent
               key={cama.id}
               cama={cama}
+              fincaId={fincaId}
+              fincaName={fincaName}
+              bloqueId={bloqueId}
+              bloqueName={bloqueName}
             />
           ))}
         </div>

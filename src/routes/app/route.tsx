@@ -17,8 +17,34 @@ function RouteComponent() {
   ]
 
   const isActive = (path: string) => {
+    // Check if we're in configuration mode (assign-camas flow from config)
+    const isConfigMode = location.search?.mode === 'assign-camas'
+    // Also consider assign-camas page itself as configuration (since it's only accessible from config)
+    const isAssignCamasPage = location.pathname === '/app/assign-camas'
+
     if (path === '/app') {
-      return location.pathname === '/app' || location.pathname === '/app/'
+      // Main monitor section - active for /app and monitoring sub-routes (but not when in config mode or assign-camas)
+      return !isConfigMode && !isAssignCamasPage && (
+        location.pathname === '/app' ||
+        location.pathname === '/app/' ||
+        location.pathname === '/app/bloques' ||
+        location.pathname === '/app/camas' ||
+        location.pathname === '/app/cama-detail'
+      )
+    }
+    if (path === '/app/configuracion') {
+      // Configuration section - active for configuration routes OR when in config mode OR on assign-camas page
+      return location.pathname.startsWith('/app/configuracion') ||
+        isConfigMode ||
+        isAssignCamasPage
+    }
+    if (path === '/app/compartir') {
+      // Sharing section - active for sharing and its sub-routes
+      return location.pathname.startsWith('/app/compartir')
+    }
+    if (path === '/app/reportes') {
+      // Reports section - active for reports and its sub-routes
+      return location.pathname.startsWith('/app/reportes')
     }
     return location.pathname === path
   }
