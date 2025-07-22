@@ -59,7 +59,7 @@ function RouteComponent() {
   return (
     <div className='w-full h-full flex flex-col p-2'>
       <h1 className='text-2xl text-zinc-500 font-thin text-center'>
-        {mode === 'assign-camas' ? 'Seleccione finca para asignar camas' : 'Eliga una finca'}
+        {mode === 'assign-camas' ? 'Seleccione finca para asignar camas' : 'Eliga una finca v1'}
       </h1>
       <div className='flex-1 grid grid-cols-2 gap-2 content-center'>
         {loading && <p>Cargando fincas...</p>}

@@ -6,6 +6,9 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 import { initializeSync } from './lib/init-sync'
+// @ts-ignore
+import { registerSW } from 'virtual:pwa-register'
+import './lib/offline-test'
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -19,6 +22,18 @@ declare module '@tanstack/react-router' {
 
 // Initialize data sync
 initializeSync().catch(console.error)
+
+// Register service worker for PWA functionality
+if (typeof registerSW === 'function') {
+  registerSW({
+    onNeedRefresh() {
+      console.log('New content available, please refresh.')
+    },
+    onOfflineReady() {
+      console.log('App ready to work offline')
+    },
+  })
+}
 
 // Render the app
 const rootElement = document.getElementById('root')!
