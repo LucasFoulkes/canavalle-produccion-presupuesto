@@ -367,10 +367,6 @@ function reportes() {
   return (
     <div className='w-full h-full flex flex-col gap-2 p-2'>
       <div className="flex items-center justify-center relative">
-        <ChevronLeft
-          className="h-6 w-6 absolute left-2 cursor-pointer"
-          onClick={() => navigate({ to: '/app' })}
-        />
         <h1 className='capitalize text-2xl text-zinc-500 font-thin'>
           Reportes
         </h1>
@@ -415,7 +411,7 @@ function reportes() {
             </>
           ) : (
             <>
-              <span className="text-muted-foreground">Seleccionar finca...</span>
+              <span className="text-muted-foreground">Finca</span>
               <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </>
           )}
@@ -476,7 +472,7 @@ function reportes() {
             </>
           ) : (
             <>
-              <span className="text-muted-foreground">Seleccionar bloque...</span>
+              <span className="text-muted-foreground">Bloque</span>
               <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </>
           )}
@@ -538,7 +534,7 @@ function reportes() {
             </>
           ) : (
             <>
-              <span className="text-muted-foreground">Seleccionar variedad...</span>
+              <span className="text-muted-foreground">Variedad</span>
               <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </>
           )}
