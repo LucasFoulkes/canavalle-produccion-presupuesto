@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, useMemo } from 'react'
 import { accionService } from '@/services/accion.service'
 import { estadosFenologicosService, EstadoFenologicoWithRelations } from '@/services/estados-fenologicos.service'
-import { ChevronLeft, Check, ChevronsUpDown, RefreshCw, Calendar as CalendarIcon, CalendarDays, Layers, Rows } from 'lucide-react'
+import { ChevronLeft, Check, ChevronsUpDown, RefreshCw, Calendar as CalendarIcon, CalendarDays, Layers, Rows, X } from 'lucide-react'
 import { DynamicTable } from '@/components/DynamicTable'
 import {
   Command,
@@ -176,12 +176,45 @@ function reportes() {
     return bloquesByFinca[selectedFinca] || [];
   }, [selectedFinca, bloquesByFinca]);
 
-  // Get available variedades based on selected finca and bloque
+  // Get all unique variedades across all data
+  const allVariedades = useMemo(() => {
+    if (!acciones.length) return [];
+
+    const variedadSet = new Set<string>();
+    acciones.forEach(accion => {
+      if (accion.variedad) {
+        variedadSet.add(accion.variedad);
+      }
+    });
+
+    return Array.from(variedadSet).sort();
+  }, [acciones]);
+
+  // Get available variedades based on selected finca and optionally bloque
   const availableVariedades = useMemo(() => {
-    if (!selectedFinca || !selectedBloque) return [];
+    // If no finca is selected, show all variedades
+    if (!selectedFinca) return allVariedades;
+
+    // If finca is selected but no bloque, show all variedades for that finca
+    if (!selectedBloque) {
+      const variedadesForFinca = new Set<string>();
+
+      // Collect all variedades from all bloques of this finca
+      Object.keys(variedadesByBloque).forEach(bloqueKey => {
+        if (bloqueKey.startsWith(`${selectedFinca}:`)) {
+          variedadesByBloque[bloqueKey].forEach(variedad => {
+            variedadesForFinca.add(variedad);
+          });
+        }
+      });
+
+      return Array.from(variedadesForFinca).sort();
+    }
+
+    // If both finca and bloque are selected, show variedades for that specific bloque
     const bloqueKey = `${selectedFinca}:${selectedBloque}`;
     return variedadesByBloque[bloqueKey] || [];
-  }, [selectedFinca, selectedBloque, variedadesByBloque]);
+  }, [selectedFinca, selectedBloque, variedadesByBloque, allVariedades]);
 
   // Filter data based on search, selected finca, bloque, variedad, and date range
   const filteredData = useMemo(() => {
@@ -341,22 +374,55 @@ function reportes() {
         <h1 className='capitalize text-2xl text-zinc-500 font-thin'>
           Reportes
         </h1>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            setSelectedFinca("");
+            setSelectedBloque("");
+            setSelectedVariedad("");
+            setSearchQuery("");
+            setStartDate(undefined);
+            setEndDate(undefined);
+          }}
+          className="rounded-full h-8 w-8 absolute right-2 flex items-center justify-center"
+          title="Limpiar filtros"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Filter Controls */}
       <div className="w-full mb-2 grid grid-cols-2 gap-2">
         {/* Row 1: Finca and Bloque */}
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-between"
+          onClick={() => {
+            if (selectedFinca) {
+              setSelectedFinca("");
+              setSelectedBloque("");
+              setSelectedVariedad("");
+            } else {
+              setOpenFinca(true);
+            }
+          }}
+        >
+          {selectedFinca ? (
+            <>
+              <span>{selectedFinca}</span>
+              <X className="h-4 w-4 opacity-70" />
+            </>
+          ) : (
+            <>
+              <span className="text-muted-foreground">Seleccionar finca...</span>
+              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+            </>
+          )}
+        </Button>
         <Popover open={openFinca} onOpenChange={setOpenFinca}>
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openFinca}
-              className="w-full justify-between"
-            >
-              {selectedFinca ? selectedFinca : "Seleccionar finca..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+            <div className="hidden">Trigger</div>
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-0">
             <Command>
@@ -369,16 +435,9 @@ function reportes() {
                       key={finca}
                       value={finca}
                       onSelect={(currentValue) => {
-                        // If selecting the same finca, clear it
-                        if (selectedFinca === currentValue) {
-                          setSelectedFinca("");
-                          setSelectedBloque(""); // Also clear bloque selection
-                          setSelectedVariedad(""); // Also clear variedad selection
-                        } else {
-                          setSelectedFinca(currentValue);
-                          setSelectedBloque(""); // Reset bloque when changing finca
-                          setSelectedVariedad(""); // Reset variedad when changing finca
-                        }
+                        setSelectedFinca(currentValue);
+                        setSelectedBloque(""); // Reset bloque when changing finca
+                        setSelectedVariedad(""); // Reset variedad when changing finca
                         setOpenFinca(false);
                       }}
                     >
@@ -397,21 +456,37 @@ function reportes() {
           </PopoverContent>
         </Popover>
 
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-between"
+          disabled={!selectedFinca}
+          onClick={() => {
+            if (selectedBloque) {
+              setSelectedBloque("");
+              setSelectedVariedad("");
+            } else if (selectedFinca) {
+              setOpenBloque(true);
+            }
+          }}
+        >
+          {selectedBloque ? (
+            <>
+              <span>{selectedBloque}</span>
+              <X className="h-4 w-4 opacity-70" />
+            </>
+          ) : (
+            <>
+              <span className="text-muted-foreground">Seleccionar bloque...</span>
+              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+            </>
+          )}
+        </Button>
         <Popover
           open={openBloque}
           onOpenChange={selectedFinca ? setOpenBloque : undefined}
         >
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openBloque}
-              className="w-full justify-between"
-              disabled={!selectedFinca}
-            >
-              {selectedBloque ? selectedBloque : "Seleccionar bloque..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+            <div className="hidden">Trigger</div>
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-0">
             <Command>
@@ -424,13 +499,8 @@ function reportes() {
                       key={bloque}
                       value={bloque}
                       onSelect={(currentValue) => {
-                        if (selectedBloque === currentValue) {
-                          setSelectedBloque("");
-                          setSelectedVariedad(""); // Also clear variedad when clearing bloque
-                        } else {
-                          setSelectedBloque(currentValue);
-                          setSelectedVariedad(""); // Reset variedad when changing bloque
-                        }
+                        setSelectedBloque(currentValue);
+                        setSelectedVariedad(""); // Reset variedad when changing bloque
                         setOpenBloque(false);
                       }}
                     >
@@ -449,22 +519,36 @@ function reportes() {
           </PopoverContent>
         </Popover>
 
-        {/* Row 2: Variedad */}
+        {/* Row 2: Variedad and Empty Space */}
+        <Button
+          variant="outline"
+          className="w-full flex items-center justify-between"
+          onClick={() => {
+            if (selectedVariedad) {
+              setSelectedVariedad("");
+            } else {
+              setOpenVariedad(true);
+            }
+          }}
+        >
+          {selectedVariedad ? (
+            <>
+              <span>{selectedVariedad}</span>
+              <X className="h-4 w-4 opacity-70" />
+            </>
+          ) : (
+            <>
+              <span className="text-muted-foreground">Seleccionar variedad...</span>
+              <ChevronsUpDown className="h-4 w-4 opacity-50" />
+            </>
+          )}
+        </Button>
         <Popover
           open={openVariedad}
-          onOpenChange={selectedBloque ? setOpenVariedad : undefined}
+          onOpenChange={setOpenVariedad}
         >
           <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openVariedad}
-              className="w-full justify-between"
-              disabled={!selectedBloque}
-            >
-              {selectedVariedad ? selectedVariedad : "Seleccionar variedad..."}
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
+            <div className="hidden">Trigger</div>
           </PopoverTrigger>
           <PopoverContent className="w-[200px] p-0">
             <Command>
@@ -477,7 +561,7 @@ function reportes() {
                       key={variedad}
                       value={variedad}
                       onSelect={(currentValue) => {
-                        setSelectedVariedad(selectedVariedad === currentValue ? "" : currentValue);
+                        setSelectedVariedad(currentValue);
                         setOpenVariedad(false);
                       }}
                     >
@@ -496,39 +580,47 @@ function reportes() {
           </PopoverContent>
         </Popover>
 
-        {/* Clear filters button - circular with refresh icon */}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => {
-            setSelectedFinca("");
-            setSelectedBloque("");
-            setSelectedVariedad("");
-            setSearchQuery("");
-            setStartDate(undefined);
-            setEndDate(undefined);
-          }}
-          className="rounded-full h-10 w-10 flex items-center justify-center"
-          title="Limpiar filtros"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+        {/* Empty space where the clear filters button was */}
+        <div></div>
 
         {/* Row 3: Date Range Pickers */}
         <div className="col-span-2 grid grid-cols-2 gap-2">
           {/* Start Date Picker */}
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full flex items-center justify-between",
+              !startDate && "text-muted-foreground"
+            )}
+            onClick={() => {
+              if (startDate) {
+                setStartDate(undefined);
+              } else {
+                setOpenStartDate(true);
+              }
+            }}
+          >
+            {startDate ? (
+              <>
+                <div className="flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>{format(startDate, "PPP", { locale: es })}</span>
+                </div>
+                <X className="h-4 w-4 opacity-70" />
+              </>
+            ) : (
+              <>
+                <div className="flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>Fecha inicial</span>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+              </>
+            )}
+          </Button>
           <Popover open={openStartDate} onOpenChange={setOpenStartDate}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !startDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {startDate ? format(startDate, "PPP", { locale: es }) : "Fecha inicial"}
-              </Button>
+              <div className="hidden">Trigger</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
@@ -543,18 +635,41 @@ function reportes() {
           </Popover>
 
           {/* End Date Picker */}
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full flex items-center justify-between",
+              !endDate && "text-muted-foreground"
+            )}
+            onClick={() => {
+              if (endDate) {
+                setEndDate(undefined);
+              } else {
+                setOpenEndDate(true);
+              }
+            }}
+          >
+            {endDate ? (
+              <>
+                <div className="flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>{format(endDate, "PPP", { locale: es })}</span>
+                </div>
+                <X className="h-4 w-4 opacity-70" />
+              </>
+            ) : (
+              <>
+                <div className="flex items-center">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span>Fecha final</span>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 opacity-50" />
+              </>
+            )}
+          </Button>
           <Popover open={openEndDate} onOpenChange={setOpenEndDate}>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !endDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {endDate ? format(endDate, "PPP", { locale: es }) : "Fecha final"}
-              </Button>
+              <div className="hidden">Trigger</div>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
@@ -571,13 +686,12 @@ function reportes() {
         </div>
 
         {/* Row 4: Aggregation Buttons */}
-        <div className="col-span-2 flex justify-center gap-4">
+        <div className="col-span-2 grid grid-cols-2 gap-2">
           {/* Time Aggregation Button */}
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setWeeklyAggregation(!weeklyAggregation)}
-            className="flex items-center gap-1"
+            className="w-full flex items-center justify-center gap-1"
           >
             {weeklyAggregation ? (
               <>
@@ -595,9 +709,8 @@ function reportes() {
           {/* Variety Aggregation Button */}
           <Button
             variant="outline"
-            size="sm"
             onClick={() => setVarietyAggregation(!varietyAggregation)}
-            className="flex items-center gap-1"
+            className="w-full flex items-center justify-center gap-1"
           >
             {varietyAggregation ? (
               <>
