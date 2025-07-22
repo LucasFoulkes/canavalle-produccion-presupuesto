@@ -1,15 +1,64 @@
 import { supabase } from '@/lib/supabase'
 import { Accion } from '@/types/database'
 
+export interface AccionWithRelations extends Accion {
+    finca_nombre?: string
+    bloque_nombre?: string
+    variedad_nombre?: string
+    cama_nombre?: string
+}
+
 export const accionService = {
-    // Get all acciones
-    async getAllAcciones(): Promise<Accion[]> {
+    // Get all acciones with related finca, bloque, variedad, and cama names
+    async getAll(): Promise<AccionWithRelations[]> {
         const { data, error } = await supabase
             .from('acciones')
-            .select('*')
+            .select(`
+                *,
+                cama:cama_id (
+                    id,
+                    nombre,
+                    bloque:bloque_id (
+                        id,
+                        nombre,
+                        finca:finca_id (
+                            id,
+                            nombre
+                        )
+                    ),
+                    variedad:variedad_id (
+                        id,
+                        nombre
+                    )
+                )
+            `)
+            .order('created_at', { ascending: false })
 
         if (error) throw error
-        return data || []
+
+        // Transform the data to flatten the relations
+        return (data || []).map((accion: any) => ({
+            id: accion.id,
+            created_at: accion.created_at,
+            finca_nombre: accion.cama?.bloque?.finca?.nombre || 'N/A',
+            bloque_nombre: accion.cama?.bloque?.nombre || 'N/A',
+            variedad_nombre: accion.cama?.variedad?.nombre || 'N/A',
+            cama_nombre: accion.cama?.nombre || 'N/A',
+            produccion_real: accion.produccion_real,
+            pinche_apertura: accion.pinche_apertura,
+            pinche_sanitario: accion.pinche_sanitario,
+            pinche_tierno: accion.pinche_tierno,
+            temperatura: accion.temperatura,
+            humedad: accion.humedad,
+            arveja: accion.arveja,
+            garbanzo: accion.garbanzo,
+            uva: accion.uva,
+            arroz: accion.arroz,
+            rayando_color: accion.rayando_color,
+            sepalos_abiertos: accion.sepalos_abiertos,
+            cosecha: accion.cosecha,
+            cama_id: accion.cama_id,
+        }))
     },
 
     // Get a specific accion by ID

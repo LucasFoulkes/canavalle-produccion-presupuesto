@@ -91,7 +91,7 @@ export const camaAssignmentService = {
         } catch (error) {
             console.error('=== ERROR IN CAMA ASSIGNMENT ===')
             console.error('Error assigning camas:', error)
-            throw new Error('Error al asignar camas al bloque: ' + error.message)
+            throw new Error('Error al asignar camas al bloque: ' + (error instanceof Error ? error.message : String(error)))
         }
     },
 
@@ -250,7 +250,7 @@ export const camaAssignmentService = {
         } catch (error) {
             console.error('=== ERROR UPDATING CAMA VARIETIES ===')
             console.error('Error updating cama varieties:', error)
-            throw new Error('Error al actualizar las variedades de las camas: ' + error.message)
+            throw new Error('Error al actualizar las variedades de las camas: ' + (error instanceof Error ? error.message : String(error)))
         }
     }
 }

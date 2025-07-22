@@ -3,19 +3,33 @@ import { EstadoFenologico } from '@/types/database'
 
 export type { EstadoFenologico }
 
-// Extended interface for display with related data
-export interface EstadoFenologicoWithRelations extends EstadoFenologico {
+export interface EstadoFenologicoWithRelations {
+    id: number
     finca_nombre?: string
     bloque_nombre?: string
     variedad_nombre?: string
+    brotacion?: number
+    '5_cm'?: number
+    '15_cm'?: number
+    '20_cm'?: number
+    primera_hoja?: number
+    espiga?: number
+    arroz?: number
+    arveja?: number
+    garbanzo?: number
+    uva?: number
+    rayando_color?: number
+    sepalos_abiertos?: number
+    cosecha?: number
 }
 
 export const estadosFenologicosService = {
     // Get all estados fenológicos with related finca, bloque, and variedad names
-    async getAllEstadosFenologicos(): Promise<EstadoFenologicoWithRelations[]> {
+    async getAll(): Promise<EstadoFenologicoWithRelations[]> {
         const { data, error } = await supabase
             .from('estados_fenologicos')
             .select(`
+                id,
                 *,
                 bloque_variedad:bloque_variedad_id (
                     bloque:bloque_id (
@@ -36,15 +50,28 @@ export const estadosFenologicosService = {
 
         if (error) throw error
 
-        // Transform the data to flatten the relations
-        const transformedData = (data || []).map((estado: any) => ({
-            ...estado,
-            finca_nombre: estado.bloque_variedad?.bloque?.finca?.nombre || 'N/A',
-            bloque_nombre: estado.bloque_variedad?.bloque?.nombre || 'N/A',
-            variedad_nombre: estado.bloque_variedad?.variedad?.nombre || 'N/A'
-        }))
-
-        return transformedData
+        // Transform: Order fields as desired, keep id, exclude bloque_variedad
+        return (data || []).map((estado: any) => {
+            return {
+                id: estado.id,  // Keep for keys/queries
+                finca_nombre: estado.bloque_variedad?.bloque?.finca?.nombre || 'N/A',  // First
+                bloque_nombre: estado.bloque_variedad?.bloque?.nombre || 'N/A',       // Second
+                variedad_nombre: estado.bloque_variedad?.variedad?.nombre || 'N/A',   // Third
+                brotacion: estado.brotacion,
+                '5_cm': estado['5_cm'],
+                '15_cm': estado['15_cm'],
+                '20_cm': estado['20_cm'],
+                primera_hoja: estado.primera_hoja,
+                espiga: estado.espiga,
+                arroz: estado.arroz,
+                arveja: estado.arveja,
+                garbanzo: estado.garbanzo,
+                uva: estado.uva,
+                rayando_color: estado.rayando_color,
+                sepalos_abiertos: estado.sepalos_abiertos,
+                cosecha: estado.cosecha,
+            };
+        })
     },
 
     // Get a specific estado fenológico by ID
@@ -65,18 +92,6 @@ export const estadosFenologicosService = {
             .from('estados_fenologicos')
             .update(updates)
             .eq('id', id)
-            .select()
-            .single()
-
-        if (error) throw error
-        return data
-    },
-
-    // Create a new estado fenológico
-    async createEstadoFenologico(estado: Omit<EstadoFenologico, 'id'>): Promise<EstadoFenologico> {
-        const { data, error } = await supabase
-            .from('estados_fenologicos')
-            .insert(estado)
             .select()
             .single()
 

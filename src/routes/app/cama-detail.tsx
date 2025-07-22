@@ -591,8 +591,8 @@ const ProyeccionButton = ({ camaId, bloqueId, fincaName, bloqueName, camaName }:
       const varietyName = variety?.variedad?.nombre || 'Variedad no asignada'
 
       // Get estados fenológicos for this variety
-      const estadosFenologicos = await estadosFenologicosService.getAllEstadosFenologicos()
-      const estadoForVariety = estadosFenologicos.find(e =>
+      const estadosFenologicos = await estadosFenologicosService.getAll()
+      const estadoForVariety = estadosFenologicos.find((e: any) =>
         e.bloque_variedad_id === localCama.variedad_id
       )
 
