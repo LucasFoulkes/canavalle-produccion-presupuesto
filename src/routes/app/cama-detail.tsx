@@ -39,6 +39,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'rec
 import { camaService } from '@/services/cama.service'
 import { bloqueVariedadService } from '@/services/bloque-variedad.service'
 import { accionService } from '@/services/accion.service'
+import { offlineAccionService } from '@/services/offline-accion.service'
+import { runOfflineActionTest } from '@/lib/test-offline-accion'
 import { estadosFenologicosService } from '@/services/estados-fenologicos.service'
 import { supabase } from '@/lib/supabase'
 
@@ -746,11 +748,41 @@ function CamaDetailComponent() {
 
   const handleActionSubmit = async (actionType: string, value: number) => {
     try {
-      await accionService.createAccionForCama(camaId, actionType, value)
-      console.log(`Successfully saved ${actionType}: ${value} for cama ${camaId}`)
+      // Use offline-first approach
+      if (navigator.onLine) {
+        // If online, try to save directly to server first
+        try {
+          await accionService.createAccionForCama(camaId, actionType, value)
+          console.log(`Successfully saved ${actionType}: ${value} for cama ${camaId} to server`)
+        } catch (serverError) {
+          console.warn('Failed to save to server, falling back to offline mode:', serverError)
+          // If server save fails, save locally and queue for sync
+          await offlineAccionService.createAccionForCama(camaId, actionType, value)
+        }
+      } else {
+        // If offline, save locally and queue for sync
+        await offlineAccionService.createAccionForCama(camaId, actionType, value)
+        console.log(`Saved ${actionType}: ${value} for cama ${camaId} locally (offline mode)`)
+      }
 
       // Refresh today's values after successful submission
-      const updatedValues = await accionService.getTodaysValuesByCama(camaId)
+      // Use offline service first to get local values, then try server if online
+      let updatedValues: Record<string, number> = {}
+
+      // Always get local values first for immediate feedback
+      updatedValues = await offlineAccionService.getTodaysValuesByCama(camaId)
+
+      // If online, try to get server values too and merge them
+      if (navigator.onLine) {
+        try {
+          const serverValues = await accionService.getTodaysValuesByCama(camaId)
+          // Merge values, with local values taking precedence
+          updatedValues = { ...serverValues, ...updatedValues }
+        } catch (error) {
+          console.warn('Failed to get server values, using local values only:', error)
+        }
+      }
+
       setTodaysValues(updatedValues)
     } catch (error) {
       console.error('Error saving action:', error)
@@ -782,9 +814,24 @@ function CamaDetailComponent() {
           setVarietyName('Variedad no asignada')
         }
 
-        // Get today's values for this cama
-        const todaysValues = await accionService.getTodaysValuesByCama(camaId)
-        setTodaysValues(todaysValues)
+        // Get today's values for this cama using offline-first approach
+        let values: Record<string, number> = {}
+
+        // Always get local values first for immediate feedback
+        values = await offlineAccionService.getTodaysValuesByCama(camaId)
+
+        // If online, try to get server values too and merge them
+        if (navigator.onLine) {
+          try {
+            const serverValues = await accionService.getTodaysValuesByCama(camaId)
+            // Merge values, with local values taking precedence
+            values = { ...serverValues, ...values }
+          } catch (error) {
+            console.warn('Failed to get server values, using local values only:', error)
+          }
+        }
+
+        setTodaysValues(values)
 
       } catch (err) {
         console.error('Error fetching cama details:', err)
@@ -878,6 +925,16 @@ function CamaDetailComponent() {
             bloqueName={bloqueName}
             camaName={camaName}
           />
+          {/* Test button for offline functionality */}
+          <Button
+            className="h-16 text-sm font-medium flex flex-col items-center justify-center gap-1 bg-gray-500 hover:bg-gray-600 text-white"
+            onClick={() => runOfflineActionTest(camaId)}
+          >
+            <span>Test Offline</span>
+            <span className="text-xs font-normal opacity-90">
+              {navigator.onLine ? '🟢 Online' : '🟡 Offline'}
+            </span>
+          </Button>
         </div>
       </div>
     </div>

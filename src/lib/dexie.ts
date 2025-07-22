@@ -32,7 +32,7 @@ class AppDB extends Dexie {
             bloques: 'id,finca_id,nombre',
             variedades: 'id,nombre',
             bloqueVariedades: 'id,bloque_id,variedad_id',
-            acciones: 'id,bloque_variedad_id,created_at',
+            acciones: 'id,cama_id,created_at',
             camas: 'id,bloque_id,variedad_id,nombre',
             estadosFenologicos: 'id,bloque_variedad_id',
             outbox: 'id,table,operation,timestamp,status,retryCount'

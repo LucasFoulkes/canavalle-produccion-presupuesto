@@ -81,19 +81,112 @@ export async function processOutbox(): Promise<void> {
             // Mark as processing
             await db.outbox.update(item.id, { status: 'processing' });
 
-            // Process based on operation type
+            // Process based on operation type and table
             let result;
 
-            switch (item.operation) {
-                case 'create':
-                    result = await supabase.from(item.table).insert(item.data);
-                    break;
-                case 'update':
-                    result = await supabase.from(item.table).update(item.data).eq('id', item.data.id);
-                    break;
-                case 'delete':
-                    result = await supabase.from(item.table).delete().eq('id', item.data.id);
-                    break;
+            // Special handling for acciones table
+            if (item.table === 'acciones') {
+                // For acciones, we need to find the server cama_id based on the local cama_id
+                const localCamaId = item.data.local_cama_id || item.data.cama_id;
+
+                // Get the local cama details
+                const localCama = await db.camas.get(localCamaId);
+                if (!localCama) {
+                    throw new Error('Local cama not found');
+                }
+
+                // Find the corresponding cama on the server by bloque_id and nombre
+                const { data: serverCama, error: findError } = await supabase
+                    .from('camas')
+                    .select('id')
+                    .eq('bloque_id', localCama.bloque_id)
+                    .eq('nombre', localCama.nombre)
+                    .single();
+
+                let serverCamaId: number;
+
+                if (findError || !serverCama) {
+                    // Cama doesn't exist on server, create it
+                    console.log('Cama not found on server, creating it...');
+
+                    const { data: newCama, error: createError } = await supabase
+                        .from('camas')
+                        .insert({
+                            bloque_id: localCama.bloque_id,
+                            variedad_id: localCama.variedad_id,
+                            nombre: localCama.nombre
+                        })
+                        .select('id')
+                        .single();
+
+                    if (createError) throw createError;
+                    serverCamaId = newCama.id;
+                } else {
+                    serverCamaId = serverCama.id;
+                }
+
+                // Prepare the data for server by replacing local cama_id with server cama_id
+                const serverData = { ...item.data };
+                delete serverData.local_cama_id; // Remove the local reference
+                serverData.cama_id = serverCamaId; // Set the server cama_id
+
+                // Check if there's already an entry for the same day for this cama
+                const createdDate = new Date(serverData.created_at);
+                const dateString = createdDate.toISOString().split('T')[0];
+
+                const { data: existingAccion, error: findAccionError } = await supabase
+                    .from('acciones')
+                    .select('*')
+                    .eq('cama_id', serverCamaId)
+                    .gte('created_at', dateString)
+                    .lt('created_at', dateString + 'T23:59:59.999Z')
+                    .maybeSingle();
+
+                if (findAccionError && findAccionError.code !== 'PGRST116') {
+                    // PGRST116 is "not found" which is expected, other errors are real problems
+                    throw findAccionError;
+                }
+
+                if (existingAccion) {
+                    // Update existing entry for the same day
+                    console.log(`Updating existing accion for cama ${serverCamaId}`);
+
+                    // Extract only the action fields that have values
+                    const updateData: Record<string, any> = {};
+                    const actionFields = [
+                        'produccion_real', 'pinche_apertura', 'pinche_sanitario', 'pinche_tierno',
+                        'temperatura', 'humedad', 'arveja', 'garbanzo', 'uva', 'arroz',
+                        'rayando_color', 'sepalos_abiertos', 'cosecha'
+                    ];
+
+                    actionFields.forEach(field => {
+                        if (serverData[field] !== undefined && serverData[field] !== null) {
+                            updateData[field] = serverData[field];
+                        }
+                    });
+
+                    result = await supabase
+                        .from('acciones')
+                        .update(updateData)
+                        .eq('id', existingAccion.id);
+                } else {
+                    // Create new entry
+                    console.log(`Creating new accion for cama ${serverCamaId}`);
+                    result = await supabase.from('acciones').insert(serverData);
+                }
+            } else {
+                // Standard processing for other tables
+                switch (item.operation) {
+                    case 'create':
+                        result = await supabase.from(item.table).insert(item.data);
+                        break;
+                    case 'update':
+                        result = await supabase.from(item.table).update(item.data).eq('id', item.data.id);
+                        break;
+                    case 'delete':
+                        result = await supabase.from(item.table).delete().eq('id', item.data.id);
+                        break;
+                }
             }
 
             if (result?.error) {
