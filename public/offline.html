@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Canavalle - Sin conexión</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="Sistema de gestión de producción agrícola" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Canavalle" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #f9fafb;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .button:hover {
+            background-color: #2563eb;
+        }
+
+        .status {
+            position: fixed;
+            top: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .cached-data {
+            margin-top: 20px;
+            text-align: left;
+            background-color: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .cached-data h3 {
+            margin-top: 0;
+            font-size: 1rem;
+        }
+
+        .cached-data ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .cached-data li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status" id="connection-status">Verificando conexión...</div>
+
+    <div class="container">
+        <div class="icon">📱</div>
+        <h1>Modo sin conexión</h1>
+        <p>No tienes conexión a internet en este momento. Algunas funciones pueden estar limitadas hasta que se
+            restablezca la conexión.</p>
+        <p>Puedes seguir usando las funciones que ya están cargadas en la aplicación.</p>
+
+        <div id="cached-data" class="cached-data" style="display: none;">
+            <h3>Datos disponibles sin conexión:</h3>
+            <ul id="cached-data-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
+
+        <button class="button" id="home-button">Volver al inicio</button>
+    </div>
+
+    <script>
+        // Update connection status
+        function updateConnectionStatus() {
+            const statusEl = document.getElementById('connection-status');
+            if (navigator.onLine) {
+                statusEl.textContent = '🟢 Conexión restablecida';
+                statusEl.style.color = '#10b981';
+
+                // Redirect after a short delay
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            } else {
+                statusEl.textContent = '🔴 Sin conexión';
+                statusEl.style.color = '#ef4444';
+            }
+        }
+
+        // Check for cached data in IndexedDB
+        async function checkCachedData() {
+            try {
+                // Try to access IndexedDB
+                const dbRequest = indexedDB.open('AppDB');
+
+                dbRequest.onsuccess = function (event) {
+                    const db = event.target.result;
+                    const tableNames = Array.from(db.objectStoreNames);
+
+                    if (tableNames.length > 0) {
+                        const dataList = document.getElementById('cached-data-list');
+
+                        // Show the cached data section
+                        document.getElementById('cached-data').style.display = 'block';
+
+                        // Add each table to the list
+                        tableNames.forEach(tableName => {
+                            const li = document.createElement('li');
+                            li.textContent = tableName;
+                            dataList.appendChild(li);
+                        });
+                    }
+                };
+
+                dbRequest.onerror = function () {
+                    console.error('Error accessing IndexedDB');
+                };
+            } catch (err) {
+                console.error('Error checking cached data:', err);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            // Set initial connection status
+            updateConnectionStatus();
+
+            // Check for cached data
+            checkCachedData();
+
+            // Add event listeners
+            window.addEventListener('online', updateConnectionStatus);
+            window.addEventListener('offline', updateConnectionStatus);
+
+            // Home button click handler
+            document.getElementById('home-button').addEventListener('click', function () {
+                window.location.href = '/';
+            });
+        });
+    </script>
+</body>
+
+</html>

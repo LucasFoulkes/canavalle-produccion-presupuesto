@@ -17,6 +17,7 @@ export default defineConfig({
   VitePWA({
     registerType: 'autoUpdate',
     injectRegister: 'auto',
+    strategies: 'generateSW',
 
     pwaAssets: {
       disabled: false,
@@ -58,17 +59,31 @@ export default defineConfig({
       cleanupOutdatedCaches: true,
       clientsClaim: true,
       skipWaiting: true,
+      navigateFallback: '/offline.html',
+      navigateFallbackDenylist: [/^\/api\//],
+
+      // Make sure to precache these critical files
+      globDirectory: 'dist',
+      globIgnores: ['**/node_modules/**/*'],
+
+      // Add additional runtime caching rules
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
           handler: 'NetworkFirst',
           options: {
-            cacheName: 'supabase-cache',
+            cacheName: 'supabase-api',
             expiration: {
               maxEntries: 100,
               maxAgeSeconds: 60 * 60 * 24 // 24 hours
             },
-            networkTimeoutSeconds: 10
+            networkTimeoutSeconds: 10,
+            backgroundSync: {
+              name: 'supabase-queue',
+              options: {
+                maxRetentionTime: 24 * 60 // Retry for up to 24 hours (specified in minutes)
+              }
+            }
           }
         },
         {
@@ -79,6 +94,61 @@ export default defineConfig({
             expiration: {
               maxEntries: 50,
               maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.googleapis\.com/,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'google-fonts-stylesheets',
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.gstatic\.com/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-webfonts',
+            expiration: {
+              maxEntries: 30,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            }
+          }
+        },
+        {
+          // Cache all app routes
+          urlPattern: ({ url }) => url.pathname.startsWith('/app'),
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'app-pages',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 // 24 hours
+            }
+          }
+        },
+        {
+          // Cache all navigation requests
+          urlPattern: ({ request }) => request.mode === 'navigate',
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'navigation-cache',
+            expiration: {
+              maxEntries: 50,
+              maxAgeSeconds: 60 * 60 * 24 // 24 hours
+            },
+            networkTimeoutSeconds: 3
+          }
+        },
+        {
+          // Cache all JavaScript and CSS files
+          urlPattern: /\.(?:js|css)$/,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'static-resources',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
             }
           }
         }
