@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useMemo } from 'react'
 import { accionService } from '@/services/accion.service'
 import { estadosFenologicosService, EstadoFenologicoWithRelations } from '@/services/estados-fenologicos.service'
-import { ChevronLeft, Check, ChevronsUpDown, RefreshCw, Calendar as CalendarIcon, CalendarDays, Layers, Rows, X } from 'lucide-react'
+import { Check, ChevronsUpDown, RefreshCw, Calendar as CalendarIcon, CalendarDays, Layers, Rows, X } from 'lucide-react'
 import { DynamicTable } from '@/components/DynamicTable'
 import {
   Command,
@@ -33,7 +33,6 @@ export const Route = createFileRoute('/app/reportes')({
 })
 
 function reportes() {
-  const navigate = useNavigate()
   const [acciones, setAcciones] = useState<TransformedAccion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
