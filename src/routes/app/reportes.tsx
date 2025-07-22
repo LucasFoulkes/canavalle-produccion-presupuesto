@@ -729,7 +729,14 @@ function reportes() {
       <div className='flex-1 overflow-y-auto relative border rounded-md'>
         <DynamicTable
           data={displayData}
-          hiddenColumns={['id', 'cama_id']}
+          hiddenColumns={[
+            'id',
+            'cama_id',
+            ...(selectedFinca ? ['finca'] : []),
+            ...(selectedBloque ? ['bloque'] : []),
+            ...(selectedVariedad ? ['variedad'] : []),
+            ...(varietyAggregation ? ['cama'] : [])
+          ]}
         />
       </div>
     </div>
