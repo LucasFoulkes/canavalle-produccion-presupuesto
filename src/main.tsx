@@ -5,6 +5,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
+import { initializeSync } from './lib/init-sync'
 
 // Create a new router instance
 const router = createRouter({ routeTree })
@@ -15,6 +16,9 @@ declare module '@tanstack/react-router' {
     router: typeof router
   }
 }
+
+// Initialize data sync
+initializeSync().catch(console.error)
 
 // Render the app
 const rootElement = document.getElementById('root')!

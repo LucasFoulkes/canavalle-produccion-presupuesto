@@ -55,6 +55,7 @@ export interface BloqueVariedad {
 }
 
 export interface EstadoFenologico {
+    _pendingSync?: boolean;
     id: number
     brotacion?: number
     '5CM'?: number

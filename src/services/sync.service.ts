@@ -8,12 +8,22 @@ export const syncService = {
             console.log('Starting full data sync...')
 
             // Fetch all data in parallel
-            const [fincasResult, bloquesResult, variedadesResult, accionesResult, camasResult] = await Promise.allSettled([
+            const [
+                fincasResult,
+                bloquesResult,
+                variedadesResult,
+                accionesResult,
+                camasResult,
+                bloqueVariedadResult,
+                estadosFenologicosResult
+            ] = await Promise.allSettled([
                 supabase.from('fincas').select('*'),
                 supabase.from('bloques').select('*'),
                 supabase.from('variedades').select('*'),
                 supabase.from('acciones').select('*'),
-                supabase.from('camas').select('*')
+                supabase.from('camas').select('*'),
+                supabase.from('bloque_variedad').select('*'),
+                supabase.from('estados_fenologicos').select('*')
             ])
 
             // Process and store fincas
@@ -52,11 +62,36 @@ export const syncService = {
                 }
             }
 
-            // Skip cama syncing in general sync - let cama assignment service handle it exclusively
-            // This prevents conflicts between assignment sync and general sync that cause duplicates
+            // Process and store camas
             if (camasResult.status === 'fulfilled' && !camasResult.value.error) {
-                const serverCamas = camasResult.value.data || []
-                console.log(`Skipping general sync of ${serverCamas.length} camas - handled by cama assignment service`)
+                const camas = camasResult.value.data || []
+                if (camas.length > 0) {
+                    await db.camas.bulkPut(camas) // Uses upsert - updates existing, inserts new
+                    console.log(`Synced ${camas.length} camas`)
+                }
+            }
+
+            // Process and store bloque_variedad
+            if (bloqueVariedadResult.status === 'fulfilled' && !bloqueVariedadResult.value.error) {
+                const bloqueVariedades = bloqueVariedadResult.value.data || []
+                if (bloqueVariedades.length > 0) {
+                    await db.bloqueVariedades.bulkPut(bloqueVariedades) // Uses upsert - updates existing, inserts new
+                    console.log(`Synced ${bloqueVariedades.length} bloque_variedad records`)
+                }
+            }
+
+            // Process and store estados_fenologicos
+            if (estadosFenologicosResult.status === 'fulfilled' && !estadosFenologicosResult.value.error) {
+                const estadosFenologicos = estadosFenologicosResult.value.data || []
+                if (estadosFenologicos.length > 0) {
+                    // Check if the table exists in the schema
+                    if (db.tables.some(table => table.name === 'estadosFenologicos')) {
+                        await db.table('estadosFenologicos').bulkPut(estadosFenologicos)
+                        console.log(`Synced ${estadosFenologicos.length} estados fenologicos records`)
+                    } else {
+                        console.warn('Estados fenologicos table not defined in Dexie schema, skipping sync')
+                    }
+                }
             }
 
             console.log('Full data sync completed')
@@ -117,6 +152,52 @@ export const syncService = {
         } catch (error) {
             console.warn('Failed to update camas, using offline data:', error)
             return await db.camas.toArray()
+        }
+    },
+
+    // Try to update bloque_variedad data
+    async tryUpdateBloqueVariedades() {
+        try {
+            const { data, error } = await supabase.from('bloque_variedad').select('*')
+            if (error) throw error
+
+            const bloqueVariedades = data || []
+            if (bloqueVariedades.length > 0) {
+                await db.bloqueVariedades.bulkPut(bloqueVariedades) // Uses upsert - no duplicates
+                console.log(`Updated ${bloqueVariedades.length} bloque_variedad records`)
+            }
+            return bloqueVariedades
+        } catch (error) {
+            console.warn('Failed to update bloque_variedad, using offline data:', error)
+            return await db.bloqueVariedades.toArray()
+        }
+    },
+
+    // Try to update estados_fenologicos data
+    async tryUpdateEstadosFenologicos() {
+        try {
+            const { data, error } = await supabase.from('estados_fenologicos').select('*')
+            if (error) throw error
+
+            const estadosFenologicos = data || []
+            if (estadosFenologicos.length > 0) {
+                // Check if the table exists in the schema
+                if (db.tables.some(table => table.name === 'estadosFenologicos')) {
+                    await db.table('estadosFenologicos').bulkPut(estadosFenologicos)
+                    console.log(`Updated ${estadosFenologicos.length} estados fenologicos records`)
+                    return estadosFenologicos
+                } else {
+                    console.warn('Estados fenologicos table not defined in Dexie schema, skipping sync')
+                    return []
+                }
+            }
+            return estadosFenologicos
+        } catch (error) {
+            console.warn('Failed to update estados_fenologicos, using offline data:', error)
+            if (db.tables.some(table => table.name === 'estadosFenologicos')) {
+                return await db.table('estadosFenologicos').toArray()
+            }
+            return []
         }
     }
 }

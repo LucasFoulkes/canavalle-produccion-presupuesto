@@ -144,30 +144,17 @@ export const bloqueVariedadService = {
         try {
             console.log('Syncing bloque_variedad from server for bloque:', bloqueId)
 
-            const { data, error } = await supabase
-                .from('bloque_variedad')
-                .select('*')
-                .eq('bloque_id', bloqueId)
+            // Use the central sync service first to sync all bloque_variedad data
+            const { syncService } = await import('./sync.service')
+            await syncService.tryUpdateBloqueVariedades()
 
-            if (error) {
-                console.error('Error fetching bloque_variedad from server:', error)
-                return
-            }
+            // Then filter for the specific bloque
+            const bloqueVariedades = await db.bloqueVariedades
+                .where('bloque_id')
+                .equals(bloqueId)
+                .toArray()
 
-            if (data && data.length > 0) {
-                console.log('Fetched bloque_variedad data from server:', data)
-
-                // Store in local database
-                for (const record of data) {
-                    await db.bloqueVariedades.put({
-                        id: record.id,
-                        bloque_id: record.bloque_id,
-                        variedad_id: record.variedad_id
-                    })
-                }
-
-                console.log('Stored bloque_variedad data locally')
-            }
+            console.log(`Found ${bloqueVariedades.length} bloque_variedad records for bloque ${bloqueId}`)
         } catch (error) {
             console.error('Error syncing bloque_variedad from server:', error)
         }
