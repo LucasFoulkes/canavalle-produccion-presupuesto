@@ -35,7 +35,7 @@ export function DynamicTable<T extends Record<string, any>>({
             <TableBody>
                 {data.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={columns.length || 1} className="text-center">
+                        <TableCell colSpan={columns.length || 1} className="text-center px-0">
                             No hay datos disponibles
                         </TableCell>
                     </TableRow>
@@ -43,7 +43,7 @@ export function DynamicTable<T extends Record<string, any>>({
                     data.map((item, index) => (
                         <TableRow key={item.id || index}>
                             {columns.map((key) => (
-                                <TableCell key={`${item.id || index}-${key}`}>
+                                <TableCell key={`${item.id || index}-${key}`} className="px-0 py-3">
                                     {typeof item[key] === 'object' && item[key] !== null ? JSON.stringify(item[key]) : (item[key] ?? '-')}
                                 </TableCell>
                             ))}
