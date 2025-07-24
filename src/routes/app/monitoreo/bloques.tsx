@@ -68,7 +68,7 @@ function BloquesComponent() {
     }
 
     return (
-        <div className="flex h-full flex-col p-2 gap-2  ">
+        <div className="flex h-full flex-col p-2 gap-2 pb-0  ">
             <div>
                 <h1 className='text-2xl font-thin capitalize'>
                     {fincaName}
