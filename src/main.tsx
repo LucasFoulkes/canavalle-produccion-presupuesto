@@ -24,11 +24,20 @@ async function logDexieDatabase() {
     console.log('Database name:', db.name)
     console.log('Database version:', db.verno)
     console.log('Tables:', db.tables.map(table => table.name))
+    console.log('Navigator online:', navigator.onLine)
 
     // Log usuarios table data
     const usuarios = await db.usuarios.toArray()
     console.log('Usuarios in database:', usuarios)
     console.log('Total usuarios count:', usuarios.length)
+
+    // Show available PINs for debugging (without showing sensitive data)
+    if (usuarios.length > 0) {
+      console.log('Available user roles:', usuarios.map(u => u.rol))
+      console.log('Users can login with their stored PINs')
+    } else {
+      console.log('No users stored locally. Must be online for first login to sync users.')
+    }
 
     // Log database size info
     if (navigator.storage && navigator.storage.estimate) {

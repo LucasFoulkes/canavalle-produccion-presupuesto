@@ -48,17 +48,32 @@
   <style>
     html,
     body {
-      height: 100%;
+      height: 100vh;
+      height: 100dvh;
+      /* Dynamic viewport height for mobile */
       margin: 0;
       padding: 0;
       overflow: hidden;
       overscroll-behavior: none;
-      touch-action: none;
+      -webkit-overflow-scrolling: touch;
     }
 
     #root {
-      height: 100%;
-      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      /* Dynamic viewport height for mobile */
+      width: 100vw;
+      position: relative;
+    }
+
+    /* Fix for iOS safe areas */
+    @supports (padding: max(0px)) {
+      #root {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-top: max(0px, env(safe-area-inset-top));
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+      }
     }
   </style>
 </head>
