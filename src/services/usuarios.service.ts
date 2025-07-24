@@ -11,7 +11,18 @@ export const authService = {
 
         // 1. Always try offline first
         try {
-            const offlineUser = await db.usuarios.where('pin').equals(pin).first()
+            // Try both string and number comparison for PIN
+            const pinAsString = String(pin)
+            const pinAsNumber = parseInt(pin, 10)
+
+            console.log('Searching for PIN as string:', pinAsString)
+            console.log('Searching for PIN as number:', pinAsNumber)
+
+            let offlineUser = await db.usuarios.where('pin').equals(pinAsString).first()
+            if (!offlineUser && !isNaN(pinAsNumber)) {
+                offlineUser = await db.usuarios.where('pin').equals(pinAsNumber).first()
+            }
+
             if (offlineUser) {
                 console.log('User found offline:', offlineUser)
                 // User found offline, only trigger sync if online
@@ -23,9 +34,7 @@ export const authService = {
             console.log('User not found offline, checking online...')
         } catch (error) {
             console.error('Offline auth error:', error)
-        }
-
-        // 2. If not found offline and we're online, try online
+        }        // 2. If not found offline and we're online, try online
         if (!navigator.onLine) {
             console.log('Offline and user not found locally')
             return null

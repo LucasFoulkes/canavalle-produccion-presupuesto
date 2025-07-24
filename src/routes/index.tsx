@@ -28,11 +28,11 @@ function App() {
       console.log('=== Authentication Debug ===')
       console.log('PIN entered:', pin)
       console.log('Navigator online:', navigator.onLine)
-      
+
       const usuario = await authService.authenticateWithPin(pin);
-      
+
       console.log('Authentication result:', usuario)
-      
+
       if (usuario) {
         console.log('Login successful, navigating to /app')
         navigate({ to: '/app' });
@@ -54,7 +54,7 @@ function App() {
       <div className='absolute top-4 right-4 text-sm text-gray-400 font-mono'>
         v1
       </div>
-      
+
       <InputOTP
         maxLength={6}
         value={codigo}
