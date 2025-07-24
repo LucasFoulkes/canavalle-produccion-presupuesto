@@ -87,7 +87,8 @@ function CamasComponent() {
                 onChange={(e) => setFilter(e.target.value)}
             />
             <div className='flex-1 overflow-y-auto'>
-                <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
+                <div className={`grid gap-2 min-h-full content-center place-items-center ${filteredCamas.length === 1 ? 'grid-cols-1' : 'grid-cols-4'
+                    }`}>
                     {isLoading && <p className='col-span-5 text-center'>Cargando camas...</p>}
                     {!isLoading && filteredCamas.map(cama => (
                         <CamaCard
