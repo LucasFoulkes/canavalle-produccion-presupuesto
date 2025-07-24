@@ -17,10 +17,17 @@ export default defineConfig({
     },
 
     manifest: {
-      name: 'canavalle-produccion-presupuesto',
-      short_name: 'canavalle-produccion-presupuesto',
-      description: 'canavalle-produccion-presupuesto',
+      name: 'Canavalle Producción',
+      short_name: 'Canavalle',
+      description: 'Sistema de gestión de producción agrícola',
       theme_color: '#ffffff',
+      background_color: '#ffffff',
+      display: 'standalone',
+      orientation: 'portrait',
+      scope: '/',
+      start_url: '/',
+      categories: ['business', 'productivity'],
+      lang: 'es'
     },
 
     workbox: {
@@ -28,6 +35,38 @@ export default defineConfig({
       cleanupOutdatedCaches: true,
       clientsClaim: true,
       skipWaiting: true,
+      navigateFallback: '/index.html',
+      navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'gstatic-fonts-cache',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // <== 365 days
+            },
+            cacheableResponse: {
+              statuses: [0, 200]
+            },
+          }
+        }
+      ]
     },
 
     devOptions: {

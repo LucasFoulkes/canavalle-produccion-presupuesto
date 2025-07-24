@@ -43,6 +43,43 @@ async function logDexieDatabase() {
 // Call the logging function
 logDexieDatabase()
 
+// Register service worker for PWA - iOS compatible
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+
+      console.log('SW registered: ', registration);
+
+      // Handle updates
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New content is available; please refresh.');
+            }
+          });
+        }
+      });
+
+    } catch (registrationError) {
+      console.log('SW registration failed: ', registrationError);
+    }
+  });
+}
+
+// Handle offline/online events
+window.addEventListener('online', () => {
+  console.log('App is online');
+});
+
+window.addEventListener('offline', () => {
+  console.log('App is offline');
+});
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
