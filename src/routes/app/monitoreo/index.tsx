@@ -1,24 +1,67 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { fincasService, Finca } from '@/services/fincas.service'
 
 export const Route = createFileRoute('/app/monitoreo/')({
     component: MonitoreoComponent,
 })
 
-function MonitoreoComponent() {
+function FincaCard({ finca }: { finca: Finca }) {
+    const navigate = useNavigate()
     return (
-        <div className='flex flex-col items-center justify-center h-full gap-6 p-8'>
-            <h1 className='text-3xl font-bold text-gray-800'>Monitoreo de Producción</h1>
-            <p className='text-gray-600 text-center max-w-md'>
-                Esta es la página principal del sistema de monitoreo. Desde aquí puedes acceder a todas las funcionalidades de seguimiento.
-            </p>
-            <div className='flex gap-4'>
-                <Link to='/app/monitoreo/config'>
-                    <Button variant='default' size='lg' className='mt-4'>
-                        Configuración
-                    </Button>
-                </Link>
-            </div>
+        <Button
+            className='aspect-square w-full h-full capitalize text-lg'
+            key={finca.id}
+            onClick={() => {
+                console.log('Selected finca:', finca)
+                navigate({
+                    to: '/app/monitoreo/bloques',
+                    search: {
+                        fincaId: finca.id,
+                        fincaName: finca.nombre,
+                    }
+                })
+            }}
+        >
+            {finca.nombre}
+        </Button>
+    )
+}
+
+function MonitoreoComponent() {
+    const [fincas, setFincas] = useState<Finca[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    useEffect(() => {
+        loadFincas()
+    }, [])
+
+    const loadFincas = async () => {
+        try {
+            setIsLoading(true)
+            const fincasData = await fincasService.getAllFincas()
+            setFincas(fincasData)
+        } catch (error) {
+            console.error('Error loading fincas:', error)
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <div className="flex h-full flex-col p-2 pb-0">
+            <h1 className='text-2xl font-thin'>
+                Seleccione una finca
+            </h1>
+            {isLoading && <p>Cargando fincas...</p>}
+            {!isLoading && (
+                <div className='flex-1 grid grid-cols-2 gap-2 content-center'>
+                    {fincas.map((finca) => (
+                        <FincaCard key={finca.id} finca={finca} />
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
