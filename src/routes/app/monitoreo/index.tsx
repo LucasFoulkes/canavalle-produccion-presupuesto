@@ -50,7 +50,7 @@ function MonitoreoComponent() {
     }
 
     return (
-        <div className="flex h-full flex-col p-2 pb-0">
+        <div className="flex h-full flex-col p-2 pb-0 gap-2">
             <h1 className='text-2xl font-thin'>
                 Seleccione una finca
             </h1>

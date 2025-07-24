@@ -4,7 +4,7 @@ import { db } from '@/lib/dexie'
 export const syncService = {
     async syncAllData(): Promise<void> {
         try {
-            console.log('Starting sync for usuarios, fincas, and bloques...')
+            console.log('Starting sync for usuarios, fincas, bloques, and camas...')
 
             // Sync usuarios
             const { data: usuariosData, error: usuariosError } = await supabase.from('usuarios').select('*')
@@ -39,6 +39,18 @@ export const syncService = {
                     console.log(`Updated ${bloquesData.length} bloques records`)
                 } else {
                     console.warn('bloques table not defined in Dexie schema, skipping sync')
+                }
+            }
+
+            // Sync camas
+            const { data: camasData, error: camasError } = await supabase.from('camas').select('*')
+            if (camasError) throw camasError
+            if (camasData && Array.isArray(camasData)) {
+                if (db.tables.some(table => table.name === 'camas')) {
+                    await db.camas.bulkPut(camasData)
+                    console.log(`Updated ${camasData.length} camas records`)
+                } else {
+                    console.warn('camas table not defined in Dexie schema, skipping sync')
                 }
             }
 

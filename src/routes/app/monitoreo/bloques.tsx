@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import { bloquesService, Bloque } from '@/services/bloques.service'
@@ -19,13 +19,24 @@ export const Route = createFileRoute('/app/monitoreo/bloques')({
 })
 
 function BloqueCard({ bloque }: { bloque: Bloque }) {
+    const navigate = useNavigate()
+    const { fincaId, fincaName } = Route.useSearch()
+
     return (
         <Button
             className='aspect-square w-full h-full capitalize text-lg'
             key={bloque.id}
             onClick={() => {
                 console.log('Selected bloque:', bloque)
-                alert(`Selected bloque: ${bloque.nombre}\n(Variedades route not implemented yet)`)
+                navigate({
+                    to: '/app/monitoreo/camas',
+                    search: {
+                        bloqueId: bloque.id,
+                        bloqueName: bloque.nombre,
+                        fincaId: fincaId,
+                        fincaName: fincaName,
+                    }
+                })
             }}
         >
             {bloque.nombre}
@@ -57,7 +68,7 @@ function BloquesComponent() {
     }
 
     return (
-        <div className="flex h-full flex-col p-2">
+        <div className="flex h-full flex-col p-2 gap-2  ">
             <div>
                 <h1 className='text-2xl font-thin capitalize'>
                     {fincaName}
@@ -67,22 +78,22 @@ function BloquesComponent() {
             {isLoading && <p>Cargando bloques...</p>}
             {!isLoading && (
                 <div className='flex-1 overflow-y-auto'>
-                    <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
-                        {bloques.length > 0 ? (
-                            bloques.map((bloque) => (
-                                <BloqueCard key={bloque.id} bloque={bloque} />
-                            ))
-                        ) : (
-                            <div className="col-span-2 flex flex-col items-center justify-center py-8">
-                                <p className="text-gray-500 mb-4">No se encontraron bloques para esta finca</p>
-                                <Button onClick={loadBloques} variant="outline">
-                                    Recargar
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    {bloques.length > 0 ? (
+                        <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
+                            {
+                                bloques.map((bloque) => (
+                                    <BloqueCard key={bloque.id} bloque={bloque} />
+                                ))
+                            }
+                        </div>
+                    ) : (
+                        <div className='flex h-full w-full items-center justify-center'>
+                            <p className="text-gray-500 font-thin">No se encontraron bloques para esta finca</p>
+                        </div>
+                    )}
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }

@@ -17,40 +17,58 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Console log the current Dexie database state
-async function logDexieDatabase() {
+// Console log the current Dexie database state and sync all data
+async function initializeDatabase() {
   try {
-    console.log('=== Dexie Database Info ===')
-    console.log('Database name:', db.name)
-    console.log('Database version:', db.verno)
+    console.log('=== Database Initialization ===')
     console.log('Tables:', db.tables.map(table => table.name))
     console.log('Navigator online:', navigator.onLine)
 
-    // Log usuarios table data
-    const usuarios = await db.usuarios.toArray()
-    console.log('Usuarios in database:', usuarios)
-    console.log('Total usuarios count:', usuarios.length)
+    // Check all table counts
+    const [usuarios, fincas, bloques, camas] = await Promise.all([
+      db.usuarios.toArray(),
+      db.fincas.toArray(),
+      db.bloques.toArray(),
+      db.camas.toArray()
+    ])
 
-    // Show available PINs for debugging (without showing sensitive data)
-    if (usuarios.length > 0) {
-      console.log('Available user roles:', usuarios.map(u => u.rol))
-      console.log('Users can login with their stored PINs')
+    console.log('Local data:', {
+      usuarios: usuarios.length,
+      fincas: fincas.length,
+      bloques: bloques.length,
+      camas: camas.length
+    })
+
+    // If online, sync all data from Supabase
+    if (navigator.onLine) {
+      console.log('Syncing data from server...')
+      const { syncService } = await import('@/services/sync.service')
+      await syncService.syncAllData()
+
+      // Log updated counts
+      const [updatedUsuarios, updatedFincas, updatedBloques, updatedCamas] = await Promise.all([
+        db.usuarios.toArray(),
+        db.fincas.toArray(),
+        db.bloques.toArray(),
+        db.camas.toArray()
+      ])
+
+      console.log('Synced data:', {
+        usuarios: updatedUsuarios.length,
+        fincas: updatedFincas.length,
+        bloques: updatedBloques.length,
+        camas: updatedCamas.length
+      })
     } else {
-      console.log('No users stored locally. Must be online for first login to sync users.')
-    }
-
-    // Log database size info
-    if (navigator.storage && navigator.storage.estimate) {
-      const estimate = await navigator.storage.estimate()
-      console.log('Storage estimate:', estimate)
+      console.log('Offline mode - using local data only')
     }
   } catch (error) {
-    console.error('Error accessing Dexie database:', error)
+    console.error('Error initializing database:', error)
   }
 }
 
-// Call the logging function
-logDexieDatabase()
+// Call the initialization function
+initializeDatabase()
 
 // Register service worker for PWA - iOS compatible
 if ('serviceWorker' in navigator) {
@@ -79,15 +97,6 @@ if ('serviceWorker' in navigator) {
     }
   });
 }
-
-// Handle offline/online events
-window.addEventListener('online', () => {
-  console.log('App is online');
-});
-
-window.addEventListener('offline', () => {
-  console.log('App is offline');
-});
 
 // Render the app
 const rootElement = document.getElementById('root')!

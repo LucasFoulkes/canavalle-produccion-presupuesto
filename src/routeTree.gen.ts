@@ -17,6 +17,7 @@ import { Route as AppCompartirRouteImport } from './routes/app/compartir'
 import { Route as AppMonitoreoIndexRouteImport } from './routes/app/monitoreo/index'
 import { Route as AppConfiguracionIndexRouteImport } from './routes/app/configuracion/index'
 import { Route as AppMonitoreoConfigRouteImport } from './routes/app/monitoreo/config'
+import { Route as AppMonitoreoCamasRouteImport } from './routes/app/monitoreo/camas'
 import { Route as AppMonitoreoBloquesRouteImport } from './routes/app/monitoreo/bloques'
 
 const AppRouteRoute = AppRouteRouteImport.update({
@@ -59,6 +60,11 @@ const AppMonitoreoConfigRoute = AppMonitoreoConfigRouteImport.update({
   path: '/monitoreo/config',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppMonitoreoCamasRoute = AppMonitoreoCamasRouteImport.update({
+  id: '/monitoreo/camas',
+  path: '/monitoreo/camas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppMonitoreoBloquesRoute = AppMonitoreoBloquesRouteImport.update({
   id: '/monitoreo/bloques',
   path: '/monitoreo/bloques',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
+  '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
   '/app/configuracion': typeof AppConfiguracionIndexRoute
   '/app/monitoreo': typeof AppMonitoreoIndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/app/reportes': typeof AppReportesRoute
   '/app': typeof AppIndexRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
+  '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
   '/app/configuracion': typeof AppConfiguracionIndexRoute
   '/app/monitoreo': typeof AppMonitoreoIndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
+  '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
   '/app/configuracion/': typeof AppConfiguracionIndexRoute
   '/app/monitoreo/': typeof AppMonitoreoIndexRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app/'
     | '/app/monitoreo/bloques'
+    | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
     | '/app/configuracion'
     | '/app/monitoreo'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app'
     | '/app/monitoreo/bloques'
+    | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
     | '/app/configuracion'
     | '/app/monitoreo'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app/'
     | '/app/monitoreo/bloques'
+    | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
     | '/app/configuracion/'
     | '/app/monitoreo/'
@@ -196,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMonitoreoConfigRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/monitoreo/camas': {
+      id: '/app/monitoreo/camas'
+      path: '/monitoreo/camas'
+      fullPath: '/app/monitoreo/camas'
+      preLoaderRoute: typeof AppMonitoreoCamasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/monitoreo/bloques': {
       id: '/app/monitoreo/bloques'
       path: '/monitoreo/bloques'
@@ -211,6 +230,7 @@ interface AppRouteRouteChildren {
   AppReportesRoute: typeof AppReportesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppMonitoreoBloquesRoute: typeof AppMonitoreoBloquesRoute
+  AppMonitoreoCamasRoute: typeof AppMonitoreoCamasRoute
   AppMonitoreoConfigRoute: typeof AppMonitoreoConfigRoute
   AppConfiguracionIndexRoute: typeof AppConfiguracionIndexRoute
   AppMonitoreoIndexRoute: typeof AppMonitoreoIndexRoute
@@ -221,6 +241,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppReportesRoute: AppReportesRoute,
   AppIndexRoute: AppIndexRoute,
   AppMonitoreoBloquesRoute: AppMonitoreoBloquesRoute,
+  AppMonitoreoCamasRoute: AppMonitoreoCamasRoute,
   AppMonitoreoConfigRoute: AppMonitoreoConfigRoute,
   AppConfiguracionIndexRoute: AppConfiguracionIndexRoute,
   AppMonitoreoIndexRoute: AppMonitoreoIndexRoute,
