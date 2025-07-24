@@ -23,10 +23,10 @@ export const Route = createFileRoute('/app/monitoreo/camas')({
     }
 })
 
-function CamaCard({ cama }: { cama: Cama }) {
+function CamaCard({ cama, isSingle = false }: { cama: Cama; isSingle?: boolean }) {
     return (
         <Button
-            className='aspect-square w-full h-full capitalize text-lg'
+            className={`capitalize text-lg ${isSingle ? 'size-36' : 'aspect-square w-full h-full'}`}
             key={cama.id}
             onClick={() => {
                 console.log('Selected cama:', cama)
@@ -94,6 +94,7 @@ function CamasComponent() {
                         <CamaCard
                             key={cama.id}
                             cama={cama}
+                            isSingle={filteredCamas.length === 1}
                         />
                     ))}
                 </div>
