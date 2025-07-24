@@ -1,3 +1,4 @@
+import { Input } from '@/components/ui/input'
 import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
@@ -40,6 +41,7 @@ function CamaCard({ cama }: { cama: Cama }) {
 function CamasComponent() {
     const [camas, setCamas] = useState<Cama[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [filter, setFilter] = useState('')
     const { bloqueId, bloqueName, fincaName } = Route.useSearch()
 
     useEffect(() => {
@@ -60,8 +62,15 @@ function CamasComponent() {
         }
     }
 
+    // Filter camas based on the filter input
+    const filteredCamas = camas.filter(cama =>
+        filter === '' ||
+        (cama.nombre && cama.nombre.toString().startsWith(filter)) ||
+        cama.id.toString().startsWith(filter)
+    )
+
     return (
-        <div className="flex h-full flex-col p-2 gap-2 pb-0">
+        <div className='w-full h-full flex flex-col gap-2 p-2 pb-0'>
             <div>
                 <h1 className='text-2xl font-thin capitalize'>
                     {bloqueName}
@@ -70,24 +79,23 @@ function CamasComponent() {
                     {fincaName} • Seleccione una cama
                 </p>
             </div>
-            {isLoading && <p>Cargando camas...</p>}
-            {!isLoading && (
-                <div className='flex-1 overflow-y-auto'>
-                    {camas.length > 0 ? (
-                        <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
-                            {
-                                camas.map((cama) => (
-                                    <CamaCard key={cama.id} cama={cama} />
-                                ))
-                            }
-                        </div>
-                    ) : (
-                        <div className='flex h-full w-full items-center justify-center'>
-                            <p className="text-gray-500 font-thin">No se encontraron camas para este bloque</p>
-                        </div>
-                    )}
+            <Input
+                type="number"
+                inputMode="numeric"
+                placeholder="Filtrar camas..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+            />
+            <div className='flex-1 overflow-y-auto'>
+                <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
+                    {isLoading && <p className='col-span-5 text-center'>Cargando camas...</p>}
+                    {!isLoading && filteredCamas.map(cama => (
+                        <CamaCard
+                            key={cama.id}
+                            cama={cama}
+                        />
+                    ))}
                 </div>
-            )}
-        </div>
+            </div></div>
     )
 }
