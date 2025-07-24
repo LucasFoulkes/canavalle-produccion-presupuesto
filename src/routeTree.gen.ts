@@ -19,6 +19,8 @@ import { Route as AppConfiguracionIndexRouteImport } from './routes/app/configur
 import { Route as AppMonitoreoConfigRouteImport } from './routes/app/monitoreo/config'
 import { Route as AppMonitoreoCamasRouteImport } from './routes/app/monitoreo/camas'
 import { Route as AppMonitoreoBloquesRouteImport } from './routes/app/monitoreo/bloques'
+import { Route as AppConfiguracionEstadosFenologicosRouteImport } from './routes/app/configuracion/estados-fenologicos'
+import { Route as AppConfiguracionCamasRouteImport } from './routes/app/configuracion/camas'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
@@ -70,6 +72,17 @@ const AppMonitoreoBloquesRoute = AppMonitoreoBloquesRouteImport.update({
   path: '/monitoreo/bloques',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppConfiguracionEstadosFenologicosRoute =
+  AppConfiguracionEstadosFenologicosRouteImport.update({
+    id: '/configuracion/estados-fenologicos',
+    path: '/configuracion/estados-fenologicos',
+    getParentRoute: () => AppRouteRoute,
+  } as any)
+const AppConfiguracionCamasRoute = AppConfiguracionCamasRouteImport.update({
+  id: '/configuracion/camas',
+  path: '/configuracion/camas',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,6 +90,8 @@ export interface FileRoutesByFullPath {
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
+  '/app/configuracion/camas': typeof AppConfiguracionCamasRoute
+  '/app/configuracion/estados-fenologicos': typeof AppConfiguracionEstadosFenologicosRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
   '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
@@ -88,6 +103,8 @@ export interface FileRoutesByTo {
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app': typeof AppIndexRoute
+  '/app/configuracion/camas': typeof AppConfiguracionCamasRoute
+  '/app/configuracion/estados-fenologicos': typeof AppConfiguracionEstadosFenologicosRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
   '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
@@ -101,6 +118,8 @@ export interface FileRoutesById {
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
+  '/app/configuracion/camas': typeof AppConfiguracionCamasRoute
+  '/app/configuracion/estados-fenologicos': typeof AppConfiguracionEstadosFenologicosRoute
   '/app/monitoreo/bloques': typeof AppMonitoreoBloquesRoute
   '/app/monitoreo/camas': typeof AppMonitoreoCamasRoute
   '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
@@ -115,6 +134,8 @@ export interface FileRouteTypes {
     | '/app/compartir'
     | '/app/reportes'
     | '/app/'
+    | '/app/configuracion/camas'
+    | '/app/configuracion/estados-fenologicos'
     | '/app/monitoreo/bloques'
     | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
@@ -126,6 +147,8 @@ export interface FileRouteTypes {
     | '/app/compartir'
     | '/app/reportes'
     | '/app'
+    | '/app/configuracion/camas'
+    | '/app/configuracion/estados-fenologicos'
     | '/app/monitoreo/bloques'
     | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
@@ -138,6 +161,8 @@ export interface FileRouteTypes {
     | '/app/compartir'
     | '/app/reportes'
     | '/app/'
+    | '/app/configuracion/camas'
+    | '/app/configuracion/estados-fenologicos'
     | '/app/monitoreo/bloques'
     | '/app/monitoreo/camas'
     | '/app/monitoreo/config'
@@ -222,6 +247,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMonitoreoBloquesRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/configuracion/estados-fenologicos': {
+      id: '/app/configuracion/estados-fenologicos'
+      path: '/configuracion/estados-fenologicos'
+      fullPath: '/app/configuracion/estados-fenologicos'
+      preLoaderRoute: typeof AppConfiguracionEstadosFenologicosRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/configuracion/camas': {
+      id: '/app/configuracion/camas'
+      path: '/configuracion/camas'
+      fullPath: '/app/configuracion/camas'
+      preLoaderRoute: typeof AppConfiguracionCamasRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
@@ -229,6 +268,8 @@ interface AppRouteRouteChildren {
   AppCompartirRoute: typeof AppCompartirRoute
   AppReportesRoute: typeof AppReportesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppConfiguracionCamasRoute: typeof AppConfiguracionCamasRoute
+  AppConfiguracionEstadosFenologicosRoute: typeof AppConfiguracionEstadosFenologicosRoute
   AppMonitoreoBloquesRoute: typeof AppMonitoreoBloquesRoute
   AppMonitoreoCamasRoute: typeof AppMonitoreoCamasRoute
   AppMonitoreoConfigRoute: typeof AppMonitoreoConfigRoute
@@ -240,6 +281,9 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppCompartirRoute: AppCompartirRoute,
   AppReportesRoute: AppReportesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppConfiguracionCamasRoute: AppConfiguracionCamasRoute,
+  AppConfiguracionEstadosFenologicosRoute:
+    AppConfiguracionEstadosFenologicosRoute,
   AppMonitoreoBloquesRoute: AppMonitoreoBloquesRoute,
   AppMonitoreoCamasRoute: AppMonitoreoCamasRoute,
   AppMonitoreoConfigRoute: AppMonitoreoConfigRoute,
