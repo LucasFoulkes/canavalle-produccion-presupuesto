@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ChevronLeft } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { camasService, Cama } from '@/services/camas.service'
 import { fincasService, Finca } from '@/services/fincas.service'
 import { bloquesService, Bloque } from '@/services/bloques.service'
@@ -12,16 +12,12 @@ export const Route = createFileRoute('/app/configuracion/camas')({
   component: CamasConfigComponent,
 })
 
-
-function CamaCard({ cama }: { cama: Cama }) {
+function CamaCard({ cama, onSelect }: { cama: Cama; onSelect: (cama: Cama) => void }) {
   return (
     <Button
-      className='aspect-square w-full h-full capitalize text-lg'
-      key={cama.id}
-      onClick={() => {
-        console.log('Selected cama:', cama)
-        alert(`Selected cama: ${cama.nombre}\n(Next level not implemented yet)`)
-      }}
+      className="aspect-square w-full h-full capitalize text-lg"
+      onClick={() => onSelect(cama)}
+      aria-label={`Select cama ${cama.nombre}`}
     >
       {cama.nombre}
     </Button>
@@ -33,104 +29,80 @@ function CamasConfigComponent() {
   const [fincas, setFincas] = useState<Finca[]>([])
   const [bloques, setBloques] = useState<Bloque[]>([])
   const [allBloques, setAllBloques] = useState<Bloque[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedFinca, setSelectedFinca] = useState("")
-  const [selectedBloque, setSelectedBloque] = useState("")
+  const [selectedFinca, setSelectedFinca] = useState<number | null>(null)
+  const [selectedBloque, setSelectedBloque] = useState<number | null>(null)
   const [filter, setFilter] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadInitialData()
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
+        const [fincasData, bloquesData] = await Promise.all([
+          fincasService.getAllFincas(),
+          bloquesService.getAllBloques(),
+        ])
+        setFincas(fincasData)
+        setAllBloques(bloquesData)
+      } catch {
+        setError('Failed to load data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadData()
   }, [])
 
   useEffect(() => {
-    if (selectedFinca) {
-      // Filter bloques by selected finca
-      const fincaBloques = allBloques.filter(bloque => bloque.finca_id.toString() === selectedFinca)
-      setBloques(fincaBloques)
-      setSelectedBloque("") // Reset bloque selection when finca changes
-    } else {
-      setBloques([])
-      setSelectedBloque("")
-    }
+    setBloques(selectedFinca ? allBloques.filter(b => b.finca_id === selectedFinca) : [])
+    setSelectedBloque(null)
   }, [selectedFinca, allBloques])
 
   useEffect(() => {
+    const loadCamas = async () => {
+      try {
+        setCamas(selectedBloque ? await camasService.getCamasByBloqueId(selectedBloque) : [])
+      } catch {
+        setError('Failed to load camas')
+      }
+    }
     loadCamas()
   }, [selectedBloque])
 
-  const loadInitialData = async () => {
-    try {
-      setIsLoading(true)
-      const [fincasData, bloquesData] = await Promise.all([
-        fincasService.getAllFincas(),
-        bloquesService.getAllBloques()
-      ])
-      setFincas(fincasData)
-      setAllBloques(bloquesData)
-
-      // Don't load camas initially - wait for filters
-      setCamas([])
-    } catch (error) {
-      console.error('Error loading initial data:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const loadCamas = async () => {
-    try {
-      if (selectedBloque && selectedFinca) {
-        // Only load camas when both finca and bloque are selected
-        const camasData = await camasService.getCamasByBloqueId(Number(selectedBloque))
-        setCamas(camasData)
-      } else {
-        // Clear camas if either filter is missing
-        setCamas([])
-      }
-    } catch (error) {
-      console.error('Error loading camas:', error)
-    }
-  }
-
-  const getEmptyStateMessage = () => {
-    if (selectedFinca && selectedBloque) {
-      return "No se encontraron camas para este bloque"
-    }
-    if (!selectedFinca) {
-      return "Seleccione una finca y un bloque para ver las camas"
-    }
-    return "Seleccione un bloque para ver las camas"
-  }
-
-  // Filter camas based on the filter input
-  const filteredCamas = camas.filter(cama =>
-    filter === '' ||
-    (cama.nombre && cama.nombre.toString().startsWith(filter)) ||
-    cama.id.toString().startsWith(filter)
+  const filteredCamas = useMemo(
+    () =>
+      camas.filter(
+        c => filter === '' || c.nombre?.toLowerCase().startsWith(filter.toLowerCase()) || c.id.toString().startsWith(filter),
+      ),
+    [camas, filter],
   )
 
-  return (
-    <div className="flex h-full flex-col p-2 pb-0 gap-2">
-      <div className="flex items-center justify-center relative">
-        <ChevronLeft
-          className="h-6 w-6 absolute left-2 cursor-pointer"
-          onClick={() => navigate({ to: '/app/configuracion' })}
-        />
-        <div>
-          <h1 className='text-2xl font-thin'>
-            Configuración de Camas
-          </h1>
-        </div>
-      </div>
+  const emptyMessage = !selectedFinca
+    ? 'Seleccione una finca y un bloque'
+    : !selectedBloque
+      ? 'Seleccione un bloque'
+      : 'No se encontraron camas'
 
-      {/* Filter Controls */}
-      <div className='grid grid-cols-2 gap-2'>
+  const handleCamaSelect = (cama: Cama) => navigate({ to: `/app/configuracion/camas/${cama.id}` })
+
+  return (
+    <div className="flex h-full flex-col gap-2 p-2 pb-0">
+      <div className="relative flex items-center justify-center">
+        <ChevronLeft
+          className="absolute left-2 h-6 w-6 cursor-pointer"
+          onClick={() => navigate({ to: '/app/configuracion' })}
+          aria-label="Back to configuration"
+        />
+        <h1 className="text-2xl font-thin">Configuración de Camas</h1>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className='text-sm font-medium mb-1 block'>Finca</label>
+          <label className="mb-1 block text-sm font-medium">Finca</label>
           <GenericCombobox
-            value={selectedFinca}
-            onValueChange={setSelectedFinca}
+            value={selectedFinca?.toString() ?? ''}
+            onValueChange={v => setSelectedFinca(v ? Number(v) : null)}
             items={fincas}
             placeholder="Seleccionar finca..."
             searchPlaceholder="Buscar finca..."
@@ -138,10 +110,10 @@ function CamasConfigComponent() {
           />
         </div>
         <div>
-          <label className='text-sm font-medium mb-1 block'>Bloque</label>
+          <label className="mb-1 block text-sm font-medium">Bloque</label>
           <GenericCombobox
-            value={selectedBloque}
-            onValueChange={setSelectedBloque}
+            value={selectedBloque?.toString() ?? ''}
+            onValueChange={v => setSelectedBloque(v ? Number(v) : null)}
             items={bloques}
             placeholder="Seleccionar bloque..."
             searchPlaceholder="Buscar bloque..."
@@ -155,26 +127,23 @@ function CamasConfigComponent() {
         inputMode="numeric"
         placeholder="Filtrar camas..."
         value={filter}
-        onChange={(e) => setFilter(e.target.value)}
+        onChange={e => setFilter(e.target.value)}
+        aria-label="Filter camas by name or ID"
       />
-
-      {isLoading && <p>Cargando datos...</p>}
-
-      {!isLoading && (
-        <div className='flex-1 overflow-y-auto'>
-          {filteredCamas.length > 0 ? (
-            <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
-              {filteredCamas.map((cama) => (
-                <CamaCard cama={cama} key={cama.id} />
-              ))}
-            </div>
-          ) : (
-            <div className='flex h-full w-full items-center justify-center'>
-              <p className="text-gray-500 font-thin">
-                {getEmptyStateMessage()}
-              </p>
-            </div>
-          )}
+      {error && <p className="text-red-500">{error}</p>}
+      {isLoading ? (
+        <p>Cargando...</p>
+      ) : filteredCamas.length > 0 ? (
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-4 gap-2 place-items-center">
+            {filteredCamas.map(cama => (
+              <CamaCard key={cama.id} cama={cama} onSelect={handleCamaSelect} />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex h-full items-center justify-center">
+          <p className="font-thin text-gray-500">{emptyMessage}</p>
         </div>
       )}
     </div>
