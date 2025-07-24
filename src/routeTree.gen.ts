@@ -12,6 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteRouteImport } from './routes/app/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppReportesRouteImport } from './routes/app/reportes'
+import { Route as AppCompartirRouteImport } from './routes/app/compartir'
+import { Route as AppConfiguracionRouteRouteImport } from './routes/app/configuracion/route'
+import { Route as AppMonitoreoIndexRouteImport } from './routes/app/monitoreo/index'
+import { Route as AppConfiguracionIndexRouteImport } from './routes/app/configuracion/index'
+import { Route as AppMonitoreoConfigRouteImport } from './routes/app/monitoreo/config'
 
 const AppRouteRoute = AppRouteRouteImport.update({
   id: '/app',
@@ -28,28 +34,101 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppReportesRoute = AppReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppCompartirRoute = AppCompartirRouteImport.update({
+  id: '/compartir',
+  path: '/compartir',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppConfiguracionRouteRoute = AppConfiguracionRouteRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppMonitoreoIndexRoute = AppMonitoreoIndexRouteImport.update({
+  id: '/monitoreo/',
+  path: '/monitoreo/',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppConfiguracionIndexRoute = AppConfiguracionIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppConfiguracionRouteRoute,
+} as any)
+const AppMonitoreoConfigRoute = AppMonitoreoConfigRouteImport.update({
+  id: '/monitoreo/config',
+  path: '/monitoreo/config',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/configuracion': typeof AppConfiguracionRouteRouteWithChildren
+  '/app/compartir': typeof AppCompartirRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
+  '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
+  '/app/configuracion/': typeof AppConfiguracionIndexRoute
+  '/app/monitoreo': typeof AppMonitoreoIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/compartir': typeof AppCompartirRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app': typeof AppIndexRoute
+  '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
+  '/app/configuracion': typeof AppConfiguracionIndexRoute
+  '/app/monitoreo': typeof AppMonitoreoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/configuracion': typeof AppConfiguracionRouteRouteWithChildren
+  '/app/compartir': typeof AppCompartirRoute
+  '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
+  '/app/monitoreo/config': typeof AppMonitoreoConfigRoute
+  '/app/configuracion/': typeof AppConfiguracionIndexRoute
+  '/app/monitoreo/': typeof AppMonitoreoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/configuracion'
+    | '/app/compartir'
+    | '/app/reportes'
+    | '/app/'
+    | '/app/monitoreo/config'
+    | '/app/configuracion/'
+    | '/app/monitoreo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app'
-  id: '__root__' | '/' | '/app' | '/app/'
+  to:
+    | '/'
+    | '/app/compartir'
+    | '/app/reportes'
+    | '/app'
+    | '/app/monitoreo/config'
+    | '/app/configuracion'
+    | '/app/monitoreo'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/configuracion'
+    | '/app/compartir'
+    | '/app/reportes'
+    | '/app/'
+    | '/app/monitoreo/config'
+    | '/app/configuracion/'
+    | '/app/monitoreo/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -80,15 +159,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/reportes': {
+      id: '/app/reportes'
+      path: '/reportes'
+      fullPath: '/app/reportes'
+      preLoaderRoute: typeof AppReportesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/compartir': {
+      id: '/app/compartir'
+      path: '/compartir'
+      fullPath: '/app/compartir'
+      preLoaderRoute: typeof AppCompartirRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/configuracion': {
+      id: '/app/configuracion'
+      path: '/configuracion'
+      fullPath: '/app/configuracion'
+      preLoaderRoute: typeof AppConfiguracionRouteRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/monitoreo/': {
+      id: '/app/monitoreo/'
+      path: '/monitoreo'
+      fullPath: '/app/monitoreo'
+      preLoaderRoute: typeof AppMonitoreoIndexRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/configuracion/': {
+      id: '/app/configuracion/'
+      path: '/'
+      fullPath: '/app/configuracion/'
+      preLoaderRoute: typeof AppConfiguracionIndexRouteImport
+      parentRoute: typeof AppConfiguracionRouteRoute
+    }
+    '/app/monitoreo/config': {
+      id: '/app/monitoreo/config'
+      path: '/monitoreo/config'
+      fullPath: '/app/monitoreo/config'
+      preLoaderRoute: typeof AppMonitoreoConfigRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
   }
 }
 
+interface AppConfiguracionRouteRouteChildren {
+  AppConfiguracionIndexRoute: typeof AppConfiguracionIndexRoute
+}
+
+const AppConfiguracionRouteRouteChildren: AppConfiguracionRouteRouteChildren = {
+  AppConfiguracionIndexRoute: AppConfiguracionIndexRoute,
+}
+
+const AppConfiguracionRouteRouteWithChildren =
+  AppConfiguracionRouteRoute._addFileChildren(
+    AppConfiguracionRouteRouteChildren,
+  )
+
 interface AppRouteRouteChildren {
+  AppConfiguracionRouteRoute: typeof AppConfiguracionRouteRouteWithChildren
+  AppCompartirRoute: typeof AppCompartirRoute
+  AppReportesRoute: typeof AppReportesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppMonitoreoConfigRoute: typeof AppMonitoreoConfigRoute
+  AppMonitoreoIndexRoute: typeof AppMonitoreoIndexRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppConfiguracionRouteRoute: AppConfiguracionRouteRouteWithChildren,
+  AppCompartirRoute: AppCompartirRoute,
+  AppReportesRoute: AppReportesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppMonitoreoConfigRoute: AppMonitoreoConfigRoute,
+  AppMonitoreoIndexRoute: AppMonitoreoIndexRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
