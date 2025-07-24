@@ -3,6 +3,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import { camasService, Cama } from '@/services/camas.service'
+import { ChevronLeft } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 
 type CamasSearch = {
     bloqueId: number
@@ -23,10 +25,10 @@ export const Route = createFileRoute('/app/monitoreo/camas')({
     }
 })
 
-function CamaCard({ cama, isSingle = false }: { cama: Cama; isSingle?: boolean }) {
+function CamaCard({ cama }: { cama: Cama }) {
     return (
         <Button
-            className={`capitalize text-lg ${isSingle ? 'size-36' : 'aspect-square w-full h-full'}`}
+            className='aspect-square w-full h-full capitalize text-lg'
             key={cama.id}
             onClick={() => {
                 console.log('Selected cama:', cama)
@@ -42,7 +44,8 @@ function CamasComponent() {
     const [camas, setCamas] = useState<Cama[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [filter, setFilter] = useState('')
-    const { bloqueId, bloqueName, fincaName } = Route.useSearch()
+    const { bloqueId, bloqueName, fincaName, fincaId } = Route.useSearch()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (bloqueId) {
@@ -71,13 +74,23 @@ function CamasComponent() {
 
     return (
         <div className='w-full h-full flex flex-col gap-2 p-2 pb-0'>
-            <div>
-                <h1 className='text-2xl font-thin capitalize'>
-                    {bloqueName}
-                </h1>
-                <p className='text-sm text-gray-500'>
-                    {fincaName} • Seleccione una cama
-                </p>
+            <div className="flex items-center justify-center relative">
+                <ChevronLeft
+                    className="h-6 w-6 absolute left-2 cursor-pointer"
+                    onClick={() => navigate({
+                        to: '/app/monitoreo/bloques',
+                        search: {
+                            fincaId: fincaId,
+                            fincaName: fincaName,
+                        }
+                    })}
+                />
+                <div>
+                    <h1 className='text-2xl font-thin capitalize'>
+                        {bloqueName}
+                    </h1>
+                    <p className='text-sm text-gray-500'>{fincaName} • Seleccione una cama</p>
+                </div>
             </div>
             <Input
                 type="number"
@@ -87,14 +100,12 @@ function CamasComponent() {
                 onChange={(e) => setFilter(e.target.value)}
             />
             <div className='flex-1 overflow-y-auto'>
-                <div className={`grid gap-2 min-h-full content-center place-items-center ${filteredCamas.length === 1 ? 'grid-cols-1' : 'grid-cols-4'
-                    }`}>
+                <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
                     {isLoading && <p className='col-span-5 text-center'>Cargando camas...</p>}
                     {!isLoading && filteredCamas.map(cama => (
                         <CamaCard
                             key={cama.id}
                             cama={cama}
-                            isSingle={filteredCamas.length === 1}
                         />
                     ))}
                 </div>

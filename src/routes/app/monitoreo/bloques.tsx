@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { useState, useEffect } from 'react'
 import { bloquesService, Bloque } from '@/services/bloques.service'
+import { ChevronLeft } from 'lucide-react'
 
 type BloquesSearch = {
     fincaId: number
@@ -48,6 +49,7 @@ function BloquesComponent() {
     const [bloques, setBloques] = useState<Bloque[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const { fincaId, fincaName } = Route.useSearch()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (fincaId) {
@@ -69,11 +71,19 @@ function BloquesComponent() {
 
     return (
         <div className="flex h-full flex-col p-2 gap-2 pb-0  ">
-            <div>
-                <h1 className='text-2xl font-thin capitalize'>
-                    {fincaName}
-                </h1>
-                <p className='text-sm text-gray-500'>Seleccione un bloque</p>
+            <div className="flex items-center justify-center relative">
+                <ChevronLeft
+                    className="h-6 w-6 absolute left-2 cursor-pointer"
+                    onClick={() => navigate({
+                        to: '/app/monitoreo',
+                    })}
+                />
+                <div>
+                    <h1 className='text-2xl font-thin capitalize'>
+                        {fincaName}
+                    </h1>
+                    <p className='text-sm text-gray-500'>Seleccione un bloque</p>
+                </div>
             </div>
             {isLoading && <p>Cargando bloques...</p>}
             {!isLoading && (
