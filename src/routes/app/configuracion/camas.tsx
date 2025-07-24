@@ -74,7 +74,7 @@ function CamasConfigComponent() {
   const filteredCamas = useMemo(
     () =>
       camas.filter(
-        c => filter === '' || c.nombre?.toLowerCase().startsWith(filter.toLowerCase()) || c.id.toString().startsWith(filter),
+        c => filter === '' || c.nombre?.toString().startsWith(filter) || c.id.toString().startsWith(filter),
       ),
     [camas, filter],
   )
