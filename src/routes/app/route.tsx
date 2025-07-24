@@ -21,11 +21,11 @@ function RouteComponent() {
       : pathname === path
 
   return (
-    <div className="flex h-screen w-screen flex-col">
-      <main className="flex-1 overflow-hidden">
+    <div className="flex h-screen w-screen flex-col overflow-hidden">
+      <main className="flex-1 overflow-auto">
         <Outlet />
       </main>
-      <nav className="mx-4 mb-4">
+      <nav className="flex-shrink-0 p-4 pb-safe">
         <ul className="flex justify-center gap-2 rounded-full bg-zinc-900 p-2">
           {navigationItems.map(({ path, icon: Icon, label }) => (
             <li key={path}>

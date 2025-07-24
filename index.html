@@ -64,16 +64,20 @@
       /* Dynamic viewport height for mobile */
       width: 100vw;
       position: relative;
+      overflow: hidden;
     }
 
     /* Fix for iOS safe areas */
     @supports (padding: max(0px)) {
-      #root {
-        padding-left: max(0px, env(safe-area-inset-left));
-        padding-right: max(0px, env(safe-area-inset-right));
-        padding-top: max(0px, env(safe-area-inset-top));
-        padding-bottom: max(0px, env(safe-area-inset-bottom));
+      .pb-safe {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
       }
+    }
+
+    /* Ensure no content goes below viewport */
+    .h-screen {
+      height: 100vh !important;
+      height: 100dvh !important;
     }
   </style>
 </head>

@@ -25,14 +25,23 @@ function App() {
   const authenticateUser = async (pin: string) => {
     try {
       setIsLoading(true);
+      console.log('=== Authentication Debug ===')
+      console.log('PIN entered:', pin)
+      console.log('Navigator online:', navigator.onLine)
+      
       const usuario = await authService.authenticateWithPin(pin);
-
+      
+      console.log('Authentication result:', usuario)
+      
       if (usuario) {
+        console.log('Login successful, navigating to /app')
         navigate({ to: '/app' });
       } else {
+        console.log('Login failed, resetting PIN input')
         setCodigo(''); // Reset the code if invalid
       }
     } catch (error) {
+      console.error('Authentication error:', error)
       setCodigo(''); // Reset the code on error
     } finally {
       setIsLoading(false);
@@ -40,7 +49,12 @@ function App() {
   };
 
   return (
-    <div className='flex flex-col items-center justify-center h-screen gap-3'>
+    <div className='flex flex-col items-center justify-center h-screen gap-3 relative'>
+      {/* Version indicator */}
+      <div className='absolute top-4 right-4 text-sm text-gray-400 font-mono'>
+        v1
+      </div>
+      
       <InputOTP
         maxLength={6}
         value={codigo}
