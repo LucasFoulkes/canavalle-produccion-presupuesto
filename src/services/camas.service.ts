@@ -49,6 +49,65 @@ class CamasService {
         }
     }
 
+    async upsertCama(cama: Omit<Cama, 'id'> & { id?: number }): Promise<Cama> {
+        try {
+            // Check if exists in Supabase
+            const { data: existing, error: queryError } = await supabase
+                .from('camas')
+                .select('*')
+                .eq('bloque_id', cama.bloque_id)
+                .eq('nombre', cama.nombre)
+                .maybeSingle()
+
+            if (queryError) {
+                console.error('Error checking existing cama in Supabase:', queryError)
+                throw queryError
+            }
+
+            let result;
+            if (existing) {
+                // Update existing
+                const { data: updated, error: updateError } = await supabase
+                    .from('camas')
+                    .update({
+                        variedad_id: cama.variedad_id,
+                        area: cama.area
+                    })
+                    .eq('id', existing.id)
+                    .select()
+                    .single()
+
+                if (updateError) {
+                    console.error('Error updating cama in Supabase:', updateError)
+                    throw updateError
+                }
+                result = updated
+            } else {
+                // Insert new
+                const { data: inserted, error: insertError } = await supabase
+                    .from('camas')
+                    .insert(cama)
+                    .select()
+                    .single()
+
+                if (insertError) {
+                    console.error('Error inserting cama in Supabase:', insertError)
+                    throw insertError
+                }
+                result = inserted
+            }
+
+            // Sync to local Dexie (put will create or update)
+            await db.camas.put(result)
+
+            console.log('Cama processed successfully:', result)
+            return result
+        } catch (error) {
+            console.error('Error in upsertCama:', error)
+            throw error
+        }
+    }
+
     /**
      * Get all camas from local database
      */

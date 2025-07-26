@@ -14,6 +14,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppReportesRouteImport } from './routes/app/reportes'
 import { Route as AppCompartirRouteImport } from './routes/app/compartir'
+import { Route as AppBloquesRouteImport } from './routes/app/bloques'
+import { Route as AppAboutRouteImport } from './routes/app/about'
 import { Route as AppMonitoreoIndexRouteImport } from './routes/app/monitoreo/index'
 import { Route as AppConfiguracionIndexRouteImport } from './routes/app/configuracion/index'
 import { Route as AppMonitoreoConfigRouteImport } from './routes/app/monitoreo/config'
@@ -45,6 +47,16 @@ const AppReportesRoute = AppReportesRouteImport.update({
 const AppCompartirRoute = AppCompartirRouteImport.update({
   id: '/compartir',
   path: '/compartir',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppBloquesRoute = AppBloquesRouteImport.update({
+  id: '/bloques',
+  path: '/bloques',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAboutRoute = AppAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppMonitoreoIndexRoute = AppMonitoreoIndexRouteImport.update({
@@ -87,6 +99,8 @@ const AppConfiguracionCamasRoute = AppConfiguracionCamasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/about': typeof AppAboutRoute
+  '/app/bloques': typeof AppBloquesRoute
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
@@ -100,6 +114,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/about': typeof AppAboutRoute
+  '/app/bloques': typeof AppBloquesRoute
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app': typeof AppIndexRoute
@@ -115,6 +131,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteRouteWithChildren
+  '/app/about': typeof AppAboutRoute
+  '/app/bloques': typeof AppBloquesRoute
   '/app/compartir': typeof AppCompartirRoute
   '/app/reportes': typeof AppReportesRoute
   '/app/': typeof AppIndexRoute
@@ -131,6 +149,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/app/about'
+    | '/app/bloques'
     | '/app/compartir'
     | '/app/reportes'
     | '/app/'
@@ -144,6 +164,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/about'
+    | '/app/bloques'
     | '/app/compartir'
     | '/app/reportes'
     | '/app'
@@ -158,6 +180,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/app/about'
+    | '/app/bloques'
     | '/app/compartir'
     | '/app/reportes'
     | '/app/'
@@ -210,6 +234,20 @@ declare module '@tanstack/react-router' {
       path: '/compartir'
       fullPath: '/app/compartir'
       preLoaderRoute: typeof AppCompartirRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/bloques': {
+      id: '/app/bloques'
+      path: '/bloques'
+      fullPath: '/app/bloques'
+      preLoaderRoute: typeof AppBloquesRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/about': {
+      id: '/app/about'
+      path: '/about'
+      fullPath: '/app/about'
+      preLoaderRoute: typeof AppAboutRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/monitoreo/': {
@@ -265,6 +303,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppAboutRoute: typeof AppAboutRoute
+  AppBloquesRoute: typeof AppBloquesRoute
   AppCompartirRoute: typeof AppCompartirRoute
   AppReportesRoute: typeof AppReportesRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -278,6 +318,8 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAboutRoute: AppAboutRoute,
+  AppBloquesRoute: AppBloquesRoute,
   AppCompartirRoute: AppCompartirRoute,
   AppReportesRoute: AppReportesRoute,
   AppIndexRoute: AppIndexRoute,

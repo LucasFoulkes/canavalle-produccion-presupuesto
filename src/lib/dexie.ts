@@ -1,11 +1,12 @@
 import Dexie, { Table } from 'dexie';
-import { Usuario, Finca, Bloque, Cama } from '@/types/database';
+import { Usuario, Finca, Bloque, Cama, Variedad } from '@/types/database';
 
 export class AppDatabase extends Dexie {
     usuarios!: Table<Usuario>;
     fincas!: Table<Finca>;
     bloques!: Table<Bloque>;
     camas!: Table<Cama>;
+    variedades!: Table<Variedad>;
 
     constructor() {
         super('AppDatabase');
@@ -13,7 +14,8 @@ export class AppDatabase extends Dexie {
             usuarios: '++id, nombres, apellidos, rol, pin',
             fincas: '++id, nombre',
             bloques: '++id, finca_id, nombre',
-            camas: '++id, bloque_id, variedad_id, nombre'
+            camas: '++id, bloque_id, variedad_id, nombre',
+            variedades: '++id, nombre'
         });
     }
 }

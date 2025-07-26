@@ -25,18 +25,20 @@ async function initializeDatabase() {
     console.log('Navigator online:', navigator.onLine)
 
     // Check all table counts
-    const [usuarios, fincas, bloques, camas] = await Promise.all([
+    const [usuarios, fincas, bloques, camas, variedades] = await Promise.all([
       db.usuarios.toArray(),
       db.fincas.toArray(),
       db.bloques.toArray(),
-      db.camas.toArray()
+      db.camas.toArray(),
+      db.variedades.toArray()
     ])
 
     console.log('Local data:', {
       usuarios: usuarios.length,
       fincas: fincas.length,
       bloques: bloques.length,
-      camas: camas.length
+      camas: camas.length,
+      variedades: variedades.length
     })
 
     // If online, sync all data from Supabase
@@ -46,18 +48,20 @@ async function initializeDatabase() {
       await syncService.syncAllData()
 
       // Log updated counts
-      const [updatedUsuarios, updatedFincas, updatedBloques, updatedCamas] = await Promise.all([
+      const [updatedUsuarios, updatedFincas, updatedBloques, updatedCamas, updatedVariedades] = await Promise.all([
         db.usuarios.toArray(),
         db.fincas.toArray(),
         db.bloques.toArray(),
-        db.camas.toArray()
+        db.camas.toArray(),
+        db.variedades.toArray()
       ])
 
       console.log('Synced data:', {
         usuarios: updatedUsuarios.length,
         fincas: updatedFincas.length,
         bloques: updatedBloques.length,
-        camas: updatedCamas.length
+        camas: updatedCamas.length,
+        variedades: updatedVariedades.length
       })
     } else {
       console.log('Offline mode - using local data only')

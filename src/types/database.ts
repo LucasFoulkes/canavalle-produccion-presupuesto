@@ -27,6 +27,7 @@ export interface Cama {
     bloque_id: number
     variedad_id: number
     nombre: string
+    area?: number
 }
 
 export interface Accion {
