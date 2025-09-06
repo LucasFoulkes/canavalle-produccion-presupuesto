@@ -26,11 +26,11 @@ async function initializeDatabase() {
 
     // Check all table counts
     const [usuarios, fincas, bloques, camas, variedades] = await Promise.all([
-      db.usuarios.toArray(),
-      db.fincas.toArray(),
-      db.bloques.toArray(),
-      db.camas.toArray(),
-      db.variedades.toArray()
+      db.usuario.toArray(),
+      db.finca.toArray(),
+      db.bloque.toArray(),
+      db.cama.toArray(),
+      db.variedad.toArray()
     ])
 
     console.log('Local data:', {
@@ -49,11 +49,11 @@ async function initializeDatabase() {
 
       // Log updated counts
       const [updatedUsuarios, updatedFincas, updatedBloques, updatedCamas, updatedVariedades] = await Promise.all([
-        db.usuarios.toArray(),
-        db.fincas.toArray(),
-        db.bloques.toArray(),
-        db.camas.toArray(),
-        db.variedades.toArray()
+        db.usuario.toArray(),
+        db.finca.toArray(),
+        db.bloque.toArray(),
+        db.cama.toArray(),
+        db.variedad.toArray()
       ])
 
       console.log('Synced data:', {
@@ -74,32 +74,26 @@ async function initializeDatabase() {
 // Call the initialization function
 initializeDatabase()
 
-// Register service worker for PWA - iOS compatible
-if ('serviceWorker' in navigator) {
+// Register service worker only in production builds
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
-
-      console.log('SW registered: ', registration);
-
-      // Handle updates
+      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      console.log('SW registered: ', registration)
       registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
+        const newWorker = registration.installing
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('New content is available; please refresh.');
+              console.log('New content is available; please refresh.')
             }
-          });
+          })
         }
-      });
-
+      })
     } catch (registrationError) {
-      console.log('SW registration failed: ', registrationError);
+      console.log('SW registration failed: ', registrationError)
     }
-  });
+  })
 }
 
 // Render the app

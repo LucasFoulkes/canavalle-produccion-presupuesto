@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { db } from '@/lib/dexie'
+import { db, TABLES } from '@/lib/dexie'
 import { Variedad } from '@/types/database'
 
 export type { Variedad }
@@ -11,13 +11,9 @@ export const variedadesService = {
 
         // 1. Always try offline first
         try {
-            const offlineVariedades = await db.variedades.toArray()
+            const offlineVariedades = await db.variedad.toArray()
             if (offlineVariedades.length > 0) {
                 console.log('Variedades found offline:', offlineVariedades)
-                // Trigger background sync if online
-                if (navigator.onLine) {
-                    this.syncVariedades().catch(err => console.log('Background variedades sync failed:', err))
-                }
                 return offlineVariedades
             }
             console.log('No variedades found offline, checking online...')
@@ -33,7 +29,7 @@ export const variedadesService = {
 
         try {
             const { data, error } = await supabase
-                .from('variedades')
+                .from(TABLES.variedad)
                 .select('*')
 
             if (error || !data) {
@@ -42,7 +38,7 @@ export const variedadesService = {
             }
 
             // 3. Store in Dexie for offline use
-            await db.variedades.bulkPut(data)
+            await db.variedad.bulkPut(data)
             console.log('Variedades stored offline for future use')
 
             return data
@@ -63,7 +59,7 @@ export const variedadesService = {
             console.log('Syncing variedades...')
 
             const { data, error } = await supabase
-                .from('variedades')
+                .from(TABLES.variedad)
                 .select('*')
 
             if (error) {
@@ -72,7 +68,7 @@ export const variedadesService = {
             }
 
             if (data && data.length > 0) {
-                await db.variedades.bulkPut(data)
+                await db.variedad.bulkPut(data)
                 console.log(`Synced ${data.length} variedades`)
             }
         } catch (error) {
@@ -84,7 +80,7 @@ export const variedadesService = {
     async getVariedadById(id: number): Promise<Variedad | null> {
         try {
             // Try offline first
-            const offlineVariedad = await db.variedades.get(id)
+            const offlineVariedad = await db.variedad.get(id)
             if (offlineVariedad) {
                 return offlineVariedad
             }
@@ -92,14 +88,14 @@ export const variedadesService = {
             // If not found offline and online, try online
             if (navigator.onLine) {
                 const { data, error } = await supabase
-                    .from('variedades')
+                    .from(TABLES.variedad)
                     .select('*')
                     .eq('id', id)
                     .single()
 
                 if (!error && data) {
                     // Store for offline use
-                    await db.variedades.put(data)
+                    await db.variedad.put(data)
                     return data
                 }
             }

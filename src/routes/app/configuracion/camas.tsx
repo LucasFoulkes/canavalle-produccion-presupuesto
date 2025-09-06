@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Plus } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { camasService, Cama } from '@/services/camas.service'
 import { fincasService, Finca } from '@/services/fincas.service'
@@ -8,7 +8,7 @@ import { bloquesService, Bloque } from '@/services/bloques.service'
 import { variedadesService, Variedad } from '@/services/variedades.service'
 import { GenericCombobox } from '@/components/generic-combobox'
 import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardTitle } from '@/components/ui/card'
 
 export const Route = createFileRoute('/app/configuracion/camas')({
   component: CamasConfigComponent,
@@ -18,7 +18,9 @@ interface CamaGroup {
   from: string
   to: string
   variety: string
+  varietyId: number
   area: number
+  camaIds: number[]
 }
 
 function CamasConfigComponent() {
@@ -39,6 +41,12 @@ function CamasConfigComponent() {
   const [toCama, setToCama] = useState('')
   const [selectedVariety, setSelectedVariety] = useState<number | null>(null)
   const [area, setArea] = useState('')
+
+  // Inline edit states
+  const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null)
+  const [editVarietyId, setEditVarietyId] = useState<number | null>(null)
+  const [editArea, setEditArea] = useState('')
+  const [addFormOpen, setAddFormOpen] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -91,7 +99,9 @@ function CamasConfigComponent() {
           from: sortedCamas[0].nombre,
           to: sortedCamas[0].nombre,
           variety: variedades.find((v: Variedad) => v.id === sortedCamas[0].variedad_id)?.nombre || 'Unknown',
-          area: sortedCamas[0].area || 0
+          varietyId: sortedCamas[0].variedad_id,
+          area: sortedCamas[0].area || 0,
+          camaIds: [sortedCamas[0].id]
         }
         for (let i = 1; i < sortedCamas.length; i++) {
           if (
@@ -100,13 +110,16 @@ function CamasConfigComponent() {
             parseInt(sortedCamas[i].nombre) === parseInt(sortedCamas[i - 1].nombre) + 1 // Consecutive check
           ) {
             currentGroup.to = sortedCamas[i].nombre
+            currentGroup.camaIds.push(sortedCamas[i].id)
           } else {
             grouped.push(currentGroup)
             currentGroup = {
               from: sortedCamas[i].nombre,
               to: sortedCamas[i].nombre,
               variety: variedades.find((v: Variedad) => v.id === sortedCamas[i].variedad_id)?.nombre || 'Unknown',
-              area: sortedCamas[i].area || 0
+              varietyId: sortedCamas[i].variedad_id,
+              area: sortedCamas[i].area || 0,
+              camaIds: [sortedCamas[i].id]
             }
           }
         }
@@ -156,17 +169,101 @@ function CamasConfigComponent() {
     }
   }
 
+  const toggleGroupEdit = (index: number) => {
+    if (editingGroupIndex === index) {
+      // collapse
+      setEditingGroupIndex(null)
+      setEditVarietyId(null)
+      setEditArea('')
+      setError(null)
+    } else {
+      const grp = groups[index]
+      setEditingGroupIndex(index)
+      setEditVarietyId(grp.varietyId)
+      setEditArea(grp.area.toString())
+      setError(null)
+    }
+  }
+
+  const handleUpdateGroup = async () => {
+    if (editingGroupIndex === null) return
+    const grp = groups[editingGroupIndex]
+    if (!grp || !editVarietyId || !editArea) {
+      setError('Por favor complete todos los campos')
+      return
+    }
+    const areaNum = parseFloat(editArea)
+    if (isNaN(areaNum) || areaNum <= 0) {
+      setError('Área inválida')
+      return
+    }
+    try {
+      for (const camaId of grp.camaIds) {
+        const existingCama = camas.find(c => c.id === camaId)
+        if (existingCama) {
+          await camasService.upsertCama({
+            ...existingCama,
+            variedad_id: editVarietyId,
+            area: areaNum
+          })
+        }
+      }
+      if (selectedBloque) {
+        const updatedCamas = await camasService.getCamasByBloqueId(selectedBloque)
+        setCamas(updatedCamas)
+      }
+      // collapse after update
+      setEditingGroupIndex(null)
+      setEditVarietyId(null)
+      setEditArea('')
+      setError(null)
+    } catch {
+      setError('Failed to update group')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingGroupIndex(null)
+    setEditVarietyId(null)
+    setEditArea('')
+    setError(null)
+  }
+
+  const handleDeleteGroup = async (index: number) => {
+    const grp = groups[index]
+    if (!grp) return
+    const confirmMsg = grp.from === grp.to
+      ? `Eliminar la cama ${grp.from}?`
+      : `Eliminar las camas ${grp.from}–${grp.to}?`
+    if (!window.confirm(confirmMsg)) return
+    try {
+      await camasService.deleteCamasByIds(grp.camaIds)
+      if (selectedBloque) {
+        const updatedCamas = await camasService.getCamasByBloqueId(selectedBloque)
+        setCamas(updatedCamas)
+      }
+      if (editingGroupIndex === index) {
+        setEditingGroupIndex(null)
+        setEditVarietyId(null)
+        setEditArea('')
+      }
+    } catch {
+      setError('No se pudo eliminar el grupo')
+    }
+  }
+
   return (
-    <div className="flex h-full flex-col gap-2 p-2">
-      <div className="relative flex items-center justify-center">
+    <div className="flex h-full flex-col p-4">
+      <div className="relative mb-4 flex items-center justify-center">
         <ChevronLeft
           className="absolute left-0 h-6 w-6 cursor-pointer"
           onClick={() => navigate({ to: '/app/configuracion' })}
           aria-label="Back to configuration"
         />
-        <h1 className="text-xl font-semibold">Configuración de Camas</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Configuración de Camas</h1>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      {/* Selectors */}
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
         <GenericCombobox
           value={selectedFinca?.toString() ?? ''}
           onValueChange={v => setSelectedFinca(v ? Number(v) : null)}
@@ -185,69 +282,141 @@ function CamasConfigComponent() {
           disabled={!selectedFinca}
         />
       </div>
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error && <p className="mx-auto mt-2 w-full max-w-2xl text-sm text-red-500">{error}</p>}
       {isLoading ? (
-        <p className="text-center text-gray-500">Cargando...</p>
+        <p className="mt-10 text-center text-sm text-gray-500">Cargando...</p>
       ) : selectedBloque ? (
-        <div className="flex-1 overflow-y-auto space-y-4">
-          {groups.map((group, index) => (
-            <Card key={index} className="p-4">
-              <div className="grid grid-cols-3 gap-4 items-center">
-                <span className="text-sm font-medium text-gray-700">{`${group.from}-${group.to}`}</span>
-                <span className="text-sm text-gray-600">{group.variety}</span>
-                <span className="text-sm text-gray-600">{group.area} m²</span>
-              </div>
-            </Card>
-          ))}
-          <Card>
-            <CardTitle className="text-lg font-medium">Configurar grupo</CardTitle>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700 w-16">Camas</label>
-                <div className="flex gap-3 flex-1">
-                  <Input
-                    type="number"
-                    min="1"
-                    placeholder="Desde"
-                    value={fromCama}
-                    onChange={e => setFromCama(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    type="number"
-                    min="1"
-                    placeholder="Hasta"
-                    value={toCama}
-                    onChange={e => setToCama(e.target.value)}
-                    className="flex-1"
-                  />
+        <div className="mx-auto flex-1 overflow-y-auto w-full max-w-2xl mt-2 space-y-2 pb-20">
+          {groups.map((group, index) => {
+            const expanded = editingGroupIndex === index
+            return (
+              <Card key={index} className={`transition-colors overflow-hidden ${expanded ? 'ring-1 ring-gray-200' : ''}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroupEdit(index)}
+                  className="w-full px-3 py-1.5 text-left hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="grid w-full grid-cols-[1fr_1fr_auto] items-center gap-2">
+                      <span className="truncate text-[13px] font-medium text-gray-900 tracking-tight">
+                        {group.from === group.to ? `Cama ${group.from}` : `Camas ${group.from}–${group.to}`}
+                      </span>
+                      <span className="truncate text-center text-[11px] sm:text-xs text-gray-600 px-1">
+                        {group.variety}
+                      </span>
+                      <span className="text-right text-[11px] sm:text-xs text-gray-600 pl-1">
+                        {group.area} m²
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 flex-none text-gray-500 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </button>
+                {expanded && (
+                  <div className="border-t px-3 py-3 bg-gray-50/60">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-600">Variedad</label>
+                        <GenericCombobox
+                          value={editVarietyId?.toString() ?? ''}
+                          onValueChange={v => setEditVarietyId(v ? Number(v) : null)}
+                          items={variedades}
+                          placeholder="Variedad..."
+                          searchPlaceholder="Buscar variedad..."
+                          emptyMessage="No se encontró variedad."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-gray-600">Área (m²)</label>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={editArea}
+                          onChange={e => setEditArea(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <Button size="sm" onClick={handleUpdateGroup}>Guardar</Button>
+                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cerrar</Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteGroup(index)}>Eliminar</Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+          {addFormOpen ? (
+            <Card className="border-dashed">
+              <div className="px-4 py-3">
+                <CardTitle className="mb-4 text-base font-medium tracking-tight">Nuevo grupo</CardTitle>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600" htmlFor="cama-desde">Cama desde</label>
+                    <Input
+                      id="cama-desde"
+                      type="number"
+                      min="1"
+                      placeholder="Desde"
+                      value={fromCama}
+                      onChange={e => setFromCama(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600" htmlFor="cama-hasta">Cama hasta</label>
+                    <Input
+                      id="cama-hasta"
+                      type="number"
+                      min="1"
+                      placeholder="Hasta"
+                      value={toCama}
+                      onChange={e => setToCama(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">Variedad</label>
+                    <GenericCombobox
+                      value={selectedVariety?.toString() ?? ''}
+                      onValueChange={v => setSelectedVariety(v ? Number(v) : null)}
+                      items={variedades}
+                      placeholder="Variedad..."
+                      searchPlaceholder="Buscar variedad..."
+                      emptyMessage="No se encontró variedad."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-600">Área (m²)</label>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={area}
+                      onChange={e => setArea(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" onClick={handleAddGroup} className="flex-1">Guardar</Button>
+                  <Button size="sm" type="button" variant="outline" className="flex-1" onClick={() => setAddFormOpen(false)}>Cancelar</Button>
                 </div>
               </div>
-              <GenericCombobox
-                value={selectedVariety?.toString() ?? ''}
-                onValueChange={v => setSelectedVariety(v ? Number(v) : null)}
-                items={variedades}
-                placeholder="Variedad..."
-                searchPlaceholder="Buscar variedad..."
-                emptyMessage="No se encontró variedad."
-              />
-              <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700 w-16">Área (m²)</label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={area}
-                  onChange={e => setArea(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
-              <Button onClick={handleAddGroup} className="w-full">
-                + Agregar Grupo
-              </Button>
-            </CardContent>
-          </Card>
+            </Card>
+          ) : (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setAddFormOpen(true)}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-black text-white shadow-lg ring-1 ring-black/10 hover:scale-105 active:scale-95 transition-all"
+                aria-label="Agregar grupo"
+              >
+                <Plus className="h-6 w-6" />
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
     </div>

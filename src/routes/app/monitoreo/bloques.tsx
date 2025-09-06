@@ -19,28 +19,30 @@ export const Route = createFileRoute('/app/monitoreo/bloques')({
     }
 })
 
-function BloqueCard({ bloque }: { bloque: Bloque }) {
+function BloqueCard({ bloque }: { bloque: Bloque | any }) {
     const navigate = useNavigate()
     const { fincaId, fincaName } = Route.useSearch()
+    const bloqueId = bloque.id ?? bloque.bloque_id
+    const displayName = bloque.nombre ?? bloque.codigo ?? `Bloque ${bloqueId}`
 
     return (
         <Button
             className='aspect-square w-full h-full capitalize text-lg'
-            key={bloque.id}
+            key={bloqueId}
             onClick={() => {
                 console.log('Selected bloque:', bloque)
                 navigate({
-                    to: '/app/monitoreo/camas',
+                    to: '/app/monitoreo/bloque',
                     search: {
-                        bloqueId: bloque.id,
-                        bloqueName: bloque.nombre,
+                        bloqueId: bloqueId,
+                        bloqueName: displayName,
                         fincaId: fincaId,
                         fincaName: fincaName,
                     }
                 })
             }}
         >
-            {bloque.nombre}
+            {displayName}
         </Button>
     )
 }
@@ -90,11 +92,34 @@ function BloquesComponent() {
                 <div className='flex-1 overflow-y-auto'>
                     {bloques.length > 0 ? (
                         <div className='grid grid-cols-4 gap-2 min-h-full content-center place-items-center'>
-                            {
-                                bloques.map((bloque) => (
-                                    <BloqueCard key={bloque.id} bloque={bloque} />
-                                ))
-                            }
+                            {[
+                                // sort bloques by natural order: 1,2,3,3a,3b,4 ... considering nombre or codigo
+                                ...bloques
+                                    .slice()
+                                    .sort((a: any, b: any) => {
+                                        const getKey = (x: any) => (x.nombre ?? x.codigo ?? '').toString().trim()
+                                        const ak = getKey(a)
+                                        const bk = getKey(b)
+                                        // Extract leading integer and optional alpha suffix
+                                        const parse = (s: string) => {
+                                            const m = s.match(/^(\d+)([a-zA-Z])?$/)
+                                            if (m) return { n: parseInt(m[1], 10), suf: m[2] || '' }
+                                            const m2 = s.match(/^(\d+)/)
+                                            if (m2) return { n: parseInt(m2[1], 10), suf: s.slice(m2[1].length) }
+                                            return { n: Number.MAX_SAFE_INTEGER, suf: s }
+                                        }
+                                        const A = parse(ak)
+                                        const B = parse(bk)
+                                        if (A.n !== B.n) return A.n - B.n
+                                        // same base number: empty suffix first, then alphabetically
+                                        if (A.suf === B.suf) return 0
+                                        if (A.suf === '') return -1
+                                        if (B.suf === '') return 1
+                                        return A.suf.localeCompare(B.suf, 'es', { sensitivity: 'base' })
+                                    })
+                            ].map((bloque: any) => (
+                                <BloqueCard key={bloque.id ?? bloque.bloque_id} bloque={bloque} />
+                            ))}
                         </div>
                     ) : (
                         <div className='flex h-full w-full items-center justify-center'>
