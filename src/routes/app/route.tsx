@@ -1,5 +1,7 @@
-import { createFileRoute, Outlet, Link, useLocation } from '@tanstack/react-router'
+import { createFileRoute, Outlet, Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { Monitor, FileText, Share2, Settings } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { authService } from '@/services/usuarios.service'
 
 export const Route = createFileRoute('/app')({
   component: RouteComponent,
@@ -7,6 +9,24 @@ export const Route = createFileRoute('/app')({
 
 function RouteComponent() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const [ready, setReady] = useState(false)
+
+  // Minimal auth guard: if no user cached locally, send to PIN screen
+  useEffect(() => {
+    ; (async () => {
+      try {
+        const usuarios = await authService.getStoredUsuarios()
+        if (!usuarios || usuarios.length === 0) {
+          navigate({ to: '/' })
+        }
+      } catch {
+        navigate({ to: '/' })
+      }
+      setReady(true)
+    })()
+    return () => { }
+  }, [navigate])
 
   const navigationItems = [
     { path: '/app/monitoreo', icon: Monitor, label: 'Monitoreo' },
@@ -20,6 +40,7 @@ function RouteComponent() {
       ? pathname === '/app' || pathname === '/app/' || pathname.startsWith('/app/monitoreo')
       : pathname === path
 
+  if (!ready) return null
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       <main className="flex-1 overflow-hidden">

@@ -49,7 +49,7 @@ export function CamaGroupForm({
                 <GenericCombobox
                     value={selectedVariety?.toString() ?? ''}
                     onValueChange={v => setSelectedVariety(v ? Number(v) : null)}
-                    items={variedades}
+                    items={variedades.map(v => ({ id: v.id_variedad as unknown as number, nombre: v.nombre })) as any}
                     placeholder="Variedad..."
                     searchPlaceholder="Buscar variedad..."
                     emptyMessage="No se encontró variedad."

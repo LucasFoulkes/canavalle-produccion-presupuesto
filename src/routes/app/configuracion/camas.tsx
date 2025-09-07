@@ -9,6 +9,7 @@ import { variedadesService, Variedad } from '@/services/variedades.service'
 import { GenericCombobox } from '@/components/generic-combobox'
 import { Input } from '@/components/ui/input'
 import { Card, CardTitle } from '@/components/ui/card'
+import { gruposPlantacionService } from '@/services/grupos-plantacion.service'
 
 export const Route = createFileRoute('/app/configuracion/camas')({
   component: CamasConfigComponent,
@@ -70,7 +71,7 @@ function CamasConfigComponent() {
   }, [])
 
   useEffect(() => {
-    setBloques(selectedFinca ? allBloques.filter(b => b.finca_id === selectedFinca) : [])
+    setBloques(selectedFinca ? allBloques.filter((b: any) => (b as any).id_finca === selectedFinca || (b as any).finca_id === selectedFinca) as any : [])
     setSelectedBloque(null)
   }, [selectedFinca, allBloques])
 
@@ -92,34 +93,35 @@ function CamasConfigComponent() {
 
   useEffect(() => {
     const groupCamas = () => {
-      const sortedCamas = [...camas].sort((a, b) => parseInt(a.nombre) - parseInt(b.nombre))
+      const nameOf = (c: Cama) => c.nombre ?? String((c as any).id_cama)
+      const numOf = (c: Cama) => {
+        const n = parseInt(nameOf(c), 10)
+        return isNaN(n) ? Number.MAX_SAFE_INTEGER : n
+      }
+      const sortedCamas = [...camas].sort((a, b) => numOf(a) - numOf(b))
       const grouped: CamaGroup[] = []
       if (sortedCamas.length > 0) {
-        let currentGroup = {
-          from: sortedCamas[0].nombre,
-          to: sortedCamas[0].nombre,
-          variety: variedades.find((v: Variedad) => v.id === sortedCamas[0].variedad_id)?.nombre || 'Unknown',
-          varietyId: sortedCamas[0].variedad_id,
-          area: sortedCamas[0].area || 0,
-          camaIds: [sortedCamas[0].id]
+        let currentGroup: CamaGroup = {
+          from: nameOf(sortedCamas[0]),
+          to: nameOf(sortedCamas[0]),
+          variety: '—',
+          varietyId: 0,
+          area: 0,
+          camaIds: [Number((sortedCamas[0] as any).id_cama)]
         }
         for (let i = 1; i < sortedCamas.length; i++) {
-          if (
-            sortedCamas[i].variedad_id === sortedCamas[i - 1].variedad_id &&
-            sortedCamas[i].area === sortedCamas[i - 1].area &&
-            parseInt(sortedCamas[i].nombre) === parseInt(sortedCamas[i - 1].nombre) + 1 // Consecutive check
-          ) {
-            currentGroup.to = sortedCamas[i].nombre
-            currentGroup.camaIds.push(sortedCamas[i].id)
+          if (numOf(sortedCamas[i]) === numOf(sortedCamas[i - 1]) + 1) {
+            currentGroup.to = nameOf(sortedCamas[i])
+            currentGroup.camaIds.push(Number((sortedCamas[i] as any).id_cama))
           } else {
             grouped.push(currentGroup)
             currentGroup = {
-              from: sortedCamas[i].nombre,
-              to: sortedCamas[i].nombre,
-              variety: variedades.find((v: Variedad) => v.id === sortedCamas[i].variedad_id)?.nombre || 'Unknown',
-              varietyId: sortedCamas[i].variedad_id,
-              area: sortedCamas[i].area || 0,
-              camaIds: [sortedCamas[i].id]
+              from: nameOf(sortedCamas[i]),
+              to: nameOf(sortedCamas[i]),
+              variety: '—',
+              varietyId: 0,
+              area: 0,
+              camaIds: [Number((sortedCamas[i] as any).id_cama)]
             }
           }
         }
@@ -144,12 +146,24 @@ function CamasConfigComponent() {
     }
 
     try {
+      // Ensure there is a grupo_cama for this bloque + variedad
+      const grupos = await gruposPlantacionService.getByBloqueId(selectedBloque)
+      let grupo = (grupos as any).find((g: any) => !g.eliminado_en && (g.id_variedad === selectedVariety || (g as any).variedad_id === selectedVariety))
+      if (!grupo) {
+        // Create group with minimal fields
+        const created = await gruposPlantacionService.upsert({
+          id_bloque: selectedBloque as any,
+          id_variedad: selectedVariety as any,
+          fecha_siembra: new Date().toISOString(),
+        } as any)
+        if (!created) throw new Error('No se pudo crear el grupo')
+        grupo = created
+      }
+      const grupoId = (grupo as any).id_grupo ?? (grupo as any).grupo_id
       for (let i = fromNum; i <= toNum; i++) {
-        const cama: Omit<Cama, 'id'> = {
+        const cama: any = {
           nombre: i.toString(),
-          bloque_id: selectedBloque,
-          variedad_id: selectedVariety,
-          area: areaNum
+          id_grupo: grupoId,
         }
         await camasService.upsertCama(cama)
       }
@@ -198,16 +212,8 @@ function CamasConfigComponent() {
       return
     }
     try {
-      for (const camaId of grp.camaIds) {
-        const existingCama = camas.find(c => c.id === camaId)
-        if (existingCama) {
-          await camasService.upsertCama({
-            ...existingCama,
-            variedad_id: editVarietyId,
-            area: areaNum
-          })
-        }
-      }
+      // TODO: actualizar variedad/área requiere mover camas entre grupos o actualizar grupo; omitido por ahora
+      console.warn('[configuracion/camas] actualizar grupo no implementado con nuevo esquema')
       if (selectedBloque) {
         const updatedCamas = await camasService.getCamasByBloqueId(selectedBloque)
         setCamas(updatedCamas)
@@ -267,7 +273,7 @@ function CamasConfigComponent() {
         <GenericCombobox
           value={selectedFinca?.toString() ?? ''}
           onValueChange={v => setSelectedFinca(v ? Number(v) : null)}
-          items={fincas}
+          items={fincas.map(f => ({ id: (f as any).id_finca, nombre: f.nombre })) as any}
           placeholder="Seleccionar finca"
           searchPlaceholder="Buscar finca"
           emptyMessage="No se encontró finca."
@@ -275,7 +281,7 @@ function CamasConfigComponent() {
         <GenericCombobox
           value={selectedBloque?.toString() ?? ''}
           onValueChange={v => setSelectedBloque(v ? Number(v) : null)}
-          items={bloques}
+          items={bloques.map(b => ({ id: (b as any).id_bloque ?? (b as any).bloque_id, nombre: String((b as any).nombre ?? (b as any).codigo ?? `Bloque ${(b as any).id_bloque ?? (b as any).bloque_id}`) })) as any}
           placeholder="Seleccionar bloque..."
           searchPlaceholder="Buscar bloque..."
           emptyMessage="No se encontró bloque."
@@ -321,7 +327,7 @@ function CamasConfigComponent() {
                         <GenericCombobox
                           value={editVarietyId?.toString() ?? ''}
                           onValueChange={v => setEditVarietyId(v ? Number(v) : null)}
-                          items={variedades}
+                          items={variedades.map(v => ({ id: (v as any).id_variedad, nombre: v.nombre })) as any}
                           placeholder="Variedad..."
                           searchPlaceholder="Buscar variedad..."
                           emptyMessage="No se encontró variedad."
@@ -381,7 +387,7 @@ function CamasConfigComponent() {
                     <GenericCombobox
                       value={selectedVariety?.toString() ?? ''}
                       onValueChange={v => setSelectedVariety(v ? Number(v) : null)}
-                      items={variedades}
+                      items={variedades.map(v => ({ id: (v as any).id_variedad, nombre: v.nombre })) as any}
                       placeholder="Variedad..."
                       searchPlaceholder="Buscar variedad..."
                       emptyMessage="No se encontró variedad."

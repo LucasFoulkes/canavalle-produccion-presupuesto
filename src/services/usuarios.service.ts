@@ -5,36 +5,48 @@ import { Usuario } from '@/types/database'
 export type { Usuario }
 
 export const authService = {
-    async authenticateWithPin(pin: string): Promise<Usuario | null> {
-        console.log('Authenticating with PIN:', pin)
-
-        // 1. Always try offline first
+    // Session helpers (localStorage-based)
+    getSessionUserId: (): number | null => {
         try {
-            // Normalize input
+            const v = localStorage.getItem('currentUserId')
+            return v ? Number(v) : null
+        } catch {
+            return null
+        }
+    },
+    setSessionUser: (userId: number) => {
+        try { localStorage.setItem('currentUserId', String(userId)) } catch { }
+    },
+    clearSession: () => {
+        try { localStorage.removeItem('currentUserId') } catch { }
+    },
+    // Preload usuarios into Dexie if empty and online, so PIN login works offline later
+    preloadUsuariosIfNeeded: async (): Promise<number> => {
+        try {
+            const count = await db.usuario.count()
+            if (count > 0 || !navigator.onLine) return count
+            const { data, error } = await supabase
+                .from(TABLES.usuario)
+                .select('*')
+                .is('eliminado_en', null)
+            if (error || !data) return count
+            await db.usuario.clear()
+            await db.usuario.bulkPut(data as any)
+            return data.length
+        } catch {
+            return await db.usuario.count()
+        }
+    },
+    async authenticateWithPin(pin: string): Promise<Usuario | null> {
+        console.log('Authenticating with PIN (clave_pin only):', pin)
+        // 1. Offline first using clave_pin only
+        try {
             const pinStr = String(pin)
-            const pinNum = parseInt(pinStr, 10)
-
-            console.log('Searching (offline) pin / clave_pin =', pinStr)
-
-            // Strategy: search by pin index, then by clave_pin index if different
-            let offlineUser = await db.usuario.where('pin').equals(pinStr).first()
-            if (!offlineUser && !isNaN(pinNum)) {
-                offlineUser = await db.usuario.where('pin').equals(pinNum as any).first()
-            }
-            if (!offlineUser) {
-                offlineUser = await db.usuario.where('clave_pin').equals(pinStr).first()
-            }
-            if (!offlineUser && !isNaN(pinNum)) {
-                offlineUser = await db.usuario.where('clave_pin').equals(pinNum as any).first()
-            }
-
+            console.log('Searching (offline) clave_pin =', pinStr)
+            const offlineUser = await db.usuario.where('clave_pin').equals(pinStr).first()
             if (offlineUser) {
-                // Ensure canonical pin field is populated for future fast lookups
-                if (!offlineUser.pin && (offlineUser as any).clave_pin) {
-                    offlineUser.pin = (offlineUser as any).clave_pin as any
-                    await db.usuario.put(offlineUser)
-                }
                 console.log('User found offline:', offlineUser)
+                authService.setSessionUser((offlineUser as any).id_usuario)
                 return offlineUser
             }
             console.log('User not found offline, checking online...')
@@ -48,22 +60,13 @@ export const authService = {
         }
 
         try {
-            // New schema column name is clave_pin; legacy might still respond to pin. Try clave_pin first.
-            let { data, error } = await supabase
+            // Query strictly by clave_pin
+            const { data, error } = await supabase
                 .from(TABLES.usuario)
                 .select('*')
+                .is('eliminado_en', null)
                 .eq('clave_pin', pin)
-                .single()
-
-            if (error && (error as any).code === '42703') {
-                // Column does not exist (maybe still legacy) -> fallback to pin
-                console.warn('clave_pin column missing remotely, falling back to pin')
-                    ; ({ data, error } = await supabase
-                        .from(TABLES.usuario)
-                        .select('*')
-                        .eq('pin', pin)
-                        .single())
-            }
+                .maybeSingle()
 
             if (error || !data) {
                 console.error('Online authentication error:', error)
@@ -71,10 +74,8 @@ export const authService = {
             }
 
             // 3. Store in Dexie for offline use
-            // Backfill local canonical fields for consistency
-            const normalized = { ...data } as any
-            if (!normalized.pin && normalized.clave_pin) normalized.pin = normalized.clave_pin
-            await db.usuario.put(normalized)
+            await db.usuario.put({ ...data } as any)
+            authService.setSessionUser((data as any).id_usuario)
             console.log('User stored offline for future use')
 
             // Removed triggering full data sync here to prevent redundant sync storms.
@@ -88,5 +89,15 @@ export const authService = {
 
     getStoredUsuarios: async (): Promise<Usuario[]> => {
         return await db.usuario.toArray();
+    },
+
+    getCurrentUser: async (): Promise<Usuario | null> => {
+        const all = await db.usuario.toArray()
+        return all.length ? all[0] : null
+    },
+
+    logout: async (): Promise<void> => {
+        authService.clearSession()
+        await db.usuario.clear()
     }
 }

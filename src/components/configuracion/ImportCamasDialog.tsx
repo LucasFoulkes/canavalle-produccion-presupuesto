@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import * as XLSX from 'xlsx'
 import { camasService } from '@/services/camas.service'
 import { Variedad } from '@/services/variedades.service'
+import { gruposPlantacionService } from '@/services/grupos-plantacion.service'
 
 interface ImportCamasDialogProps {
     variedades: Variedad[]
@@ -70,7 +71,7 @@ export function ImportCamasDialog({ variedades, bloqueId, onImported, triggerCla
         setLoading(true)
         setError(null)
         try {
-            const varietyNameToId = new Map(variedades.map(v => [v.nombre.toLowerCase(), v.id]))
+            const varietyNameToId = new Map(variedades.map(v => [v.nombre.toLowerCase(), (v as any).id_variedad as number]))
             let created = 0
             for (const r of rows) {
                 const nombre = String(r[mapping.nombre]).trim()
@@ -80,12 +81,18 @@ export function ImportCamasDialog({ variedades, bloqueId, onImported, triggerCla
                 if (!variedadId) continue // skip unknown variety
                 const areaValue = parseFloat(String(r[mapping.area]).replace(',', '.'))
                 if (isNaN(areaValue) || areaValue <= 0) continue
-                await camasService.upsertCama({
-                    nombre,
-                    bloque_id: bloqueId,
-                    variedad_id: variedadId,
-                    area: areaValue
-                })
+                // Ensure a grupo exists for this bloque + variedad, then create cama in that grupo
+                let grupo = (await gruposPlantacionService.getByBloqueId(bloqueId)).find((g: any) => !g.eliminado_en && (g.id_variedad === variedadId || (g as any).variedad_id === variedadId))
+                if (!grupo) {
+                    const created = await gruposPlantacionService.upsert({
+                        id_bloque: bloqueId as any,
+                        id_variedad: variedadId as any,
+                        fecha_siembra: new Date().toISOString(),
+                    } as any)
+                    if (!created) continue
+                    grupo = created as any
+                }
+                await camasService.upsertCama({ nombre, id_grupo: (grupo as any).id_grupo ?? (grupo as any).grupo_id })
                 created++
             }
             onImported?.()

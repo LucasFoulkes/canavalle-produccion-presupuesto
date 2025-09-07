@@ -11,8 +11,7 @@ export const bloquesService = {
 
         // 1. Always try offline first
         try {
-            const offlineBloquesRaw = await db.bloque.where('finca_id').equals(fincaId).toArray()
-            const offlineBloques = offlineBloquesRaw.map(normalizeBloque)
+            const offlineBloques = await db.bloque.where('id_finca').equals(fincaId).toArray()
             if (offlineBloques.length > 0) {
                 console.log('Bloques found offline:', offlineBloques)
                 return sortBloques(offlineBloques)
@@ -30,27 +29,18 @@ export const bloquesService = {
 
         try {
             // Attempt with new Spanish column first (id_finca). If 42703 (column missing), fallback to legacy finca_id.
-            let { data, error } = await supabase
+            const { data, error } = await supabase
                 .from(TABLES.bloque)
                 .select('*')
                 .eq('id_finca', fincaId)
-
-            if (error && (error as any).code === '42703') {
-                console.warn('id_finca column missing remotely, falling back to finca_id')
-                    ; ({ data, error } = await supabase
-                        .from(TABLES.bloque)
-                        .select('*')
-                        .eq('finca_id', fincaId))
-            }
 
             if (error || !data) {
                 console.error('Online bloques error:', error)
                 return []
             }
-            const normalized = data.map(normalizeBloque)
-            await db.bloque.bulkPut(normalized)
+            await db.bloque.bulkPut(data as any)
             console.log('Bloques stored offline for future use')
-            return sortBloques(normalized)
+            return sortBloques(data as any)
         } catch (error) {
             console.error('Network error during bloques fetch:', error)
             return []
@@ -62,8 +52,7 @@ export const bloquesService = {
         console.log('Getting all bloques...')
 
         try {
-            const offlineBloquesRaw = await db.bloque.toArray()
-            const offlineBloques = offlineBloquesRaw.map(normalizeBloque)
+            const offlineBloques = await db.bloque.toArray()
             if (offlineBloques.length > 0) {
                 console.log('All bloques found offline:', offlineBloques)
                 return sortBloques(offlineBloques)
@@ -85,9 +74,8 @@ export const bloquesService = {
                 console.error('Online bloques error:', error)
                 return []
             }
-            const normalized = data.map(normalizeBloque)
-            await db.bloque.bulkPut(normalized)
-            return sortBloques(normalized)
+            await db.bloque.bulkPut(data as any)
+            return sortBloques(data as any)
         } catch (error) {
             console.error('Network error during bloques fetch:', error)
             return []
@@ -101,13 +89,8 @@ export const bloquesService = {
             const { data, error } = await supabase.from(TABLES.bloque).select('*')
             if (error) throw error
             if (data && Array.isArray(data)) {
-                if (db.tables.some(table => table.name === 'bloque')) {
-                    const normalized = data.map(normalizeBloque)
-                    await db.bloque.bulkPut(normalized)
-                    console.log(`Updated ${normalized.length} bloque records (normalized)`)
-                } else {
-                    console.warn('bloque table not defined in Dexie schema, skipping sync')
-                }
+                await db.bloque.bulkPut(data as any)
+                console.log(`Updated ${data.length} bloque records`)
             }
             console.log('Bloques sync completed')
         } catch (error) {
@@ -116,26 +99,23 @@ export const bloquesService = {
     },
 
     // Get bloque by ID
-    async getBloqueById(id: number): Promise<Bloque | null> {
+    async getBloqueById(id_bloque: number): Promise<Bloque | null> {
         try {
             // Try offline first
-            const offlineBloqueRaw = await db.bloque.where('id').equals(id).first()
-            if (offlineBloqueRaw) {
-                return normalizeBloque(offlineBloqueRaw as Bloque)
-            }
+            const offlineBloque = await db.bloque.get(id_bloque)
+            if (offlineBloque) return offlineBloque as any
 
             // If not found offline and we're online, try online
             if (navigator.onLine) {
                 const { data, error } = await supabase
                     .from(TABLES.bloque)
                     .select('*')
-                    .eq('id', id)
+                    .eq('id_bloque', id_bloque)
                     .single()
 
                 if (!error && data) {
-                    const norm = normalizeBloque(data as Bloque)
-                    await db.bloque.put(norm)
-                    return norm
+                    await db.bloque.put(data as any)
+                    return data as any
                 }
             }
 
@@ -146,21 +126,10 @@ export const bloquesService = {
         }
     }
 }
-
-// Helper: normalize bloque shape
-function normalizeBloque(raw: any): Bloque {
-    const b: any = { ...raw }
-    if ((b.id === undefined || b.id === null) && b.bloque_id != null) b.id = b.bloque_id
-    if (typeof b.id === 'string' && /^\d+$/.test(b.id)) b.id = Number(b.id)
-    // Spanish schema uses id_finca; canonical is finca_id in code. Copy if needed.
-    if ((b.finca_id == null) && b.id_finca != null) b.finca_id = b.id_finca
-    if (typeof b.finca_id === 'string' && /^\d+$/.test(b.finca_id)) b.finca_id = Number(b.finca_id)
-    if (!b.codigo && b.nombre != null) b.codigo = String(b.nombre)
-    return b
-}
-
-// Natural sort similar to UI requirement (e.g., 3, 3a, 3b, 4)
+// Natural sort by nombre (numeric-aware). Fallback to id_bloque when nombre missing.
 function sortBloques(list: Bloque[]): Bloque[] {
     const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
-    return [...list].sort((a, b) => collator.compare(a.codigo || String(a.id), b.codigo || String(b.id)))
+    return [...list].sort((a, b) =>
+        collator.compare(String(a.nombre ?? a.id_bloque), String(b.nombre ?? b.id_bloque))
+    )
 }

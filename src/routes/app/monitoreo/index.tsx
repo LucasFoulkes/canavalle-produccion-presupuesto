@@ -12,13 +12,13 @@ function FincaCard({ finca }: { finca: Finca }) {
     return (
         <Button
             className='aspect-square w-full h-full capitalize text-lg'
-            key={finca.id}
+            key={(finca as any).id_finca}
             onClick={() => {
                 console.log('Selected finca:', finca)
                 navigate({
                     to: '/app/monitoreo/bloques',
                     search: {
-                        fincaId: finca.id,
+                        fincaId: (finca as any).id_finca,
                         fincaName: finca.nombre,
                     }
                 })
@@ -58,7 +58,7 @@ function MonitoreoComponent() {
             {!isLoading && (
                 <div className='flex-1 grid grid-cols-2 gap-2 content-center'>
                     {fincas.map((finca) => (
-                        <FincaCard key={finca.id} finca={finca} />
+                        <FincaCard key={(finca as any).id_finca} finca={finca} />
                     ))}
                 </div>
             )}

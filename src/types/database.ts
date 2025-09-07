@@ -1,105 +1,58 @@
 export interface Usuario {
-    id: number
-    // New backend primary key alias
-    id_usuario?: number
-    created_at: string
-    creado_en?: string // new backend timestamp name
+    id_usuario: number
+    creado_en: string
     nombres: string | null
     apellidos: string | null
     rol: string | null
-    pin?: string | null // legacy
-    clave_pin?: string | null // new backend field
-    deleted_at?: string | null
+    clave_pin?: string | null
     eliminado_en?: string | null
 }
 
 export interface Finca {
-    id: number
-    id_finca?: number
+    id_finca: number
     nombre: string
-    finca_id?: number // legacy alias
-    created_at?: string
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
 }
 
 export interface Bloque {
-    id: number
-    id_bloque?: number
-    finca_id: number
-    id_finca?: number // alt from backend if joined
-    // Backend may now provide either 'codigo' (legacy) or 'nombre'.
-    codigo?: string
+    id_bloque: number
+    id_finca: number
     nombre?: string | number
-    bloque_id?: number // legacy alt key
     numero_camas?: number | null
-    altitud_msnm?: number | null
-    created_at?: string
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
 }
 
 export interface Variedad {
-    id: number
-    id_variedad?: number
+    id_variedad: number
     nombre: string
-    variedad_id?: number // legacy
-    id_obtentor?: number | null
-    breeder_id?: number | null // legacy
+    id_breeder?: number | null
     color?: string | null
     clase_longitud_tallo?: string | null
-    stem_length_class?: string | null // legacy english mapping
     cantidad_petalos?: number | null
-    petal_count?: number | null
     nivel_fragancia?: string | null
-    fragrance_level?: string | null
     resistencia_enfermedades?: string | null
-    disease_resistance?: string | null
     dias_vida_florero?: number | null
-    vase_life_days?: number | null
     productividad_anual?: number | null
-    annual_productivity?: number | null
     grado_calidad?: string | null
-    quality_grade?: string | null
     notas?: string | null
-    created_at?: string
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
 }
 
 export interface Cama {
-    id: number
-    id_cama?: number
-    bloque_id: number
-    id_bloque?: number
-    variedad_id?: number | null // legacy direct variety link if any
-    nombre?: string | null
-    area?: number | null
-    area_m2?: number | null
-    cama_id?: number // legacy alt key
-    largo_metros?: number | null
-    plantas_totales?: number | null
-    grupo_id?: number | null
+    id_cama: number
     id_grupo?: number | null
-    created_at?: string
+    nombre?: string | null
+    largo_metros?: number | null
+    ancho_metros?: number | null
+    plantas_totales?: number | null
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
 }
 
-export interface Breeder {
-    id: number
-    id_obtentor?: number
-    breeder_id?: number // legacy
-    nombre: string
-    created_at?: string
-    creado_en?: string
-    deleted_at?: string | null
-    eliminado_en?: string | null
-}
+// Breeder removed
 
 export interface Accion {
     id: number
@@ -146,19 +99,20 @@ export interface EstadoFenologico {
 }
 
 export interface FincaWithRelations {
-    id: number
+    id_finca: number
     nombre: string
 }
 
 export interface BloqueWithVariedades {
-    id: number
-    finca_id: number
+    id_bloque: number
+    id_finca: number
     nombre: string
 }
 
 // New entity: grupo_plantacion groups camas within a bloque
 // Deprecated: replaced by GrupoCama naming in backend
 export interface GrupoPlantacion {
+    // deprecated
     grupo_id: number
     bloque_id?: number
     variedad_id?: number
@@ -171,75 +125,35 @@ export interface GrupoPlantacion {
 }
 
 export interface GrupoCama {
-    grupo_id: number
-    id_grupo?: number
-    bloque_id?: number
-    id_bloque?: number
-    variedad_id?: number
-    id_variedad?: number
+    id_grupo: number
+    id_bloque: number
+    id_variedad: number
     fecha_siembra: string
     estado?: string | null
     patron?: string | null
     tipo_planta?: string | null
-    created_at?: string
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
-    num_camas?: number | null
     numero_camas?: number | null
     total_plantas?: number | null
-    total_area?: number | null
-    area_total?: number | null
 }
 
 // New tables
-export interface EstadoFenologicoNuevo {
-    id: number
-    id_estado_fenologico?: number
-    id_finca?: number | null
-    id_bloque?: number | null
-    id_variedad?: number | null
-    id_usuario?: number | null
-    // Day count fields (dynamic, keep index signature optional)
-    [key: string]: any
-    created_at?: string
-    creado_en?: string
-    deleted_at?: string | null
-    eliminado_en?: string | null
-}
+// EstadoFenologicoNuevo removed
 
-export interface MedicionDiaria {
-    id: number
-    id_medicion?: number
-    id_cama: number
-    ubicacion_seccion?: string | null
-    posicion_metros?: number | null
-    fecha_medicion?: string | null
-    hora_medicion?: string | null
-    estado_fenologico?: string | null
-    cantidad?: number | null
-    id_usuario?: number | null
-    observaciones?: string | null
-    created_at?: string
-    creado_en?: string
-    deleted_at?: string | null
-    eliminado_en?: string | null
-}
+// MedicionDiaria removed
 
 // New: Observacion (public.observacion)
 export interface Observacion {
-    id: number // backend id_observacion copied to id
+    // Local PK for offline; server id is id_observacion
+    id: number
     id_observacion?: number
     id_cama: number
     ubicacion_seccion?: string | null
-    fecha_observacion?: string | null
-    hora_observacion?: string | null
-    estado_fenologico: string
+    tipo_observacion: string
     cantidad: number
     id_usuario?: number | null
-    created_at?: string
     creado_en?: string
-    deleted_at?: string | null
     eliminado_en?: string | null
 }
 

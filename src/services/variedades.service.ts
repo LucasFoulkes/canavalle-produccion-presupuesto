@@ -77,10 +77,10 @@ export const variedadesService = {
     },
 
     // Get variedad by ID
-    async getVariedadById(id: number): Promise<Variedad | null> {
+    async getVariedadById(id_variedad: number): Promise<Variedad | null> {
         try {
             // Try offline first
-            const offlineVariedad = await db.variedad.get(id)
+            const offlineVariedad = await db.variedad.get(id_variedad)
             if (offlineVariedad) {
                 return offlineVariedad
             }
@@ -90,13 +90,13 @@ export const variedadesService = {
                 const { data, error } = await supabase
                     .from(TABLES.variedad)
                     .select('*')
-                    .eq('id', id)
+                    .eq('id_variedad', id_variedad)
                     .single()
 
                 if (!error && data) {
                     // Store for offline use
-                    await db.variedad.put(data)
-                    return data
+                    await db.variedad.put(data as any)
+                    return data as any
                 }
             }
 

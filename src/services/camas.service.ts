@@ -12,29 +12,56 @@ class CamasService {
         try {
             console.log('Loading camas for bloque:', bloqueId)
 
-            // Try to get from local database first
-            // Support Spanish schema where foreign key field may be id_bloque. Dexie index is on bloque_id, but we may
-            // have stored records where normalization already copied id_bloque -> bloque_id. Query bloque_id only.
-            const localCamasRaw = await db.cama.where('bloque_id').equals(bloqueId).toArray()
-            const localCamas = localCamasRaw.map(normalizeCama)
+            // Resolve grupos for this bloque (prefer grupo_cama; fallback legacy grupoPlantacion)
+            const hasGrupoCama = db.tables.some(t => t.name === TABLES.grupoCama)
+            if (hasGrupoCama && !(db as any).grupoCama) {
+                (db as any).grupoCama = db.table(TABLES.grupoCama)
+            }
+            const localGrupos = hasGrupoCama
+                ? await (db as any).grupoCama.where('id_bloque').equals(bloqueId).toArray()
+                : (db as any).grupoPlantacion
+                    ? await (db as any).grupoPlantacion.where('bloque_id').equals(bloqueId).toArray()
+                    : []
+            const grupoIds = localGrupos.filter((g: any) => !g.eliminado_en).map((g: any) => g.id_grupo).filter(Boolean)
+
+            // Try to get from local camas by grupo_id if any grupos available
+            let localCamas: Cama[] = []
+            if (grupoIds.length) {
+                // Dexie doesn't index grupo_id by default; use filter as fallback
+                const allLocal = await db.cama.toArray()
+                localCamas = allLocal.filter((c: any) => c.id_grupo != null && grupoIds.includes(c.id_grupo)) as any
+            } else {
+                // Legacy fallback removed; camas belong to grupos
+                localCamas = []
+            }
             console.log('Local camas found (normalized):', localCamas.length)
 
             if (localCamas.length > 0) {
-                return localCamas.filter(c => !c.deleted_at)
+                return localCamas.filter((c: any) => !c.eliminado_en) as any
             }
 
-            // If no local data, try to fetch from Supabase
-            let { data: remoteCamas, error } = await supabase
-                .from('cama')
-                .select('*')
-                .eq('id_bloque', bloqueId)
+            // If no local data, try to fetch remote: first grupos, then camas by those grupos
+            let remoteGrupos = localGrupos
+            if (!remoteGrupos.length) {
+                const { data: rg, error: rgErr } = await supabase.from(TABLES.grupoCama).select('*').eq('id_bloque', bloqueId)
+                if (rgErr) {
+                    console.warn('Error fetching grupos for bloque, skipping to legacy cama by bloque:', rgErr)
+                } else if (rg) {
+                    remoteGrupos = rg
+                    if (hasGrupoCama) await (db as any).grupoCama.bulkPut(rg)
+                }
+            }
+            const remoteGrupoIds = (remoteGrupos || []).map((g: any) => g.id_grupo).filter(Boolean)
 
-            if (error && (error as any).code === '42703') {
-                console.warn('id_bloque column missing remotely, falling back to bloque_id')
-                    ; ({ data: remoteCamas, error } = await supabase
-                        .from('cama')
-                        .select('*')
-                        .eq('bloque_id', bloqueId))
+            let remoteCamas: any[] | null = null
+            let error: any | null = null
+            if (remoteGrupoIds.length) {
+                const { data, error: rcErr } = await supabase.from(TABLES.cama).select('*').in('id_grupo', remoteGrupoIds as number[])
+                remoteCamas = data ?? null
+                error = rcErr ?? null
+            } else {
+                remoteCamas = []
+                error = null
             }
 
             if (error) {
@@ -45,31 +72,55 @@ class CamasService {
             console.log('Remote camas fetched (raw):', remoteCamas?.length || 0)
 
             if (remoteCamas && remoteCamas.length > 0) {
-                const normalized = remoteCamas.map(normalizeCama).filter(c => !c.deleted_at)
-                await db.cama.bulkPut(normalized)
-                console.log('Stored normalized remote camas:', normalized.length, 'Sample:', normalized[0])
-                return normalized
+                const filtered = (remoteCamas as any[]).filter(c => !c.eliminado_en)
+                await db.cama.bulkPut(filtered as any)
+                console.log('Stored remote camas:', filtered.length, 'Sample:', filtered[0])
+                return filtered as any
             }
 
             return localCamas
         } catch (error) {
             console.error('Error in getCamasByBloqueId:', error)
 
-            // Fallback to local data
-            const localCamas = await db.cama.where('bloque_id').equals(bloqueId).toArray()
-            return localCamas.map(normalizeCama).filter(c => !c.deleted_at)
+            // Fallback to local data by grupo if possible, else by legacy bloque_id
+            try {
+                const hasGrupoCama = db.tables.some(t => t.name === TABLES.grupoCama)
+                const localGrupos = hasGrupoCama && (db as any).grupoCama
+                    ? await (db as any).grupoCama.where('id_bloque').equals(bloqueId).toArray()
+                    : []
+                const grupoIds = localGrupos.filter((g: any) => !g.eliminado_en).map((g: any) => g.id_grupo).filter(Boolean)
+                if (grupoIds.length) {
+                    const allLocal = await db.cama.toArray()
+                    return allLocal.filter((c: any) => !c.eliminado_en && c.id_grupo != null && grupoIds.includes(c.id_grupo)) as any
+                }
+            } catch { }
+            return []
         }
     }
 
-    async upsertCama(cama: Omit<Cama, 'id'> & { id?: number }): Promise<Cama> {
+    async upsertCama(cama: Partial<Cama> & { id_cama?: number }): Promise<Cama> {
         try {
             // Check if exists in Supabase
-            const { data: existing, error: queryError } = await supabase
-                .from(TABLES.cama)
-                .select('*')
-                .eq('bloque_id', cama.bloque_id)
-                .eq('nombre', cama.nombre)
-                .maybeSingle()
+            // Prefer uniqueness by (grupo_id, nombre). Fallback to (bloque_id, nombre) for legacy datasets.
+            let existing: any = null
+            let queryError: any = null
+            if (cama.id_grupo != null) {
+                const { data, error } = await supabase
+                    .from(TABLES.cama)
+                    .select('*')
+                    .eq('id_grupo', cama.id_grupo)
+                    .eq('nombre', cama.nombre)
+                    .maybeSingle()
+                existing = data; queryError = error
+            } else {
+                // Last resort: by nombre only (should not happen)
+                const { data, error } = await supabase
+                    .from(TABLES.cama)
+                    .select('*')
+                    .eq('nombre', cama.nombre)
+                    .maybeSingle()
+                existing = data; queryError = error
+            }
 
             if (queryError) {
                 console.error('Error checking existing cama in Supabase:', queryError)
@@ -79,14 +130,18 @@ class CamasService {
             let result;
             if (existing) {
                 // Update existing
+                const patch: any = {}
+                if (cama.nombre !== undefined) patch.nombre = cama.nombre
+                if (cama.id_grupo !== undefined) patch.id_grupo = cama.id_grupo
+                if (cama.largo_metros !== undefined) patch.largo_metros = cama.largo_metros
+                if (cama.ancho_metros !== undefined) patch.ancho_metros = cama.ancho_metros
+                if (cama.plantas_totales !== undefined) patch.plantas_totales = cama.plantas_totales
+
                 const { data: updated, error: updateError } = await supabase
                     .from(TABLES.cama)
-                    .update({
-                        variedad_id: cama.variedad_id,
-                        area: cama.area
-                    })
-                    .eq('id', existing.id)
-                    .select()
+                    .update(patch)
+                    .eq('id_cama', existing.id_cama ?? existing.id)
+                    .select('*')
                     .single()
 
                 if (updateError) {
@@ -96,10 +151,17 @@ class CamasService {
                 result = updated
             } else {
                 // Insert new
+                const insertPayload: any = {}
+                if (cama.nombre !== undefined) insertPayload.nombre = cama.nombre
+                if (cama.id_grupo !== undefined) insertPayload.id_grupo = cama.id_grupo
+                if (cama.largo_metros !== undefined) insertPayload.largo_metros = cama.largo_metros
+                if (cama.ancho_metros !== undefined) insertPayload.ancho_metros = cama.ancho_metros
+                if (cama.plantas_totales !== undefined) insertPayload.plantas_totales = cama.plantas_totales
+
                 const { data: inserted, error: insertError } = await supabase
                     .from(TABLES.cama)
-                    .insert(cama)
-                    .select()
+                    .insert(insertPayload)
+                    .select('*')
                     .single()
 
                 if (insertError) {
@@ -126,7 +188,7 @@ class CamasService {
     async getAllCamas(): Promise<Cama[]> {
         try {
             const all = await db.cama.toArray()
-            return all.map(normalizeCama).filter(c => !c.deleted_at)
+            return (all as any).filter((c: any) => !c.eliminado_en)
         } catch (error) {
             console.error('Error getting all camas:', error)
             return []
@@ -136,10 +198,10 @@ class CamasService {
     /**
      * Get a specific cama by ID
      */
-    async getCamaById(id: number): Promise<Cama | undefined> {
+    async getCamaById(id_cama: number): Promise<Cama | undefined> {
         try {
-            const c = await db.cama.get(id)
-            return c ? normalizeCama(c) : undefined
+            const c = await db.cama.get(id_cama)
+            return c as any
         } catch (error) {
             console.error('Error getting cama by ID:', error)
             return undefined
@@ -163,10 +225,10 @@ class CamasService {
             }
 
             if (remoteCamas && remoteCamas.length > 0) {
-                const normalized = remoteCamas.map(normalizeCama).filter(c => !c.deleted_at)
+                const filtered = (remoteCamas as any[]).filter(c => !c.eliminado_en)
                 await db.cama.clear()
-                await db.cama.bulkAdd(normalized)
-                console.log('Camas synced successfully (normalized):', normalized.length)
+                await db.cama.bulkAdd(filtered as any)
+                console.log('Camas synced successfully:', filtered.length)
             }
         } catch (error) {
             console.error('Error in syncCamas:', error)
@@ -181,7 +243,7 @@ class CamasService {
         if (!ids.length) return
         try {
             if (navigator.onLine) {
-                const { error } = await supabase.from(TABLES.cama).delete().in('id', ids)
+                const { error } = await supabase.from(TABLES.cama).delete().in('id_cama', ids)
                 if (error) {
                     console.error('Error deleting camas remotely:', error)
                 }
@@ -190,7 +252,7 @@ class CamasService {
             console.error('Remote delete attempt failed:', err)
         }
         try {
-            await db.cama.bulkDelete(ids)
+            await db.cama.bulkDelete(ids as any)
             console.log('Deleted camas locally:', ids.length)
         } catch (err) {
             console.error('Local delete failed:', err)
@@ -200,13 +262,3 @@ class CamasService {
 }
 
 export const camasService = new CamasService()
-
-function normalizeCama(raw: any): Cama {
-    const c: any = { ...raw }
-    if ((c.id === undefined || c.id === null) && c.cama_id != null) c.id = c.cama_id
-    if ((c.bloque_id == null) && c.id_bloque != null) c.bloque_id = c.id_bloque
-    if (typeof c.id === 'string' && /^\d+$/.test(c.id)) c.id = Number(c.id)
-    if (typeof c.bloque_id === 'string' && /^\d+$/.test(c.bloque_id)) c.bloque_id = Number(c.bloque_id)
-    if (c.area == null && c.area_m2 != null) c.area = c.area_m2
-    return c
-}

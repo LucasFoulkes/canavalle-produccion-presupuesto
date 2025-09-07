@@ -22,8 +22,8 @@ export const Route = createFileRoute('/app/monitoreo/bloques')({
 function BloqueCard({ bloque }: { bloque: Bloque | any }) {
     const navigate = useNavigate()
     const { fincaId, fincaName } = Route.useSearch()
-    const bloqueId = bloque.id ?? bloque.bloque_id
-    const displayName = bloque.nombre ?? bloque.codigo ?? `Bloque ${bloqueId}`
+    const bloqueId = bloque.id_bloque ?? bloque.bloque_id ?? bloque.id
+    const displayName = (bloque.nombre != null && bloque.nombre !== '') ? bloque.nombre : `Bloque ${bloqueId}`
 
     return (
         <Button
@@ -97,7 +97,7 @@ function BloquesComponent() {
                                 ...bloques
                                     .slice()
                                     .sort((a: any, b: any) => {
-                                        const getKey = (x: any) => (x.nombre ?? x.codigo ?? '').toString().trim()
+                                        const getKey = (x: any) => (x.nombre ?? '').toString().trim()
                                         const ak = getKey(a)
                                         const bk = getKey(b)
                                         // Extract leading integer and optional alpha suffix
@@ -118,7 +118,7 @@ function BloquesComponent() {
                                         return A.suf.localeCompare(B.suf, 'es', { sensitivity: 'base' })
                                     })
                             ].map((bloque: any) => (
-                                <BloqueCard key={bloque.id ?? bloque.bloque_id} bloque={bloque} />
+                                <BloqueCard key={bloque.id_bloque ?? bloque.bloque_id ?? bloque.id} bloque={bloque} />
                             ))}
                         </div>
                     ) : (

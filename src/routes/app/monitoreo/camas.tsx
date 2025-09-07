@@ -12,7 +12,7 @@ type CamasSearch = {
     bloqueName: string
     fincaId: number
     fincaName: string
-    variety?: string
+    varietyId?: number
     cama?: string
 }
 
@@ -24,18 +24,18 @@ export const Route = createFileRoute('/app/monitoreo/camas')({
             bloqueName: String(search.bloqueName || 'Bloque'),
             fincaId: Number(search.fincaId),
             fincaName: String(search.fincaName || 'Finca'),
-            variety: search.variety ? String(search.variety) : undefined,
+            varietyId: search.varietyId !== undefined ? Number(search.varietyId) : undefined,
             cama: search.cama ? String(search.cama) : undefined,
         }
     }
 })
 
 function CamaCard({ cama, onOpen }: { cama: Cama; onOpen: (c: Cama, display: string) => void }) {
-    const display = cama.nombre || `Cama ${cama.id}`
+    const display = cama.nombre || `Cama ${(cama as any).id_cama}`
     return (
         <Button
             className='aspect-square w-full h-full capitalize text-lg'
-            key={cama.id}
+            key={(cama as any).id_cama}
             onClick={() => onOpen(cama, display)}
             variant="outline"
         >
@@ -51,22 +51,32 @@ function CamasComponent() {
     const [varietyGroupIds, setVarietyGroupIds] = useState<Set<number> | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [filter, setFilter] = useState('')
-    const { bloqueId, bloqueName, fincaName, fincaId, variety, cama } = Route.useSearch()
+    const { bloqueId, bloqueName, fincaName, fincaId, varietyId, cama } = Route.useSearch()
+    const [varietyName, setVarietyName] = useState<string>('')
     const navigate = useNavigate()
 
     useEffect(() => {
         if (bloqueId) {
             loadCamas()
         }
-    }, [bloqueId, variety])
+    }, [bloqueId, varietyId])
+
+    useEffect(() => {
+        // Lookup variety name for display
+        if (typeof varietyId === 'number') {
+            db.variedad.get(varietyId).then(v => setVarietyName(v?.nombre || ''))
+        } else {
+            setVarietyName('')
+        }
+    }, [varietyId])
 
     const loadCamas = async () => {
         try {
             setIsLoading(true)
             const camasData = await camasService.getCamasByBloqueId(bloqueId)
             setCamas(camasData)
-            if (variety) {
-                resolveVarietyGroups(variety)
+            if (typeof varietyId === 'number') {
+                resolveVarietyGroupsById(varietyId)
             } else {
                 setVarietyGroupIds(null)
             }
@@ -77,59 +87,44 @@ function CamasComponent() {
         }
     }
 
-    const resolveVarietyGroups = async (varietyName: string) => {
+    const resolveVarietyGroupsById = async (varietyId: number) => {
         try {
-            // Find variety id(s) matching name (case-insensitive)
-            const variedades = await db.variedad.toArray()
-            const match = variedades.filter(v => v.nombre?.toLowerCase() === varietyName.toLowerCase())
-            if (!match.length) {
-                console.warn('[camas] variety param provided but no variedad matched:', varietyName)
-                setVarietyGroupIds(new Set())
-                return
-            }
             const ids = new Set<number>()
-            const varietyIds = match.map(v => v.id)
-            // Prefer grupo_cama if present
             const hasGrupoCama = db.tables.some(t => t.name === 'grupo_cama')
             if (hasGrupoCama) {
-                const groups = await (db as any).grupoCama.where('variedad_id').anyOf(varietyIds).toArray()
-                groups.filter((g: any) => g.bloque_id === bloqueId && !g.deleted_at).forEach((g: any) => { if (g.grupo_id != null) ids.add(g.grupo_id) })
+                const groups = await (db as any).grupoCama.where('id_variedad').equals(varietyId).toArray()
+                groups
+                    .filter((g: any) => (g.id_bloque === bloqueId || g.bloque_id === bloqueId) && !g.eliminado_en)
+                    .forEach((g: any) => { const gid = g.id_grupo ?? g.grupo_id; if (gid != null) ids.add(gid) })
             } else if ((db as any).grupoPlantacion) {
-                const groups = await (db as any).grupoPlantacion.where('variedad_id').anyOf(varietyIds).toArray()
+                const groups = await (db as any).grupoPlantacion.where('variedad_id').equals(varietyId).toArray()
                 groups.filter((g: any) => g.bloque_id === bloqueId && !g.deleted_at).forEach((g: any) => { if (g.grupo_id != null) ids.add(g.grupo_id) })
             }
             setVarietyGroupIds(ids)
-            console.log('[camas] variety filter groups', varietyName, Array.from(ids))
+            console.log('[camas] varietyId filter groups', varietyId, Array.from(ids))
         } catch (e) {
-            console.error('[camas] error resolving variety groups', e)
+            console.error('[camas] error resolving varietyId groups', e)
             setVarietyGroupIds(new Set())
         }
     }
 
     // Filter camas based on the filter input
-    let filteredCamas = camas.filter(c => !c.deleted_at)
-    if (variety && varietyGroupIds) {
-        if (varietyGroupIds.size === 0) {
-            filteredCamas = []
-        } else {
-            filteredCamas = filteredCamas.filter(c => {
-                // Normalize grupo_id alias just in case
-                const gid = c.grupo_id != null ? c.grupo_id : (c as any).id_grupo
-                if (c.grupo_id == null && (c as any).id_grupo != null) {
-                    // Mutate in-memory to speed subsequent filters
-                    c.grupo_id = (c as any).id_grupo
-                }
-                return gid != null && varietyGroupIds.has(gid as number)
-            })
-        }
+    let filteredCamas = camas.filter((c: any) => !c.eliminado_en)
+    if (typeof varietyId === 'number' && varietyGroupIds) {
+        filteredCamas = filteredCamas.filter(c => {
+            const gid = (c as any).id_grupo
+            const inGroup = gid != null && varietyGroupIds.has(gid as number)
+            const direct = false // camas no longer carry bloque/variedad directly
+            return inGroup || direct
+        })
     }
     if (cama) {
-        filteredCamas = filteredCamas.filter(c => c.nombre?.startsWith(cama) || c.id.toString() === cama)
+        filteredCamas = filteredCamas.filter((c: any) => c.nombre?.startsWith(cama) || String(c.id_cama) === cama)
     }
     filteredCamas = filteredCamas.filter(c =>
         filter === '' ||
         (c.nombre && c.nombre.toString().startsWith(filter)) ||
-        c.id.toString().startsWith(filter)
+        String((c as any).id_cama).startsWith(filter)
     )
 
     return (
@@ -149,9 +144,9 @@ function CamasComponent() {
                     <p className='text-sm text-gray-500'>{fincaName} • Seleccione una cama</p>
                 </div>
             </div>
-            {variety && (
+            {typeof varietyId === 'number' && varietyName && (
                 <div className='flex items-center gap-2 bg-black text-white px-3 py-2 rounded-md text-sm justify-between'>
-                    <span className='truncate'>Variedad: <strong className='font-semibold'>{variety}</strong></span>
+                    <span className='truncate'>Variedad: <strong className='font-semibold'>{varietyName}</strong></span>
                     <Button
                         size='sm'
                         variant='secondary'
@@ -181,12 +176,12 @@ function CamasComponent() {
                     )}
                     {!isLoading && filteredCamas.map(cama => (
                         <CamaCard
-                            key={cama.id || (cama as any).cama_id}
+                            key={(cama as any).id_cama}
                             cama={cama}
                             onOpen={(c, display) =>
                                 navigate({
                                     to: '/app/monitoreo/cama',
-                                    search: { camaId: c.id, camaName: display, bloqueId, bloqueName, fincaId, fincaName }
+                                    search: { camaId: (c as any).id_cama, camaName: display, bloqueId, bloqueName, fincaId, fincaName }
                                 })
                             }
                         />

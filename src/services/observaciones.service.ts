@@ -15,7 +15,7 @@ export const observacionesService = {
     },
 
     async listByCama(id_cama: number) {
-        const rows = await db.observacion.where('id_cama').equals(id_cama).and(o => !o.deleted_at && !o.eliminado_en).toArray()
+        const rows = await db.observacion.where('id_cama').equals(id_cama).and(o => !o.eliminado_en).toArray()
         return rows
     },
 
@@ -24,13 +24,13 @@ export const observacionesService = {
         const rec: Observacion = {
             id: row.id ?? Date.now(),
             id_cama: row.id_cama!,
-            estado_fenologico: row.estado_fenologico!,
+            tipo_observacion: (row as any).tipo_observacion ?? (row as any).estado_fenologico!,
             cantidad: row.cantidad ?? 0,
-            fecha_observacion: row.fecha_observacion ?? now.slice(0, 10),
-            hora_observacion: row.hora_observacion ?? now.slice(11, 19),
+            // Use creado_en as the local timestamp source for grouping
+            creado_en: row.creado_en ?? now,
             ubicacion_seccion: row.ubicacion_seccion ?? null,
             id_usuario: row.id_usuario ?? null,
-            created_at: row.created_at ?? now,
+            eliminado_en: null,
         }
         await db.observacion.put(rec as any)
         return rec
@@ -43,11 +43,10 @@ export const observacionesService = {
         const payload: any = {
             id_cama: row.id_cama,
             ubicacion_seccion: row.ubicacion_seccion ?? null,
-            fecha_observacion: row.fecha_observacion ?? null,
-            hora_observacion: row.hora_observacion ?? null,
-            estado_fenologico: row.estado_fenologico,
+            tipo_observacion: (row as any).tipo_observacion ?? (row as any).estado_fenologico,
             cantidad: row.cantidad,
             id_usuario: row.id_usuario ?? null,
+            // Do not send fecha/hora; DB will set timestamp. creado_en is server-managed; omit.
         }
         if (hasServerId) payload.id_observacion = row.id_observacion
         const { data, error } = await supabase

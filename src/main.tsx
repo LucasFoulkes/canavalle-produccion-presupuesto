@@ -2,7 +2,8 @@ import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import './index.css'
-import { db } from '@/lib/dexie'
+import { initializeDatabase as bootstrapInitializeDatabase } from '@/bootstrap/db'
+import { registerSW } from 'virtual:pwa-register'
 
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
@@ -17,84 +18,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
-// Console log the current Dexie database state and sync all data
-async function initializeDatabase() {
-  try {
-    console.log('=== Database Initialization ===')
-    console.log('Tables:', db.tables.map(table => table.name))
-    console.log('Navigator online:', navigator.onLine)
+// Initialize and sync database (shared implementation)
+bootstrapInitializeDatabase()
 
-    // Check all table counts
-    const [usuarios, fincas, bloques, camas, variedades] = await Promise.all([
-      db.usuario.toArray(),
-      db.finca.toArray(),
-      db.bloque.toArray(),
-      db.cama.toArray(),
-      db.variedad.toArray()
-    ])
-
-    console.log('Local data:', {
-      usuarios: usuarios.length,
-      fincas: fincas.length,
-      bloques: bloques.length,
-      camas: camas.length,
-      variedades: variedades.length
-    })
-
-    // If online, sync all data from Supabase
-    if (navigator.onLine) {
-      console.log('Syncing data from server...')
-      const { syncService } = await import('@/services/sync.service')
-      await syncService.syncAllData()
-
-      // Log updated counts
-      const [updatedUsuarios, updatedFincas, updatedBloques, updatedCamas, updatedVariedades] = await Promise.all([
-        db.usuario.toArray(),
-        db.finca.toArray(),
-        db.bloque.toArray(),
-        db.cama.toArray(),
-        db.variedad.toArray()
-      ])
-
-      console.log('Synced data:', {
-        usuarios: updatedUsuarios.length,
-        fincas: updatedFincas.length,
-        bloques: updatedBloques.length,
-        camas: updatedCamas.length,
-        variedades: updatedVariedades.length
-      })
-    } else {
-      console.log('Offline mode - using local data only')
-    }
-  } catch (error) {
-    console.error('Error initializing database:', error)
-  }
-}
-
-// Call the initialization function
-initializeDatabase()
-
-// Register service worker only in production builds
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      console.log('SW registered: ', registration)
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('New content is available; please refresh.')
-            }
-          })
-        }
-      })
-    } catch (registrationError) {
-      console.log('SW registration failed: ', registrationError)
-    }
-  })
-}
+// Register service worker via VitePWA helper (respects registerType: 'autoUpdate')
+registerSW({ immediate: false })
 
 // Render the app
 const rootElement = document.getElementById('root')!

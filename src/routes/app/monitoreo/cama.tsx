@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 // notas removed – textarea no longer used
 import { ChevronLeft, ArrowDown } from 'lucide-react'
 import { observacionesService } from '@/services/observaciones.service'
+import { isEstadoTracked } from '@/lib/preferences'
 
 interface SearchShape {
     camaId: number
@@ -72,15 +73,17 @@ function CamaDetailPage() {
 
     async function load() {
         const list = await observacionesService.listTipos()
-        // Only show active tipos (activo !== false)
-        const active = (list || []).filter((t: any) => t.activo !== false)
-        setTipos(active)
+        // Filter by tracked set; default to active ones if no selection saved
+        const filtered = (list || [])
+            .filter((t: any) => t.activo !== false)
+            .filter((t: any) => isEstadoTracked(t.codigo, true))
+        setTipos(filtered)
         // load existing counts for today
         const today = new Date().toISOString().slice(0, 10)
-        const rows = await db.observacion.where('id_cama').equals(camaId).and(o => (o.fecha_observacion ?? '').startsWith(today)).toArray()
+        const rows = await db.observacion.where('id_cama').equals(camaId).and(o => (o.creado_en ?? '').startsWith(today)).toArray()
         const byTipo: Record<string, number> = {}
         for (const r of rows) {
-            const key = r.estado_fenologico
+            const key = (r as any).tipo_observacion ?? (r as any).estado_fenologico
             byTipo[key] = (byTipo[key] ?? 0) + (r.cantidad ?? 0)
         }
         setCounts(byTipo)
@@ -92,7 +95,6 @@ function CamaDetailPage() {
 
     async function save() {
         const user = await db.usuario.toCollection().first()
-        const today = new Date()
         const created: any[] = []
         for (const [estado_fenologico, cantidad] of Object.entries(counts)) {
             if ((cantidad ?? 0) > 0) {
@@ -100,12 +102,10 @@ function CamaDetailPage() {
                 const ubicacion = Math.random().toString(36).slice(2, 12)
                 const rec = await observacionesService.upsertLocal({
                     id_cama: camaId,
-                    estado_fenologico,
+                    tipo_observacion: estado_fenologico,
                     cantidad,
                     ubicacion_seccion: ubicacion,
-                    id_usuario: user?.id ?? undefined,
-                    fecha_observacion: today.toISOString().slice(0, 10),
-                    hora_observacion: today.toISOString().slice(11, 19),
+                    id_usuario: (user as any)?.id_usuario ?? undefined,
                 })
                 created.push(rec)
             }

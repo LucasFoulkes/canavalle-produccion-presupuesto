@@ -1,5 +1,14 @@
 import { Card } from '@/components/ui/card'
-import type { CamaGroup } from '@/lib/utils'
+
+// Local shape for display; matches groups produced in configuracion/camas page
+type CamaGroup = {
+    from: string
+    to: string
+    variety: string
+    varietyId: number
+    area: number
+    camaIds: number[]
+}
 
 export function CamaGroupsList({ groups }: { groups: CamaGroup[] }) {
     return (
