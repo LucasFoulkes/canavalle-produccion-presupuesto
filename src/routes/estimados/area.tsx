@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import * as React from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { getStore } from '@/lib/dexie'
-import { DataTable } from '@/components/data-table'
+import { getStore, type AnyRow } from '@/lib/dexie'
+import { DataTable, type Column } from '@/components/data-table'
 
 export const Route = createFileRoute('/estimados/area')({
     component: Page,
@@ -20,7 +20,13 @@ const ESTADO_PRODUCTIVO = 'productivo'
 function Page() {
     const rows = useLiveQuery(async () => {
         // Load required tables from Dexie
-        const [camas, grupos, bloques, fincas, variedades] = await Promise.all([
+        const [camas, grupos, bloques, fincas, variedades] = await Promise.all<[
+            AnyRow[],
+            AnyRow[],
+            AnyRow[],
+            AnyRow[],
+            AnyRow[],
+        ]>([
             getStore('cama').toArray(),
             getStore('grupo_cama').toArray(),
             getStore('bloque').toArray(),
@@ -28,34 +34,39 @@ function Page() {
             getStore('variedad').toArray(),
         ])
 
-        const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
-            const m = new Map<any, T>()
-            for (const it of arr) m.set(it[key], it)
+        const mapBy = <T extends Record<string, unknown>>(arr: T[], key: string) => {
+            const m = new Map<string, T>()
+            for (const it of arr) {
+                const id = it?.[key]
+                if (id == null) continue
+                m.set(String(id), it)
+            }
             return m
         }
 
-        const gruposById = mapBy(grupos as any[], 'id_grupo')
-        const bloquesById = mapBy(bloques as any[], 'id_bloque')
-        const fincasById = mapBy(fincas as any[], 'id_finca')
-        const variedadesById = mapBy(variedades as any[], 'id_variedad')
+        const gruposById = mapBy(grupos, 'id_grupo')
+        const bloquesById = mapBy(bloques, 'id_bloque')
+        const fincasById = mapBy(fincas, 'id_finca')
+        const variedadesById = mapBy(variedades, 'id_variedad')
 
         // Group accumulator by finca|bloque|variedad
         const acc = new Map<string, ReportRow>()
 
-        for (const c of camas as any[]) {
-            const g = gruposById.get(c.id_grupo)
+        for (const cama of camas) {
+            const g = gruposById.get(String(cama?.['id_grupo']))
             if (!g) continue
-            if ((g.estado ?? '').toString().toLowerCase() !== ESTADO_PRODUCTIVO) continue
-            const b = bloquesById.get(g.id_bloque)
+            const estado = String(g?.['estado'] ?? '').toLowerCase()
+            if (estado !== ESTADO_PRODUCTIVO) continue
+            const b = bloquesById.get(String(g?.['id_bloque']))
             if (!b) continue
-            const f = fincasById.get(b.id_finca)
-            const v = variedadesById.get(g.id_variedad)
-            const fincaNombre = f?.nombre ?? '—'
-            const bloqueNombre = b?.nombre ?? '—'
-            const variedadNombre = v?.nombre ?? '—'
-            const key = `${f?.id_finca ?? 'x'}|${b?.id_bloque ?? 'x'}|${v?.id_variedad ?? 'x'}`
-            const largo = Number(c.largo_metros) || 0
-            const ancho = Number(c.ancho_metros) || 0
+            const f = fincasById.get(String(b?.['id_finca']))
+            const v = variedadesById.get(String(g?.['id_variedad']))
+            const fincaNombre = String(f?.['nombre'] ?? '—')
+            const bloqueNombre = String(b?.['nombre'] ?? '—')
+            const variedadNombre = String(v?.['nombre'] ?? '—')
+            const key = `${String(f?.['id_finca'] ?? 'x')}|${String(b?.['id_bloque'] ?? 'x')}|${String(v?.['id_variedad'] ?? 'x')}`
+            const largo = Number(cama?.['largo_metros']) || 0
+            const ancho = Number(cama?.['ancho_metros']) || 0
             const area = largo * ancho
             const existing = acc.get(key)
             if (existing) {
@@ -73,15 +84,22 @@ function Page() {
             if (fb) return fb
             return a.variedad.localeCompare(b.variedad, undefined, { sensitivity: 'base' })
         })
-        return res as ReportRow[]
+        return res
     }, [])
 
-    const columns = React.useMemo(() => [
-        { key: 'finca', header: 'Finca' },
-        { key: 'bloque', header: 'Bloque' },
-        { key: 'variedad', header: 'Variedad' },
-        { key: 'area', header: 'Área (m²)', render: (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 }) },
-    ], []) as any
+    const columns = React.useMemo<Column<ReportRow>[]>(
+        () => [
+            { key: 'finca', header: 'Finca' },
+            { key: 'bloque', header: 'Bloque' },
+            { key: 'variedad', header: 'Variedad' },
+            {
+                key: 'area',
+                header: 'Área (m²)',
+                render: (value) => (Number(value ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 2 }),
+            },
+        ],
+        [],
+    )
 
     return (
         <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">

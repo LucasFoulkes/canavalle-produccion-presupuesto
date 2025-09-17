@@ -51,7 +51,7 @@ export const TableFilterProvider: React.FC<{ children: React.ReactNode }> = ({ c
             setQuery('')
             setColumn('*')
             setFilters([])
-            return cols.map(c => ({ ...c, type: c.type ?? inferType(c.key) }))
+            return cols.map((c) => ({ ...c, type: c.type ?? inferType(c.key) }))
         })
     }, [])
 
@@ -98,13 +98,15 @@ export function useTableFilter() {
 }
 
 // Helper to apply filtering to a row list; can be used if needed elsewhere
-export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null | undefined, columns: { key: keyof T; header?: string }[]) {
+export function useFilteredRows<T extends Record<string, unknown>>(rows: T[] | null | undefined, columns: { key: keyof T; header?: string }[]) {
     const { query, column } = useTableFilter()
     return React.useMemo(() => {
         if (!rows || !rows.length) return rows ?? []
         if (!query) return rows
         const q = query.toLowerCase()
-        const keys: string[] = column === '*' ? columns.map((c) => c.key as string) : [column]
+        const keys: Array<keyof T> = column === '*'
+            ? columns.map((c) => c.key)
+            : [column as keyof T]
         return rows.filter((row) => {
             return keys.some((k) => {
                 const v = row?.[k]

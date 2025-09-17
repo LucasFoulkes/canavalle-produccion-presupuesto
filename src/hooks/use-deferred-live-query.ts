@@ -8,11 +8,11 @@ import { useLiveQuery } from 'dexie-react-hooks'
  */
 export function useDeferredLiveQuery<T>(
     fn: () => Promise<T>,
-    deps: any[],
+    deps: React.DependencyList,
     options?: { delay?: number; defer?: boolean }
 ) {
     const { delay = 80, defer = true } = options || {}
-    const data = useLiveQuery(fn, deps) as T | undefined
+    const data = useLiveQuery<T | undefined>(fn, deps)
     const [showSkeleton, setShowSkeleton] = React.useState(true)
     React.useEffect(() => {
         if (data !== undefined) {

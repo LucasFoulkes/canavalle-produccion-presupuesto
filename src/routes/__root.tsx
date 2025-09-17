@@ -17,7 +17,7 @@ import {
     SidebarRail,
     SidebarTrigger,
 } from '@/components/ui/sidebar'
-import { TABLES } from '@/services/db'
+import { TABLE_GROUPS, TABLES } from '@/config/tables'
 import { TableFilterProvider, useTableFilter } from '@/hooks/use-table-filter'
 import { Input } from '@/components/ui/input'
 import {
@@ -31,9 +31,9 @@ import {
 import { ChevronRight as CaretDownIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Plus, X } from 'lucide-react'
-import { DatePicker, DateRangePicker, toISODate } from '@/components/date-picker'
+import { DatePicker, DateRangePicker, toISODate, type DateRangeValue } from '@/components/date-picker'
 
-type OperatorDef = { value: string; label: string; types: Array<'string' | 'number' | 'date'> }
+type OperatorDef = { value: 'contains' | 'eq' | 'starts' | 'ends' | 'gt' | 'lt' | 'gte' | 'lte' | 'between'; label: string; types: Array<'string' | 'number' | 'date'> }
 const OPERATORS: OperatorDef[] = [
     { value: 'contains', label: 'contiene', types: ['string'] },
     { value: 'eq', label: '=', types: ['string', 'number', 'date'] },
@@ -48,11 +48,11 @@ const OPERATORS: OperatorDef[] = [
 
 function FilterToolbar() {
     const { query, setQuery, column, setColumn, columns, addFilter, filters, removeFilter, clearFilters } = useTableFilter()
-    const activeColumn = column === '*' ? null : columns.find(c => c.key === column) || null
+    const activeColumn = column === '*' ? null : columns.find((c) => c.key === column) || null
     const activeLabel = activeColumn ? activeColumn.label : 'Todas las columnas'
-    const [op, setOp] = React.useState<string>('contains')
+    const [op, setOp] = React.useState<OperatorDef['value']>('contains')
     const [value2, setValue2] = React.useState('')
-    const [dateRange, setDateRange] = React.useState<{ from?: Date; to?: Date }>({})
+    const [dateRange, setDateRange] = React.useState<DateRangeValue>({})
     const [singleDate, setSingleDate] = React.useState<Date | undefined>(undefined)
     const inputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -67,7 +67,7 @@ function FilterToolbar() {
 
     const availableOps = React.useMemo(() => {
         const t = activeColumn?.type || 'string'
-        return OPERATORS.filter(o => o.types.includes(t as any))
+        return OPERATORS.filter((o) => o.types.includes(t))
     }, [activeColumn])
 
     const showSecond = op === 'between' && activeColumn && (activeColumn.type === 'number')
@@ -115,9 +115,9 @@ function FilterToolbar() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuLabel className="text-xs uppercase tracking-wide">Columna</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={column} onValueChange={setColumn as any}>
+                    <DropdownMenuRadioGroup value={column} onValueChange={(next) => setColumn(next)}>
                         <DropdownMenuRadioItem value="*">Todas (búsqueda global)</DropdownMenuRadioItem>
-                        {columns.map(c => (
+                        {columns.map((c) => (
                             <DropdownMenuRadioItem key={c.key} value={c.key}>{c.label}</DropdownMenuRadioItem>
                         ))}
                     </DropdownMenuRadioGroup>
@@ -133,7 +133,7 @@ function FilterToolbar() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
                         <DropdownMenuLabel className="text-xs uppercase tracking-wide">Operador</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={op} onValueChange={setOp as any}>
+                        <DropdownMenuRadioGroup value={op} onValueChange={(next) => setOp(next as OperatorDef['value'])}>
                             {availableOps.map(o => (
                                 <DropdownMenuRadioItem key={o.value} value={o.value}>{o.label}</DropdownMenuRadioItem>
                             ))}
@@ -184,7 +184,7 @@ function FilterToolbar() {
             {isDateMode && op === 'between' && (
                 <DateRangePicker
                     value={dateRange}
-                    onChange={(r) => setDateRange(r)}
+                    onChange={(range) => setDateRange(range ?? {})}
                     autoCloseOnSelect={false}
                     onCommit={commitFilter}
                     className="h-8"
@@ -214,7 +214,7 @@ function FilterToolbar() {
             )}
             {filters.length > 0 && (
                 <div className="flex items-center gap-1 flex-wrap max-w-[360px]">
-                    {filters.map(f => {
+                    {filters.map((f) => {
                         const colLabel = columns.find(c => c.key === f.column)?.label || f.column
                         const opDef = OPERATORS.find(o => o.value === f.op)?.label || f.op
                         const displayVal = f.type === 'date'
@@ -249,15 +249,6 @@ function disp(iso?: string) {
     if (isNaN(d.getTime())) return iso
     return fmt(d)
 }
-
-const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
-    { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
-    { label: 'Variedades', items: ['variedad', 'breeder', 'patron'] },
-    { label: 'Fenología', items: ['estados_fenologicos', 'estado_fenologico_tipo'] },
-    { label: 'Observaciones', items: ['observacion'] },
-    { label: 'Catálogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta'] },
-    { label: 'Sistema', items: ['usuario'] },
-]
 
 const RootLayout = () => {
     const currentTitle = useRouterState({
@@ -350,21 +341,21 @@ const RootLayout = () => {
                                                 </SidebarMenuSubItem>
                                                 <SidebarMenuSubItem>
                                                     <SidebarMenuSubButton asChild size="sm">
-                                                        <Link to={"/estimados/observaciones-resumen" as any} activeProps={{ 'data-active': 'true' }}>
+                                                        <Link to="/estimados/observaciones-resumen" activeProps={{ 'data-active': 'true' }}>
                                                             <span>Resumen observaciones por cama</span>
                                                         </Link>
                                                     </SidebarMenuSubButton>
                                                 </SidebarMenuSubItem>
                                                 <SidebarMenuSubItem>
                                                     <SidebarMenuSubButton asChild size="sm">
-                                                        <Link to={"/estimados/estimados" as any} activeProps={{ 'data-active': 'true' }}>
+                                                        <Link to="/estimados/estimados" activeProps={{ 'data-active': 'true' }}>
                                                             <span>Estimados</span>
                                                         </Link>
                                                     </SidebarMenuSubButton>
                                                 </SidebarMenuSubItem>
                                                 <SidebarMenuSubItem>
                                                     <SidebarMenuSubButton asChild size="sm">
-                                                        <Link to={"/estimados/estimados-resumen" as any} activeProps={{ 'data-active': 'true' }}>
+                                                        <Link to="/estimados/estimados-resumen" activeProps={{ 'data-active': 'true' }}>
                                                             <span>Resumen fenológico (b)</span>
                                                         </Link>
                                                     </SidebarMenuSubButton>

@@ -7,10 +7,20 @@ export function cn(...inputs: ClassValue[]) {
 
 // --- Date formatting helpers ---
 // Display format requested: DD/MM/YYYY (always using UTC components to avoid TZ drift)
-export function formatDate(value: any): string {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
+function toDate(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const d = new Date(value)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  return null
+}
+
+export function formatDate(value: unknown): string {
+  const d = toDate(value)
+  if (!d) return ''
   const y = d.getUTCFullYear()
   const m = String(d.getUTCMonth() + 1).padStart(2, '0')
   const day = String(d.getUTCDate()).padStart(2, '0')
@@ -18,17 +28,16 @@ export function formatDate(value: any): string {
 }
 
 // Canonical ISO (YYYY-MM-DD) if ever needed for stable lexical sorting
-export function formatDateISO(value: any): string {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
+export function formatDateISO(value: unknown): string {
+  const d = toDate(value)
+  if (!d) return ''
   const y = d.getUTCFullYear()
   const m = String(d.getUTCMonth() + 1).padStart(2, '0')
   const day = String(d.getUTCDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
 }
 
-export function formatDateRange(from?: any, to?: any): string {
+export function formatDateRange(from?: unknown, to?: unknown): string {
   const aISO = formatDateISO(from)
   const bISO = formatDateISO(to)
   if (!aISO && !bISO) return ''

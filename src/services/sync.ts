@@ -1,11 +1,11 @@
-import { getStore, initDexieSchema } from '@/lib/dexie'
+import { getStore, initDexieSchema, type AnyRow } from '@/lib/dexie'
 import { SERVICE_PK } from '@/services/db'
 import { supabase } from '@/lib/supabase'
 
 export type SyncResult = { table: string; count: number }
 
 // Upsert array of rows into Dexie using the configured PK
-async function upsertIntoDexie(table: string, rows: any[]) {
+async function upsertIntoDexie(table: string, rows: AnyRow[]) {
     const store = getStore(table)
     await store.bulkPut(rows)
 }
@@ -34,7 +34,7 @@ export async function syncTable(table: string): Promise<SyncResult> {
             .range(from, to)
 
         if (error) throw new Error(`Failed to fetch ${table} page starting at ${from}: ${error.message}`)
-        const rows = (data as any[]) ?? []
+        const rows: AnyRow[] = Array.isArray(data) ? (data as AnyRow[]) : []
         if (rows.length === 0) break
 
         await upsertIntoDexie(table, rows)

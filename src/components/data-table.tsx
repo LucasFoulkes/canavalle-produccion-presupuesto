@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableCaption } from '@/components/ui/table'
 
-export type Column<T> = { key: keyof T; header?: string; render?: (value: any, row: T) => React.ReactNode }
+export type Column<T> = { key: keyof T; header?: string; render?: (value: T[keyof T] | undefined, row: T) => React.ReactNode }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
     caption,
     columns,
     rows,
@@ -16,15 +16,15 @@ export function DataTable<T extends Record<string, any>>({
     onRowClick?: (row: T, index: number) => void
     getRowKey?: (row: T, index: number) => React.Key
 }) {
-    const [sortKey, setSortKey] = React.useState<string | null>(null)
+    const [sortKey, setSortKey] = React.useState<keyof T | null>(null)
     const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc')
 
-    const sortedRows = React.useMemo(() => {
+    const sortedRows = React.useMemo<T[]>(() => {
         const list = rows ?? []
         if (!sortKey) return list
-        const compare = (a: any, b: any) => {
-            const va = a?.[sortKey as any]
-            const vb = b?.[sortKey as any]
+        const compare = (a: T, b: T) => {
+            const va = a?.[sortKey]
+            const vb = b?.[sortKey]
             // Push null/undefined to the end
             const aNil = va === null || va === undefined
             const bNil = vb === null || vb === undefined
@@ -38,10 +38,10 @@ export function DataTable<T extends Record<string, any>>({
             return String(va).localeCompare(String(vb), undefined, { numeric: true, sensitivity: 'base' })
         }
         const sorted = [...list].sort(compare)
-        return sortDir === 'asc' ? sorted : sorted.reverse()
+        return sortDir === 'asc' ? sorted : [...sorted].reverse()
     }, [rows, sortKey, sortDir])
 
-    const onHeaderClick = (key: string) => {
+    const onHeaderClick = (key: keyof T) => {
         if (sortKey === key) {
             setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
         } else {
@@ -58,7 +58,7 @@ export function DataTable<T extends Record<string, any>>({
                     {columns.map((c) => (
                         <TableHead
                             key={String(c.key)}
-                            onClick={() => onHeaderClick(String(c.key))}
+                            onClick={() => onHeaderClick(c.key)}
                             role="button"
                             className="sticky top-0 z-10 bg-background whitespace-nowrap shadow-[inset_0_-1px_0_theme(colors.border)] cursor-pointer select-none"
                         >
@@ -75,18 +75,21 @@ export function DataTable<T extends Record<string, any>>({
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {sortedRows?.length ? (
-                    sortedRows.map((row, i) => (
-                        <TableRow
-                            key={getRowKey ? getRowKey(row, i) : i}
+                    {sortedRows?.length ? (
+                        sortedRows.map((row, i) => (
+                            <TableRow
+                                key={getRowKey ? getRowKey(row, i) : i}
                             onClick={onRowClick ? () => onRowClick(row, i) : undefined}
                             className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : undefined}
                         >
-                            {columns.map((c) => (
-                                <TableCell key={String(c.key)} className="whitespace-nowrap">
-                                    {c.render ? c.render(row[c.key], row) : String(row[c.key] ?? '')}
-                                </TableCell>
-                            ))}
+                            {columns.map((c) => {
+                                const value = row[c.key]
+                                return (
+                                    <TableCell key={String(c.key)} className="whitespace-nowrap">
+                                        {c.render ? c.render(value, row) : String(value ?? '')}
+                                    </TableCell>
+                                )
+                            })}
                         </TableRow>
                     ))
                 ) : (

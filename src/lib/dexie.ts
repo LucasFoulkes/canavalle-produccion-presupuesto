@@ -1,14 +1,10 @@
-import Dexie, { Table } from 'dexie'
+import Dexie, { type Table } from 'dexie'
 
 // Define a minimal row shape: all values are unknown, but rows must have a PK
 export type AnyRow = Record<string, unknown>
 
 // Names of our stores correspond to table names (keys of SERVICE_PK and TABLES)
 export class AppDexie extends Dexie {
-    // Dynamic table index: [tableName: string]: Table<AnyRow, any>
-    // We'll also add typed properties at runtime.
-    [storeName: string]: any
-
     constructor() {
         super('canavalle-db')
         // Stores are defined later via initDexieSchema()
@@ -42,6 +38,6 @@ export async function initDexieSchema() {
     }
 }
 
-export function getStore(table: string): Table<AnyRow, any> {
-    return (db as any)[table] as Table<AnyRow, any>
+export function getStore(table: string): Table<AnyRow, string> {
+    return db.table<AnyRow, string>(table)
 }

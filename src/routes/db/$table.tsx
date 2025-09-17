@@ -2,9 +2,10 @@ import { createFileRoute, notFound } from '@tanstack/react-router'
 import * as React from 'react'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
-import { getTableConfig, getTableService, SERVICE_PK } from '@/services/db'
+import { getTableConfig } from '@/config/tables'
+import { getTableService, SERVICE_PK } from '@/services/db'
 import { formatDate, isDateLikeKey, formatDateISO } from '@/lib/utils'
-import { getStore } from '@/lib/dexie'
+import { getStore, type AnyRow } from '@/lib/dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { syncTable } from '@/services/sync'
 import { useDottedLookups } from '@/hooks/use-dotted-lookups'
@@ -13,6 +14,8 @@ import { useTableFilter } from '@/hooks/use-table-filter'
 export const Route = createFileRoute('/db/$table')({
   component: Page,
 })
+
+type TableRow = AnyRow
 
 function useDbTable(tableId: string) {
   const config = getTableConfig(tableId)
@@ -25,8 +28,8 @@ function useDbTable(tableId: string) {
     try {
       const store = getStore(tableId)
       const all = await store.toArray()
-      return all as any[]
-    } catch (e: any) {
+      return all
+    } catch (e: unknown) {
       console.warn('Dexie read failed', e)
       return []
     }
@@ -37,12 +40,13 @@ function useDbTable(tableId: string) {
     if (!dexieSupported) return
     syncTable(tableId).catch((e) => {
       console.warn('Sync failed', e)
-      setError(String(e?.message ?? e))
+      const message = e instanceof Error ? e.message : String(e)
+      setError(message)
     })
   }, [tableId, dexieSupported])
 
   // Fallback fetch if table not in Dexie config
-  const [fallbackRows, setFallbackRows] = React.useState<any[] | null>(null)
+  const [fallbackRows, setFallbackRows] = React.useState<TableRow[] | null>(null)
   React.useEffect(() => {
     if (dexieSupported) return
     let cancelled = false
@@ -50,30 +54,37 @@ function useDbTable(tableId: string) {
         const { data, error } = await getTableService(tableId).selectAll('*')
         if (cancelled) return
         if (error) setError(error.message)
-        setFallbackRows((data as any[]) ?? [])
+        setFallbackRows(Array.isArray(data) ? (data as TableRow[]) : [])
       })()
     return () => {
       cancelled = true
     }
   }, [tableId, dexieSupported])
 
-  const rows = (liveRows ?? fallbackRows ?? []) as any[]
+  const rows = React.useMemo<TableRow[]>(() => liveRows ?? fallbackRows ?? [], [liveRows, fallbackRows])
 
   const columns = React.useMemo(() => {
     if (config) {
       // Attach date formatter lazily without mutating original config
       return config.columns.map((c) => {
+        const column: Column<TableRow> = { key: c.key as keyof TableRow, header: c.header }
         if (isDateLikeKey(c.key)) {
-          return { ...c, render: (v: any) => formatDate(v) }
+          column.render = (value) => formatDate(value)
         }
-        return c
+        return column
       })
     }
-    const sample = rows?.[0]
+    const sample = rows[0]
     if (sample) {
       return Object.keys(sample)
         .slice(0, 6)
-        .map((k) => ({ key: k, render: isDateLikeKey(k) ? (v: any) => formatDate(v) : undefined }))
+        .map((k) => {
+          const column: Column<TableRow> = { key: k as keyof TableRow, header: k }
+          if (isDateLikeKey(k)) {
+            column.render = (value) => formatDate(value)
+          }
+          return column
+        })
     }
     return []
   }, [config, rows])
@@ -86,21 +97,27 @@ function Page() {
   const { table } = Route.useParams()
   // Limit to known tables to avoid accidental exposure
   if (!getTableConfig(table)) throw notFound()
-  const { columns, rows, } = useDbTable(table)
+  const { columns, rows } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
   // Register columns on changes
   React.useEffect(() => {
-    registerColumns(columns.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
+    registerColumns(
+      columns.map((c) => ({
+        key: String(c.key),
+        label: c.header ?? String(c.key),
+        type: isDateLikeKey(String(c.key)) ? 'date' : 'string',
+      }))
+    )
   }, [columns, registerColumns])
-  const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: true })
+  const { displayRows, relationLoading } = useDottedLookups(table, rows, columns, { requireAll: true })
   const baseLoading = rows == null || rows.length === 0
   const finalLoading = baseLoading || relationLoading
   const filtered = React.useMemo(() => {
     let rowsToCheck = displayRows
     if (filters.length) {
-      rowsToCheck = rowsToCheck.filter(r => {
-        return filters.every(f => {
-          const raw = (r as any)[f.column]
+      rowsToCheck = rowsToCheck.filter((r) => {
+        return filters.every((f) => {
+          const raw = r[f.column]
           if (raw == null) return false
           const valStr = String(raw)
           const lower = valStr.toLowerCase()
@@ -149,18 +166,19 @@ function Page() {
     if (!query) return rowsToCheck
     const q = query.toLowerCase()
     const keys = column === '*' ? columns.map(c => String(c.key)) : [column]
-    return rowsToCheck.filter(r => keys.some(k => {
-      const v = (r as any)[k]
+    return rowsToCheck.filter((r) => keys.some((k) => {
+      const v = r[k]
       if (v == null) return false
       return String(v).toLowerCase().includes(q)
     }))
   }, [query, column, displayRows, columns, filters])
+  const skeletonColumns = React.useMemo(() => columns.map((c) => ({ key: String(c.key), header: c.header })), [columns])
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {finalLoading ? (
-        <DataTableSkeleton columns={columns as any} rows={8} />
+        <DataTableSkeleton columns={skeletonColumns} rows={8} />
       ) : (
-        <DataTable caption={`${filtered.length}`} columns={columns as any} rows={filtered} />
+        <DataTable caption={`${filtered.length}`} columns={columns} rows={filtered} />
       )}
     </div>
   )

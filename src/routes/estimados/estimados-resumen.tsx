@@ -1,12 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import * as React from 'react'
 import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
-import { getStore } from '@/lib/dexie'
-import { DataTable } from '@/components/data-table'
+import { getStore, type AnyRow } from '@/lib/dexie'
+import { DataTable, type Column } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { formatDate } from '@/lib/utils'
 
-export const Route = createFileRoute('/estimados/estimados-resumen' as any)({
+export const Route = createFileRoute('/estimados/estimados-resumen')({
   component: Page,
 })
 
@@ -46,22 +46,23 @@ const STAGE_KEYS = [
   'dias_cosecha',
 ] as const
 
+type StageKey = (typeof STAGE_KEYS)[number]
+
 function Page() {
   const { data: rows, loading } = useDeferredLiveQuery<Row[] | undefined>(async () => {
-    // --- Normalization & mapping helpers ---
-    const normalize = (s: any) =>
-      String(s ?? '')
+    const normalize = (value: unknown) =>
+      String(value ?? '')
         .toLowerCase()
         .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // strip diacritics
+        .replace(/[\u0300-\u036f]/g, '')
         .replace(/\s+/g, '_')
         .replace(/[^a-z0-9_]/g, '')
 
-    const mapTipoToStageKey = (tipo: any): typeof STAGE_KEYS[number] | null => {
-      const t = normalize(tipo)
-      const direct = t.startsWith('dias_') ? t : `dias_${t}`
-      if ((STAGE_KEYS as readonly string[]).includes(direct)) return direct as any
-      const syn: Record<string, typeof STAGE_KEYS[number]> = {
+    const mapTipoToStageKey = (tipo: unknown): StageKey | null => {
+      const normalized = normalize(tipo)
+      const direct = normalized.startsWith('dias_') ? normalized : `dias_${normalized}`
+      if ((STAGE_KEYS as readonly string[]).includes(direct)) return direct as StageKey
+      const syn: Record<string, StageKey> = {
         brotacion: 'dias_brotacion',
         '50mm': 'dias_cincuenta_mm',
         '50_mm': 'dias_cincuenta_mm',
@@ -88,28 +89,34 @@ function Page() {
         sepalos_abiertos: 'dias_sepalos_abiertos',
         cosecha: 'dias_cosecha',
       }
-      return syn[t] ?? null
+      return syn[normalized] ?? null
     }
 
-    const parseNumber = (val: any): number => {
-      if (typeof val === 'number') return isFinite(val) ? val : 0
+    const parseNumber = (val: unknown): number => {
+      if (typeof val === 'number') return Number.isFinite(val) ? val : 0
       if (typeof val === 'string') {
-        const s = val.trim()
-        if (!s) return 0
-        const hasComma = s.includes(',')
-        const hasDot = s.includes('.')
-        let normalized = s
+        const trimmed = val.trim()
+        if (!trimmed) return 0
+        const hasComma = trimmed.includes(',')
+        const hasDot = trimmed.includes('.')
+        let normalized = trimmed
         if (hasComma && (!hasDot || (hasDot && hasComma))) {
-          normalized = s.replace(/\./g, '').replace(/,/g, '.')
+          normalized = trimmed.replace(/\./g, '').replace(/,/g, '.')
         }
         const n = Number(normalized)
-        return isNaN(n) ? 0 : n
+        return Number.isNaN(n) ? 0 : n
       }
       return 0
     }
 
-    // --- Load required tables from Dexie (already synced from Supabase) ---
-    const [observaciones, camas, grupos, bloques, fincas, variedades] = await Promise.all([
+    const [observaciones, camas, grupos, bloques, fincas, variedades] = await Promise.all<[
+      AnyRow[],
+      AnyRow[],
+      AnyRow[],
+      AnyRow[],
+      AnyRow[],
+      AnyRow[],
+    ]>([
       getStore('observacion').toArray(),
       getStore('cama').toArray(),
       getStore('grupo_cama').toArray(),
@@ -118,110 +125,118 @@ function Page() {
       getStore('variedad').toArray(),
     ])
 
-    const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
+    const mapBy = <T extends Record<string, unknown>>(arr: T[], key: string) => {
       const m = new Map<string, T>()
-      for (const it of arr) m.set(String(it[key]), it)
+      for (const it of arr) {
+        const id = it?.[key]
+        if (id == null) continue
+        m.set(String(id), it)
+      }
       return m
     }
 
-    const camasById = mapBy(camas as any[], 'id_cama')
-    const gruposById = mapBy(grupos as any[], 'id_grupo')
-    const bloquesById = mapBy(bloques as any[], 'id_bloque')
-    const fincasById = mapBy(fincas as any[], 'id_finca')
-    const variedadesById = mapBy(variedades as any[], 'id_variedad')
+    const camasById = mapBy(camas, 'id_cama')
+    const gruposById = mapBy(grupos, 'id_grupo')
+    const bloquesById = mapBy(bloques, 'id_bloque')
+    const fincasById = mapBy(fincas, 'id_finca')
+    const variedadesById = mapBy(variedades, 'id_variedad')
 
-    // --- Pre-compute area productiva per (bloque,variedad) across groups with estado 'productivo' ---
     const ESTADO_PRODUCTIVO = 'productivo'
     const areaByBloqueVar = new Map<string, number>()
-    for (const c of camas as any[]) {
-      const g = gruposById.get(String((c as any).id_grupo))
-      if (!g) continue
-      const estado = String((g as any).estado ?? '').toLowerCase()
+    for (const cama of camas) {
+      const grupo = gruposById.get(String(cama?.['id_grupo']))
+      if (!grupo) continue
+      const estado = String(grupo?.['estado'] ?? '').toLowerCase()
       if (estado !== ESTADO_PRODUCTIVO) continue
-      const key = `${String((g as any).id_bloque)}|${String((g as any).id_variedad)}`
-      const largo = Number((c as any).largo_metros) || 0
-      const ancho = Number((c as any).ancho_metros) || 0
+      const key = `${String(grupo?.['id_bloque'])}|${String(grupo?.['id_variedad'])}`
+      const largo = Number(cama?.['largo_metros']) || 0
+      const ancho = Number(cama?.['ancho_metros']) || 0
       const area = largo * ancho
       areaByBloqueVar.set(key, (areaByBloqueVar.get(key) || 0) + area)
     }
 
-    // --- First aggregation level: per (bloque,variedad,fecha,stage,id_cama) ---
-    type Leaf = { count: number; areaCama: number; bloqueId: string; variedadId: string; fincaId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
+    type Leaf = {
+      count: number
+      areaCama: number
+      bloqueId: string
+      variedadId: string
+      dateKey: string
+      stageKey: StageKey
+    }
+
     const leafAcc = new Map<string, Leaf>()
+    const dateTouched = new Map<string, Set<string>>()
 
-    // Track dates per (bloque,variedad) even if no valid stage mapping so we can output a zero row
-    const dateTouched = new Map<string, Set<string>>() // key: bloqueId|variedadId -> Set<dateKey>
-
-    for (const o of (observaciones as any[])) {
-      const idCama = String(o?.id_cama ?? '')
-      if (!idCama) continue
-      const cama = camasById.get(idCama)
+    for (const obs of observaciones) {
+      const idCama = obs?.['id_cama']
+      if (idCama == null) continue
+      const cama = camasById.get(String(idCama))
       if (!cama) continue
-      const g = gruposById.get(String((cama as any)?.id_grupo))
-      if (!g) continue
-      const bloqueId = String((g as any).id_bloque)
-      const variedadId = String((g as any).id_variedad)
-      const b = bloquesById.get(bloqueId)
-      const f = b ? fincasById.get(String((b as any).id_finca)) : undefined
-      const fincaId = f ? String((f as any).id_finca) : ''
+      const grupo = gruposById.get(String(cama?.['id_grupo']))
+      if (!grupo) continue
+      const bloqueId = String(grupo?.['id_bloque'])
+      const variedadId = String(grupo?.['id_variedad'])
 
-      const rawDate: any = (o as any)?.creado_en ?? (o as any)?.fecha ?? null
+      const rawDate = obs?.['creado_en'] ?? obs?.['fecha']
       let dateKey = ''
       if (rawDate) {
         const d = new Date(rawDate)
-        if (!isNaN(d.getTime())) dateKey = d.toISOString().slice(0, 10)
+        if (!Number.isNaN(d.getTime())) dateKey = d.toISOString().slice(0, 10)
       }
-      if (!dateKey) continue // still skip undated rows
+      if (!dateKey) continue
 
-      // record date presence
       const dvKey = `${bloqueId}|${variedadId}`
       if (!dateTouched.has(dvKey)) dateTouched.set(dvKey, new Set())
       dateTouched.get(dvKey)!.add(dateKey)
 
-      const stageKey = mapTipoToStageKey(o?.tipo_observacion)
-      if (!stageKey) continue // we only aggregate known stages, but keep date via dateTouched
+      const stageKey = mapTipoToStageKey(obs?.['tipo_observacion'])
+      if (!stageKey) continue
 
-      // cama area (full)
-      const largo = Number((cama as any)?.largo_metros) || 0
-      const ancho = Number((cama as any)?.ancho_metros) || 0
+      const largo = Number(cama?.['largo_metros']) || 0
+      const ancho = Number(cama?.['ancho_metros']) || 0
       const areaCama = largo * ancho
       if (areaCama <= 0) continue
 
-      const cant = parseNumber((o as any)?.cantidad)
-      if (cant <= 0) continue
+      const count = parseNumber(obs?.['cantidad'])
+      if (count <= 0) continue
 
-      const leafKey = `${bloqueId}|${variedadId}|${dateKey}|${stageKey}|${idCama}`
+      const leafKey = `${bloqueId}|${variedadId}|${dateKey}|${stageKey}|${String(idCama)}`
       const existing = leafAcc.get(leafKey)
       if (existing) {
-        existing.count += cant
+        existing.count += count
       } else {
-        leafAcc.set(leafKey, { count: cant, areaCama, bloqueId, variedadId, fincaId, dateKey, stageKey })
+        leafAcc.set(leafKey, { count, areaCama, bloqueId, variedadId, dateKey, stageKey })
       }
     }
 
-    // --- Second aggregation level: per (bloque,variedad,fecha) row, summing stage results ---
     const rowAcc = new Map<string, Row>()
-    // Helper to fetch display names lazily
     const getNames = (bloqueId: string, variedadId: string) => {
-      const b = bloquesById.get(bloqueId)
-      const f = b ? fincasById.get(String((b as any).id_finca)) : undefined
-      const v = variedadesById.get(variedadId)
+      const bloque = bloquesById.get(bloqueId)
+      const finca = bloque ? fincasById.get(String(bloque?.['id_finca'])) : undefined
+      const variedad = variedadesById.get(variedadId)
       return {
-        finca: String((f as any)?.nombre ?? ''),
-        bloque: String((b as any)?.nombre ?? ''),
-        variedad: String((v as any)?.nombre ?? ''),
+        finca: String(finca?.['nombre'] ?? ''),
+        bloque: String(bloque?.['nombre'] ?? ''),
+        variedad: String(variedad?.['nombre'] ?? ''),
       }
     }
 
-    // Group leaves by (bloque,variedad,fecha,stage) to compute densities (sum counts / sum areas)
-    interface StageGroup { totalCount: number; totalArea: number; bloqueId: string; variedadId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
+    interface StageGroup {
+      totalCount: number
+      totalArea: number
+      bloqueId: string
+      variedadId: string
+      dateKey: string
+      stageKey: StageKey
+    }
+
     const stageGroupAcc = new Map<string, StageGroup>()
     for (const leaf of leafAcc.values()) {
       const sgKey = `${leaf.bloqueId}|${leaf.variedadId}|${leaf.dateKey}|${leaf.stageKey}`
-      const sg = stageGroupAcc.get(sgKey)
-      if (sg) {
-        sg.totalCount += leaf.count
-        sg.totalArea += leaf.areaCama
+      const existing = stageGroupAcc.get(sgKey)
+      if (existing) {
+        existing.totalCount += leaf.count
+        existing.totalArea += leaf.areaCama
       } else {
         stageGroupAcc.set(sgKey, {
           totalCount: leaf.count,
@@ -234,135 +249,102 @@ function Page() {
       }
     }
 
+    const createEmptyRow = (names: { finca: string; bloque: string; variedad: string }, dateKey: string): Row => ({
+      finca: names.finca,
+      bloque: names.bloque,
+      variedad: names.variedad,
+      fecha: dateKey,
+      dias_brotacion: 0,
+      dias_cincuenta_mm: 0,
+      dias_quince_cm: 0,
+      dias_veinte_cm: 0,
+      dias_primera_hoja: 0,
+      dias_espiga: 0,
+      dias_arroz: 0,
+      dias_arveja: 0,
+      dias_garbanzo: 0,
+      dias_uva: 0,
+      dias_rayando_color: 0,
+      dias_sepalos_abiertos: 0,
+      dias_cosecha: 0,
+    })
+
     for (const sg of stageGroupAcc.values()) {
       if (sg.totalArea <= 0) continue
-      const densidad_b = sg.totalCount / sg.totalArea
+      const densidadBloque = sg.totalCount / sg.totalArea
       const areaProductiva = areaByBloqueVar.get(`${sg.bloqueId}|${sg.variedadId}`) || 0
+      const rowKey = `${sg.bloqueId}|${sg.variedadId}|${sg.dateKey}`
       if (areaProductiva <= 0) {
-        // keep a row even if productiva = 0 (shows date exists) but skip adding stage value
-        const rowKeyZero = `${sg.bloqueId}|${sg.variedadId}|${sg.dateKey}`
-        if (!rowAcc.has(rowKeyZero)) {
+        if (!rowAcc.has(rowKey)) {
           const names = getNames(sg.bloqueId, sg.variedadId)
-          rowAcc.set(rowKeyZero, {
-            finca: names.finca,
-            bloque: names.bloque,
-            variedad: names.variedad,
-            fecha: sg.dateKey,
-            dias_brotacion: 0,
-            dias_cincuenta_mm: 0,
-            dias_quince_cm: 0,
-            dias_veinte_cm: 0,
-            dias_primera_hoja: 0,
-            dias_espiga: 0,
-            dias_arroz: 0,
-            dias_arveja: 0,
-            dias_garbanzo: 0,
-            dias_uva: 0,
-            dias_rayando_color: 0,
-            dias_sepalos_abiertos: 0,
-            dias_cosecha: 0,
-          })
+          rowAcc.set(rowKey, createEmptyRow(names, sg.dateKey))
         }
         continue
       }
-      const estimado_bloque_b = densidad_b * areaProductiva
 
-      const rowKey = `${sg.bloqueId}|${sg.variedadId}|${sg.dateKey}`
+      const estimado = densidadBloque * areaProductiva
       let row = rowAcc.get(rowKey)
       if (!row) {
         const names = getNames(sg.bloqueId, sg.variedadId)
-        row = {
-          finca: names.finca,
-          bloque: names.bloque,
-          variedad: names.variedad,
-          fecha: sg.dateKey,
-          dias_brotacion: 0,
-          dias_cincuenta_mm: 0,
-          dias_quince_cm: 0,
-          dias_veinte_cm: 0,
-          dias_primera_hoja: 0,
-          dias_espiga: 0,
-          dias_arroz: 0,
-          dias_arveja: 0,
-          dias_garbanzo: 0,
-          dias_uva: 0,
-          dias_rayando_color: 0,
-          dias_sepalos_abiertos: 0,
-          dias_cosecha: 0,
-        }
+        row = createEmptyRow(names, sg.dateKey)
         rowAcc.set(rowKey, row)
       }
-      ; (row as any)[sg.stageKey] += estimado_bloque_b
+      row[sg.stageKey] += estimado
     }
 
-    // Ensure every date touched (even with no recognized stage groups) has a zero row
     for (const [bv, dates] of dateTouched.entries()) {
       const [bloqueId, variedadId] = bv.split('|')
-      for (const d of dates) {
-        const rowKey = `${bloqueId}|${variedadId}|${d}`
+      for (const dateKey of dates) {
+        const rowKey = `${bloqueId}|${variedadId}|${dateKey}`
         if (!rowAcc.has(rowKey)) {
           const names = getNames(bloqueId, variedadId)
-          rowAcc.set(rowKey, {
-            finca: names.finca,
-            bloque: names.bloque,
-            variedad: names.variedad,
-            fecha: d,
-            dias_brotacion: 0,
-            dias_cincuenta_mm: 0,
-            dias_quince_cm: 0,
-            dias_veinte_cm: 0,
-            dias_primera_hoja: 0,
-            dias_espiga: 0,
-            dias_arroz: 0,
-            dias_arveja: 0,
-            dias_garbanzo: 0,
-            dias_uva: 0,
-            dias_rayando_color: 0,
-            dias_sepalos_abiertos: 0,
-            dias_cosecha: 0,
-          })
+          rowAcc.set(rowKey, createEmptyRow(names, dateKey))
         }
       }
     }
 
-    // Sort rows consistently
-    return Array.from(rowAcc.values()).sort((a, b) =>
-      a.finca.localeCompare(b.finca, undefined, { sensitivity: 'base' }) ||
-      a.bloque.localeCompare(b.bloque, undefined, { sensitivity: 'base' }) ||
-      a.variedad.localeCompare(b.variedad, undefined, { sensitivity: 'base' }) ||
-      (a.fecha || '').localeCompare(b.fecha || '')
+    return Array.from(rowAcc.values()).sort(
+      (a, b) =>
+        a.finca.localeCompare(b.finca, undefined, { sensitivity: 'base' }) ||
+        a.bloque.localeCompare(b.bloque, undefined, { sensitivity: 'base' }) ||
+        a.variedad.localeCompare(b.variedad, undefined, { sensitivity: 'base' }) ||
+        (a.fecha || '').localeCompare(b.fecha || '')
     )
   }, [], { defer: false })
 
-  const fmt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
-  const columns = React.useMemo(() => ([
-    { key: 'finca', header: 'Finca' },
-    { key: 'bloque', header: 'Bloque' },
-    { key: 'variedad', header: 'Variedad' },
-    { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
-    { key: 'dias_brotacion', header: 'Brotación', render: fmt },
-    { key: 'dias_cincuenta_mm', header: '50 mm', render: fmt },
-    { key: 'dias_quince_cm', header: '15 cm', render: fmt },
-    { key: 'dias_veinte_cm', header: '20 cm', render: fmt },
-    { key: 'dias_primera_hoja', header: 'Primera hoja', render: fmt },
-    { key: 'dias_espiga', header: 'Espiga', render: fmt },
-    { key: 'dias_arroz', header: 'Arroz', render: fmt },
-    { key: 'dias_arveja', header: 'Arveja', render: fmt },
-    { key: 'dias_garbanzo', header: 'Garbanzo', render: fmt },
-    { key: 'dias_uva', header: 'Uva', render: fmt },
-    { key: 'dias_rayando_color', header: 'Rayando color', render: fmt },
-    { key: 'dias_sepalos_abiertos', header: 'Sépalos abiertos', render: fmt },
-    { key: 'dias_cosecha', header: 'Cosecha', render: fmt },
-  ]), []) as any
+  const fmt = (value: unknown) => (Number(value ?? 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const columns = React.useMemo<Column<Row>[]>(
+    () => [
+      { key: 'finca', header: 'Finca' },
+      { key: 'bloque', header: 'Bloque' },
+      { key: 'variedad', header: 'Variedad' },
+      { key: 'fecha', header: 'Fecha', render: (value) => formatDate(value) },
+      { key: 'dias_brotacion', header: 'Brotación', render: fmt },
+      { key: 'dias_cincuenta_mm', header: '50 mm', render: fmt },
+      { key: 'dias_quince_cm', header: '15 cm', render: fmt },
+      { key: 'dias_veinte_cm', header: '20 cm', render: fmt },
+      { key: 'dias_primera_hoja', header: 'Primera hoja', render: fmt },
+      { key: 'dias_espiga', header: 'Espiga', render: fmt },
+      { key: 'dias_arroz', header: 'Arroz', render: fmt },
+      { key: 'dias_arveja', header: 'Arveja', render: fmt },
+      { key: 'dias_garbanzo', header: 'Garbanzo', render: fmt },
+      { key: 'dias_uva', header: 'Uva', render: fmt },
+      { key: 'dias_rayando_color', header: 'Rayando color', render: fmt },
+      { key: 'dias_sepalos_abiertos', header: 'Sépalos abiertos', render: fmt },
+      { key: 'dias_cosecha', header: 'Cosecha', render: fmt },
+    ],
+    [],
+  )
+
+  const skeletonColumns = React.useMemo(() => columns.map((c) => ({ key: String(c.key), header: c.header })), [columns])
 
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {loading ? (
-        <DataTableSkeleton columns={columns as any} rows={8} />
+        <DataTableSkeleton columns={skeletonColumns} rows={8} />
       ) : (
         <DataTable caption={`${rows?.length ?? 0}`} columns={columns} rows={rows ?? []} />
       )}
     </div>
   )
 }
-//
