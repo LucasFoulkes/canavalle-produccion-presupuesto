@@ -6,6 +6,7 @@ import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { formatDate } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { useTableFilter, useFilteredRows } from '@/hooks/use-table-filter'
 
 export const Route = createFileRoute('/estimados/estimados' as any)({
   component: Page,
@@ -24,10 +25,7 @@ type Row = {
   area_cama: number
   area_productiva: number
   densidad: number
-  estimado_cama: number
-  estimado_bloque: number
   densidad_b: number
-  estimado_bloque_b: number
 }
 
 function Page() {
@@ -149,10 +147,7 @@ function Page() {
           area_cama: areaCama,
           area_productiva: areaProductiva,
           densidad: 0,
-          estimado_cama: 0,
-          estimado_bloque: 0,
           densidad_b: 0,
-          estimado_bloque_b: 0,
         })
       }
     }
@@ -160,11 +155,8 @@ function Page() {
     // finalize derived fields
     const rows = Array.from(acc.values()).map((r) => {
       const densidad = r.area_observada > 0 ? r.cantidad_total / r.area_observada : 0
-      const estimado_cama = densidad * r.area_cama
-      const estimado_bloque = densidad * r.area_productiva
       const densidad_b = r.area_cama > 0 ? r.cantidad_total / r.area_cama : 0
-      const estimado_bloque_b = densidad_b * r.area_productiva
-      return { ...r, densidad, estimado_cama, estimado_bloque, densidad_b, estimado_bloque_b }
+      return { ...r, densidad, densidad_b }
     }).sort((a, b) =>
       a.finca.localeCompare(b.finca, undefined, { sensitivity: 'base' }) ||
       a.bloque.localeCompare(b.bloque, undefined, { sensitivity: 'base' }) ||
@@ -178,28 +170,32 @@ function Page() {
 
   const fmt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
   const columns = React.useMemo(() => ([
+    { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
     { key: 'finca', header: 'Finca' },
     { key: 'bloque', header: 'Bloque' },
     { key: 'variedad', header: 'Variedad' },
     { key: 'cama', header: 'Cama' },
     { key: 'tipo_observacion', header: 'Estado fenológico' },
-    { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
     { key: 'cantidad_total', header: 'Cantidad' },
     { key: 'area_observada', header: 'Área observada (m²)', render: (v: number) => fmt(v) },
     { key: 'area_cama', header: 'Área cama (m²)', render: (v: number) => fmt(v) },
     { key: 'area_productiva', header: 'Área productiva (m²)', render: (v: number) => fmt(v) },
-    { key: 'densidad', header: 'Densidad (/m²)', render: (v: number) => fmt(v) },
-    { key: 'estimado_cama', header: 'Estimado cama (a)', render: (v: number) => fmt(v) },
-    { key: 'estimado_bloque', header: 'Estimado bloque (a)', render: (v: number) => fmt(v) },
+    { key: 'densidad', header: 'Densidad A (/m²)', render: (v: number) => fmt(v) },
     { key: 'densidad_b', header: 'Densidad B (/m²)', render: (v: number) => fmt(v) },
-    { key: 'estimado_bloque_b', header: 'Estimado bloque (b)', render: (v: number) => fmt(v) },
   ]), []) as any
+
+  // Register columns for filtering + apply filters
+  const { registerColumns } = useTableFilter()
+  React.useEffect(() => {
+    registerColumns(columns.map((c: any) => ({ key: c.key, label: c.header || c.key })))
+  }, [columns, registerColumns])
+  const filtered = useFilteredRows(data || [], columns)
 
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {loading && <DataTableSkeleton columns={columns as any} rows={8} />}
       {!loading && (
-        <DataTable<Row> caption={`${(data || []).length}`} columns={columns} rows={data || []} />
+        <DataTable<Row> caption={`${(filtered || []).length}`} columns={columns} rows={filtered || []} />
       )}
     </div>
   )

@@ -93,24 +93,117 @@ export const TableFilterProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 export function useTableFilter() {
     const ctx = React.useContext(TableFilterContext)
-    if (!ctx) throw new Error('useTableFilter must be used within TableFilterProvider')
+    if (!ctx) {
+        // Graceful fallback: provide inert implementation so pages rendered outside provider don't crash.
+        // Warn once in dev.
+        if (process.env.NODE_ENV !== 'production') {
+            // eslint-disable-next-line no-console
+            console.warn('[useTableFilter] missing TableFilterProvider – using no-op fallback')
+        }
+        const noop = () => { }
+        return {
+            query: '', setQuery: noop,
+            column: '*', setColumn: noop,
+            columns: [], registerColumns: noop,
+            reset: noop,
+            filters: [], addFilter: noop, removeFilter: noop, clearFilters: noop,
+        } as TableFilterState
+    }
     return ctx
 }
 
 // Helper to apply filtering to a row list; can be used if needed elsewhere
 export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null | undefined, columns: { key: keyof T; header?: string }[]) {
-    const { query, column } = useTableFilter()
+    const { query, column, filters } = useTableFilter()
     return React.useMemo(() => {
         if (!rows || !rows.length) return rows ?? []
-        if (!query) return rows
-        const q = query.toLowerCase()
-        const keys: string[] = column === '*' ? columns.map((c) => c.key as string) : [column]
-        return rows.filter((row) => {
-            return keys.some((k) => {
-                const v = row?.[k]
-                if (v == null) return false
-                return String(v).toLowerCase().includes(q)
+
+        const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, r => `\\${r}`)
+        const buildNumericBoundaryRegex = (tok: string) => new RegExp(`\\b${tok}\\b`, 'i')
+        // For free-text tokens: numeric tokens enforce whole-number boundaries; text tokens act as simple substring (case-insensitive)
+        const buildStringTokenRegex = (tok: string) => new RegExp(esc(tok), 'i')
+        const queryTokens = query.trim() ? query.trim().toLowerCase().split(/\s+/).filter(Boolean) : []
+        const queryKeys: string[] = column === '*' ? columns.map(c => c.key as string) : [column]
+
+        const applyQuery = (row: T) => {
+            if (!queryTokens.length) return true
+            return queryTokens.every(tok => {
+                const isNum = /^\d+$/.test(tok)
+                return queryKeys.some(k => {
+                    const v = row?.[k]
+                    if (v == null) return false
+                    const str = String(v)
+                    if (isNum) return buildNumericBoundaryRegex(tok).test(str)
+                    return buildStringTokenRegex(tok).test(str)
+                })
             })
-        })
-    }, [rows, query, column, columns])
+        }
+
+        const parseNum = (v: any) => {
+            if (typeof v === 'number') return v
+            if (typeof v === 'string') {
+                const t = v.trim().replace(/,/g, '.')
+                const n = Number(t)
+                return isNaN(n) ? NaN : n
+            }
+            return NaN
+        }
+        const toDateOnly = (iso: string) => {
+            if (!iso) return ''
+            const d = new Date(iso)
+            if (isNaN(d.getTime())) return iso
+            return d.toISOString().slice(0, 10)
+        }
+
+        const applySavedFilters = (row: T) => {
+            if (!filters.length) return true
+            return filters.every(f => {
+                const raw = row[f.column]
+                if (raw == null) return false
+                // Date handling (stored iso) compare date-only
+                if (f.type === 'date') {
+                    const val = toDateOnly(String(raw))
+                    if (f.op === 'eq') return val === f.value
+                    if (f.op === 'between') return val >= String(f.value) && val <= String(f.value2)
+                    return false
+                }
+                if (f.type === 'number') {
+                    const valNum = parseNum(raw)
+                    const a = parseNum(f.value)
+                    if (isNaN(valNum) || isNaN(a)) return false
+                    if (f.op === 'eq') return valNum === a
+                    if (['gt', 'lt', 'gte', 'lte'].includes(f.op)) {
+                        if (f.op === 'gt') return valNum > a
+                        if (f.op === 'lt') return valNum < a
+                        if (f.op === 'gte') return valNum >= a
+                        if (f.op === 'lte') return valNum <= a
+                    }
+                    if (f.op === 'between') {
+                        const b = parseNum(f.value2)
+                        if (isNaN(b)) return false
+                        return valNum >= Math.min(a, b) && valNum <= Math.max(a, b)
+                    }
+                    return false
+                }
+                // string ops (case-insensitive)
+                const rawStr = String(raw)
+                const valStr = rawStr.toLowerCase()
+                const needle = f.value.toLowerCase()
+                const isPureNumber = /^\d+$/.test(needle)
+                switch (f.op) {
+                    case 'contains':
+                        if (isPureNumber) return buildNumericBoundaryRegex(needle).test(rawStr)
+                        // For general strings allow substring but still case-insensitive
+                        return valStr.includes(needle)
+                    case 'eq': return valStr === needle
+                    case 'starts': return valStr.startsWith(needle)
+                    case 'ends': return valStr.endsWith(needle)
+                    // between for strings not supported
+                    default: return false
+                }
+            })
+        }
+
+        return rows.filter(r => applyQuery(r) && applySavedFilters(r))
+    }, [rows, query, column, columns, filters])
 }

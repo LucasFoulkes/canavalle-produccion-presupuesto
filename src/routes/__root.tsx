@@ -56,6 +56,17 @@ function FilterToolbar() {
     const [singleDate, setSingleDate] = React.useState<Date | undefined>(undefined)
     const inputRef = React.useRef<HTMLInputElement | null>(null)
 
+    // After adding a filter: clear values AND return to global mode (column '*', op 'contains') as requested
+    const resetAfterAdd = React.useCallback(() => {
+        setValue2('')
+        setDateRange({})
+        setSingleDate(undefined)
+        setQuery('')
+        setColumn('*')
+        setOp('contains')
+        inputRef.current?.focus()
+    }, [setColumn])
+
     // Adjust default operator when column or its type changes
     React.useEffect(() => {
         if (!activeColumn) { setOp('contains'); return }
@@ -81,12 +92,12 @@ function FilterToolbar() {
                 const a = toISODate(dateRange.from)
                 const b = toISODate(dateRange.to)
                 addFilter({ column: activeColumn.key, value: a, value2: b, op: 'between', type: 'date' })
-                setDateRange({})
+                resetAfterAdd()
             } else { // treat anything else as eq for dates
                 if (!singleDate) return
                 const a = toISODate(singleDate)
                 addFilter({ column: activeColumn.key, value: a, op: 'eq', type: 'date' })
-                setSingleDate(undefined)
+                resetAfterAdd()
             }
             return
         }
@@ -96,12 +107,11 @@ function FilterToolbar() {
             const b = value2.trim()
             if (!b) return
             addFilter({ column: activeColumn.key, value: base, value2: b, op, type: activeColumn.type || 'number' })
-            setQuery('')
-            setValue2('')
+            resetAfterAdd()
             return
         }
         addFilter({ column: activeColumn.key, value: base, op, type: activeColumn.type || 'string' })
-        setQuery('')
+        resetAfterAdd()
     }
 
     return (
@@ -213,7 +223,7 @@ function FilterToolbar() {
                 </button>
             )}
             {filters.length > 0 && (
-                <div className="flex items-center gap-1 flex-wrap max-w-[360px]">
+                <div className="flex items-center gap-1 whitespace-nowrap overflow-x-auto scrollbar-thin pr-2">
                     {filters.map(f => {
                         const colLabel = columns.find(c => c.key === f.column)?.label || f.column
                         const opDef = OPERATORS.find(o => o.value === f.op)?.label || f.op
@@ -230,9 +240,27 @@ function FilterToolbar() {
                     <button
                         type="button"
                         onClick={clearFilters}
-                        className="text-xs text-muted-foreground hover:text-foreground underline"
+                        className="inline-flex items-center justify-center h-6 w-6 rounded-md border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0"
+                        title="Limpiar filtros"
+                        aria-label="Limpiar filtros"
                     >
-                        limpiar
+                        {/* Simple trash icon using SVG to avoid extra dependency */}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="size-4"
+                        >
+                            <path d="M3 6h18" />
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <path d="M10 11v6" />
+                            <path d="M14 11v6" />
+                            <path d="M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14" />
+                        </svg>
                     </button>
                 </div>
             )}
@@ -365,7 +393,7 @@ const RootLayout = () => {
                                                 <SidebarMenuSubItem>
                                                     <SidebarMenuSubButton asChild size="sm">
                                                         <Link to={"/estimados/estimados-resumen" as any} activeProps={{ 'data-active': 'true' }}>
-                                                            <span>Resumen fenológico (b)</span>
+                                                            <span>Resumen fenológico</span>
                                                         </Link>
                                                     </SidebarMenuSubButton>
                                                 </SidebarMenuSubItem>

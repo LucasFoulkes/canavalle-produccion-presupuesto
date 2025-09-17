@@ -5,6 +5,7 @@ import { getStore } from '@/lib/dexie'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { formatDate } from '@/lib/utils'
+import { useTableFilter, useFilteredRows } from '@/hooks/use-table-filter'
 
 export const Route = createFileRoute('/estimados/estimados-resumen' as any)({
   component: Page,
@@ -15,19 +16,20 @@ type Row = {
   bloque: string
   variedad: string
   fecha?: string | null
-  dias_brotacion: number
-  dias_cincuenta_mm: number
-  dias_quince_cm: number
-  dias_veinte_cm: number
-  dias_primera_hoja: number
-  dias_espiga: number
-  dias_arroz: number
-  dias_arveja: number
-  dias_garbanzo: number
-  dias_uva: number
-  dias_rayando_color: number
-  dias_sepalos_abiertos: number
-  dias_cosecha: number
+  // For each stage we store density (value) and sampling percent (stage_pct)
+  dias_brotacion: number; dias_brotacion_pct: number
+  dias_cincuenta_mm: number; dias_cincuenta_mm_pct: number
+  dias_quince_cm: number; dias_quince_cm_pct: number
+  dias_veinte_cm: number; dias_veinte_cm_pct: number
+  dias_primera_hoja: number; dias_primera_hoja_pct: number
+  dias_espiga: number; dias_espiga_pct: number
+  dias_arroz: number; dias_arroz_pct: number
+  dias_arveja: number; dias_arveja_pct: number
+  dias_garbanzo: number; dias_garbanzo_pct: number
+  dias_uva: number; dias_uva_pct: number
+  dias_rayando_color: number; dias_rayando_color_pct: number
+  dias_sepalos_abiertos: number; dias_sepalos_abiertos_pct: number
+  dias_cosecha: number; dias_cosecha_pct: number
 }
 
 const STAGE_KEYS = [
@@ -47,6 +49,7 @@ const STAGE_KEYS = [
 ] as const
 
 function Page() {
+  const { registerColumns } = useTableFilter()
   const { data: rows, loading } = useDeferredLiveQuery<Row[] | undefined>(async () => {
     // --- Normalization & mapping helpers ---
     const normalize = (s: any) =>
@@ -118,6 +121,35 @@ function Page() {
       getStore('variedad').toArray(),
     ])
 
+    // Obtain seccion length (standard observed length). Strategy:
+    // 1. Try Dexie store 'seccion' if present.
+    // 2. If not found or empty, attempt Supabase fetch (lightweight select).
+    // 3. If still 0, we'll fallback per-cama to using full cama length (so percentages are still meaningful) but capped.
+    let seccionLargoM = 0
+    const loadLocalSeccion = async () => {
+      try {
+        const maybeStore: any = (getStore as any)('seccion')
+        if (maybeStore && typeof maybeStore.toArray === 'function') {
+          const secciones = await maybeStore.toArray()
+          if (secciones && secciones.length > 0) {
+            const s0: any = secciones[0]
+            seccionLargoM = Number(s0?.largo_m) || 0
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    await loadLocalSeccion()
+    if (seccionLargoM <= 0) {
+      try {
+        const { supabase } = await import('@/lib/supabase')
+        const { data: secData } = await supabase.from('seccion').select('largo_m').limit(1)
+        if (secData && secData.length > 0) {
+          const s0: any = secData[0]
+          seccionLargoM = Number(s0?.largo_m) || 0
+        }
+      } catch { /* ignore remote error */ }
+    }
+
     const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
       const m = new Map<string, T>()
       for (const it of arr) m.set(String(it[key]), it)
@@ -145,8 +177,10 @@ function Page() {
       areaByBloqueVar.set(key, (areaByBloqueVar.get(key) || 0) + area)
     }
 
-    // --- First aggregation level: per (bloque,variedad,fecha,stage,id_cama) ---
-    type Leaf = { count: number; areaCama: number; bloqueId: string; variedadId: string; fincaId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
+    // --- First aggregation level: per (bloque,variedad,fecha,stage,id_cama)
+    // We now store the OBSERVED (sampled) area, not the full cama area, so sampling % represents
+    // (sum observed area for stage & date) / (area productiva del bloque-variedad) * 100.
+    type Leaf = { count: number; areaSampled: number; bloqueId: string; variedadId: string; fincaId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
     const leafAcc = new Map<string, Leaf>()
 
     // Track dates per (bloque,variedad) even if no valid stage mapping so we can output a zero row
@@ -181,11 +215,18 @@ function Page() {
       const stageKey = mapTipoToStageKey(o?.tipo_observacion)
       if (!stageKey) continue // we only aggregate known stages, but keep date via dateTouched
 
-      // cama area (full)
+      // cama dimensions
       const largo = Number((cama as any)?.largo_metros) || 0
       const ancho = Number((cama as any)?.ancho_metros) || 0
       const areaCama = largo * ancho
-      if (areaCama <= 0) continue
+      if (areaCama <= 0 || ancho <= 0) continue
+
+      // Observed (sampled) area determination:
+      // If a standard seccion length exists (seccionLargoM > 0), use min(seccionLargoM, largo) * ancho.
+      // Else fallback to full cama length * ancho so we still get non-zero sampling coverage.
+      const effectiveLength = seccionLargoM > 0 ? Math.min(seccionLargoM, largo) : largo
+      const areaSampled = effectiveLength * ancho
+      if (areaSampled <= 0) continue
 
       const cant = parseNumber((o as any)?.cantidad)
       if (cant <= 0) continue
@@ -194,8 +235,9 @@ function Page() {
       const existing = leafAcc.get(leafKey)
       if (existing) {
         existing.count += cant
+        // do NOT add areaSampled again; it's the same sampled segment for that cama/stage/date
       } else {
-        leafAcc.set(leafKey, { count: cant, areaCama, bloqueId, variedadId, fincaId, dateKey, stageKey })
+        leafAcc.set(leafKey, { count: cant, areaSampled, bloqueId, variedadId, fincaId, dateKey, stageKey })
       }
     }
 
@@ -213,19 +255,19 @@ function Page() {
       }
     }
 
-    // Group leaves by (bloque,variedad,fecha,stage) to compute densities (sum counts / sum areas)
-    interface StageGroup { totalCount: number; totalArea: number; bloqueId: string; variedadId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
+    // Group leaves by (bloque,variedad,fecha,stage) to sum counts and sampled area (without double counting per cama)
+    interface StageGroup { totalCount: number; totalAreaSampled: number; bloqueId: string; variedadId: string; dateKey: string; stageKey: typeof STAGE_KEYS[number] }
     const stageGroupAcc = new Map<string, StageGroup>()
     for (const leaf of leafAcc.values()) {
       const sgKey = `${leaf.bloqueId}|${leaf.variedadId}|${leaf.dateKey}|${leaf.stageKey}`
       const sg = stageGroupAcc.get(sgKey)
       if (sg) {
         sg.totalCount += leaf.count
-        sg.totalArea += leaf.areaCama
+        sg.totalAreaSampled += leaf.areaSampled
       } else {
         stageGroupAcc.set(sgKey, {
           totalCount: leaf.count,
-          totalArea: leaf.areaCama,
+          totalAreaSampled: leaf.areaSampled,
           bloqueId: leaf.bloqueId,
           variedadId: leaf.variedadId,
           dateKey: leaf.dateKey,
@@ -235,37 +277,11 @@ function Page() {
     }
 
     for (const sg of stageGroupAcc.values()) {
-      if (sg.totalArea <= 0) continue
-      const densidad_b = sg.totalCount / sg.totalArea
+      if (sg.totalAreaSampled <= 0) continue
       const areaProductiva = areaByBloqueVar.get(`${sg.bloqueId}|${sg.variedadId}`) || 0
-      if (areaProductiva <= 0) {
-        // keep a row even if productiva = 0 (shows date exists) but skip adding stage value
-        const rowKeyZero = `${sg.bloqueId}|${sg.variedadId}|${sg.dateKey}`
-        if (!rowAcc.has(rowKeyZero)) {
-          const names = getNames(sg.bloqueId, sg.variedadId)
-          rowAcc.set(rowKeyZero, {
-            finca: names.finca,
-            bloque: names.bloque,
-            variedad: names.variedad,
-            fecha: sg.dateKey,
-            dias_brotacion: 0,
-            dias_cincuenta_mm: 0,
-            dias_quince_cm: 0,
-            dias_veinte_cm: 0,
-            dias_primera_hoja: 0,
-            dias_espiga: 0,
-            dias_arroz: 0,
-            dias_arveja: 0,
-            dias_garbanzo: 0,
-            dias_uva: 0,
-            dias_rayando_color: 0,
-            dias_sepalos_abiertos: 0,
-            dias_cosecha: 0,
-          })
-        }
-        continue
-      }
-      const estimado_bloque_b = densidad_b * areaProductiva
+      // Percentage of bloque-variedad productiva area that was actually OBSERVED for this stage/date.
+      let samplePct = areaProductiva > 0 ? (sg.totalAreaSampled / areaProductiva) * 100 : 0
+      if (samplePct > 100) samplePct = 100 // cap defensively
 
       const rowKey = `${sg.bloqueId}|${sg.variedadId}|${sg.dateKey}`
       let row = rowAcc.get(rowKey)
@@ -276,23 +292,25 @@ function Page() {
           bloque: names.bloque,
           variedad: names.variedad,
           fecha: sg.dateKey,
-          dias_brotacion: 0,
-          dias_cincuenta_mm: 0,
-          dias_quince_cm: 0,
-          dias_veinte_cm: 0,
-          dias_primera_hoja: 0,
-          dias_espiga: 0,
-          dias_arroz: 0,
-          dias_arveja: 0,
-          dias_garbanzo: 0,
-          dias_uva: 0,
-          dias_rayando_color: 0,
-          dias_sepalos_abiertos: 0,
-          dias_cosecha: 0,
+          dias_brotacion: 0, dias_brotacion_pct: 0,
+          dias_cincuenta_mm: 0, dias_cincuenta_mm_pct: 0,
+          dias_quince_cm: 0, dias_quince_cm_pct: 0,
+          dias_veinte_cm: 0, dias_veinte_cm_pct: 0,
+          dias_primera_hoja: 0, dias_primera_hoja_pct: 0,
+          dias_espiga: 0, dias_espiga_pct: 0,
+          dias_arroz: 0, dias_arroz_pct: 0,
+          dias_arveja: 0, dias_arveja_pct: 0,
+          dias_garbanzo: 0, dias_garbanzo_pct: 0,
+          dias_uva: 0, dias_uva_pct: 0,
+          dias_rayando_color: 0, dias_rayando_color_pct: 0,
+          dias_sepalos_abiertos: 0, dias_sepalos_abiertos_pct: 0,
+          dias_cosecha: 0, dias_cosecha_pct: 0,
         }
         rowAcc.set(rowKey, row)
       }
-      ; (row as any)[sg.stageKey] += estimado_bloque_b
+      // Store raw total count (cantidad encontrada) and sampling % based on observed (section) area
+      ; (row as any)[sg.stageKey] = sg.totalCount
+        ; (row as any)[`${sg.stageKey}_pct`] = samplePct
     }
 
     // Ensure every date touched (even with no recognized stage groups) has a zero row
@@ -307,19 +325,19 @@ function Page() {
             bloque: names.bloque,
             variedad: names.variedad,
             fecha: d,
-            dias_brotacion: 0,
-            dias_cincuenta_mm: 0,
-            dias_quince_cm: 0,
-            dias_veinte_cm: 0,
-            dias_primera_hoja: 0,
-            dias_espiga: 0,
-            dias_arroz: 0,
-            dias_arveja: 0,
-            dias_garbanzo: 0,
-            dias_uva: 0,
-            dias_rayando_color: 0,
-            dias_sepalos_abiertos: 0,
-            dias_cosecha: 0,
+            dias_brotacion: 0, dias_brotacion_pct: 0,
+            dias_cincuenta_mm: 0, dias_cincuenta_mm_pct: 0,
+            dias_quince_cm: 0, dias_quince_cm_pct: 0,
+            dias_veinte_cm: 0, dias_veinte_cm_pct: 0,
+            dias_primera_hoja: 0, dias_primera_hoja_pct: 0,
+            dias_espiga: 0, dias_espiga_pct: 0,
+            dias_arroz: 0, dias_arroz_pct: 0,
+            dias_arveja: 0, dias_arveja_pct: 0,
+            dias_garbanzo: 0, dias_garbanzo_pct: 0,
+            dias_uva: 0, dias_uva_pct: 0,
+            dias_rayando_color: 0, dias_rayando_color_pct: 0,
+            dias_sepalos_abiertos: 0, dias_sepalos_abiertos_pct: 0,
+            dias_cosecha: 0, dias_cosecha_pct: 0,
           })
         }
       }
@@ -334,33 +352,51 @@ function Page() {
     )
   }, [], { defer: false })
 
-  const fmt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const fmtInt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })
+  // Show percentages with exactly 3 decimal places
+  const fmtPct = (v: number) => (Number(v || 0)).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+  const renderStage = (key: string) => (value: number, row: any) => {
+    const pct = row?.[`${key}_pct`] ?? 0
+    if ((!value || value === 0) && (!pct || pct === 0)) return null // keep cell visually empty for cleanliness
+    return (
+      <span className="whitespace-nowrap">
+        {fmtInt(value)} <span className="text-muted-foreground text-[0.7rem]">({fmtPct(pct)}%)</span>
+      </span>
+    )
+  }
   const columns = React.useMemo(() => ([
     { key: 'finca', header: 'Finca' },
     { key: 'bloque', header: 'Bloque' },
     { key: 'variedad', header: 'Variedad' },
     { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
-    { key: 'dias_brotacion', header: 'Brotación', render: fmt },
-    { key: 'dias_cincuenta_mm', header: '50 mm', render: fmt },
-    { key: 'dias_quince_cm', header: '15 cm', render: fmt },
-    { key: 'dias_veinte_cm', header: '20 cm', render: fmt },
-    { key: 'dias_primera_hoja', header: 'Primera hoja', render: fmt },
-    { key: 'dias_espiga', header: 'Espiga', render: fmt },
-    { key: 'dias_arroz', header: 'Arroz', render: fmt },
-    { key: 'dias_arveja', header: 'Arveja', render: fmt },
-    { key: 'dias_garbanzo', header: 'Garbanzo', render: fmt },
-    { key: 'dias_uva', header: 'Uva', render: fmt },
-    { key: 'dias_rayando_color', header: 'Rayando color', render: fmt },
-    { key: 'dias_sepalos_abiertos', header: 'Sépalos abiertos', render: fmt },
-    { key: 'dias_cosecha', header: 'Cosecha', render: fmt },
+    { key: 'dias_brotacion', header: 'Brotación', render: renderStage('dias_brotacion') },
+    { key: 'dias_cincuenta_mm', header: '50 mm', render: renderStage('dias_cincuenta_mm') },
+    { key: 'dias_quince_cm', header: '15 cm', render: renderStage('dias_quince_cm') },
+    { key: 'dias_veinte_cm', header: '20 cm', render: renderStage('dias_veinte_cm') },
+    { key: 'dias_primera_hoja', header: 'Primera hoja', render: renderStage('dias_primera_hoja') },
+    { key: 'dias_espiga', header: 'Espiga', render: renderStage('dias_espiga') },
+    { key: 'dias_arroz', header: 'Arroz', render: renderStage('dias_arroz') },
+    { key: 'dias_arveja', header: 'Arveja', render: renderStage('dias_arveja') },
+    { key: 'dias_garbanzo', header: 'Garbanzo', render: renderStage('dias_garbanzo') },
+    { key: 'dias_uva', header: 'Uva', render: renderStage('dias_uva') },
+    { key: 'dias_rayando_color', header: 'Rayando color', render: renderStage('dias_rayando_color') },
+    { key: 'dias_sepalos_abiertos', header: 'Sépalos abiertos', render: renderStage('dias_sepalos_abiertos') },
+    { key: 'dias_cosecha', header: 'Cosecha', render: renderStage('dias_cosecha') },
   ]), []) as any
+
+  // Register columns (excluding computed *_pct) once
+  React.useEffect(() => {
+    registerColumns(columns.map((c: any) => ({ key: String(c.key), label: c.header || String(c.key) })))
+  }, [columns, registerColumns])
+
+  const filteredRows = useFilteredRows(rows, columns)
 
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {loading ? (
         <DataTableSkeleton columns={columns as any} rows={8} />
       ) : (
-        <DataTable caption={`${rows?.length ?? 0}`} columns={columns} rows={rows ?? []} />
+        <DataTable caption={`${filteredRows?.length ?? 0}`} columns={columns} rows={filteredRows ?? []} />
       )}
     </div>
   )

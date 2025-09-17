@@ -110,9 +110,9 @@ export const TABLES: Record<string, TableConfig> = {
         title: 'Estados fenológicos',
         columns: cols(
             'id_estado_fenologico',
-            'id_finca',
-            'id_bloque',
-            'id_variedad',
+            'finca.nombre',
+            'bloque.nombre',
+            'variedad.nombre',
             'dias_brotacion',
             'dias_cincuenta_mm',
             'dias_quince_cm',
