@@ -12,7 +12,7 @@ export type SavedFilter = {
     type: 'string' | 'number' | 'date'
 }
 
-type TableFilterState = {
+export type TableFilterState = {
     query: string
     setQuery: (v: string) => void
     column: string // '*' means all columns for live query typing
