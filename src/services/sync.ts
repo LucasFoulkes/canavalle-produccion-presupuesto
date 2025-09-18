@@ -4,6 +4,9 @@ import { supabase } from '@/lib/supabase'
 
 export type SyncResult = { table: string; count: number }
 
+const loggedOfflineTables = new Set<string>()
+let loggedOfflineBulk = false
+
 // Upsert array of rows into Dexie using the configured PK
 async function upsertIntoDexie(table: string, rows: any[]) {
   const store = getStore(table)
@@ -15,13 +18,20 @@ function isOffline(): boolean {
   return navigator.onLine === false
 }
 
+function logOfflineTable(table: string) {
+  if (!loggedOfflineTables.has(table)) {
+    console.info(`[sync] skipped "${table}" because the browser is offline`)
+    loggedOfflineTables.add(table)
+  }
+}
+
 export async function syncTable(table: string): Promise<SyncResult> {
   if (!SERVICE_PK[table]) {
     // Table not configured for Dexie; skip
     return { table, count: 0 }
   }
   if (isOffline()) {
-    console.info(`[sync] skipped "${table}" because the browser is offline`)
+    logOfflineTable(table)
     return { table, count: 0 }
   }
 
@@ -30,10 +40,6 @@ export async function syncTable(table: string): Promise<SyncResult> {
   let offset = 0
   let total = 0
 
-  // Fetch all rows in pages ordered by PK for deterministic paging
-  // Use while loop and break when fewer than pageSize are returned
-  // Bulk upsert each page directly into Dexie to avoid large memory spikes
-  // Note: range is inclusive [from, to]
   for (;;) {
     const from = offset
     const to = offset + pageSize - 1
@@ -60,9 +66,15 @@ export async function syncTable(table: string): Promise<SyncResult> {
 export async function syncAllTables(): Promise<SyncResult[]> {
   await initDexieSchema()
   if (isOffline()) {
-    console.info('[sync] skipped full refresh because the browser is offline')
+    if (!loggedOfflineBulk) {
+      console.info('[sync] skipped full refresh because the browser is offline')
+      loggedOfflineBulk = true
+    }
     return []
   }
+
+  loggedOfflineTables.clear()
+  loggedOfflineBulk = false
 
   const tables = Object.keys(SERVICE_PK)
   const results: SyncResult[] = []

@@ -25,18 +25,23 @@ import { TableFilterProvider } from '@/hooks/use-table-filter'
 const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
   { label: 'Variedades', items: ['variedad', 'breeder', 'patron'] },
-  { label: 'Fenologia', items: ['estados_fenologicos', 'estado_fenologico_tipo'] },
+  { label: 'Fenología', items: ['estados_fenologicos', 'estado_fenologico_tipo'] },
   { label: 'Observaciones', items: ['observacion'] },
-  { label: 'Catalogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta'] },
+  { label: 'Catálogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta'] },
   { label: 'Sistema', items: ['usuario'] },
 ]
 
 const SUMMARY_LINKS: ReadonlyArray<{ to: string; label: string }> = [
-  { to: '/estimados/area', label: 'Area productiva por variedad' },
-  { to: '/estimados/observaciones-area', label: 'Observaciones + Area productiva' },
+  { to: '/estimados/area', label: 'Área productiva por variedad' },
+  { to: '/estimados/observaciones-area', label: 'Observaciones + Área productiva' },
   { to: '/estimados/observaciones-resumen', label: 'Resumen observaciones por cama' },
   { to: '/estimados/estimados', label: 'Estimados' },
-  { to: '/estimados/estimados-resumen', label: 'Resumen fenologico' },
+  { to: '/estimados/estimados-resumen', label: 'Resumen fenológico' },
+]
+
+const PREDICTION_LINKS: ReadonlyArray<{ to: string; label: string }> = [
+  { to: '/predicciones', label: 'Predicciones' },
+  { to: '/predicciones/totales', label: 'Predicciones totales' },
 ]
 
 const RootLayout = () => {
@@ -128,6 +133,29 @@ const RootLayout = () => {
                     </CollapsibleContent>
                   </SidebarMenuItem>
                 </Collapsible>
+                <Collapsible defaultOpen className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton>
+                        <span>Predicciones</span>
+                        <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {PREDICTION_LINKS.map((link) => (
+                          <SidebarMenuSubItem key={link.to}>
+                            <SidebarMenuSubButton asChild size="sm">
+                              <Link to={link.to} activeProps={{ 'data-active': 'true' }}>
+                                <span>{link.label}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               </SidebarMenu>
             </SidebarContent>
             <SidebarRail />
@@ -156,5 +184,3 @@ const RootLayout = () => {
 }
 
 export const Route = createRootRoute({ component: RootLayout })
-
-

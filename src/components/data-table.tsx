@@ -1,4 +1,4 @@
-import * as React from 'react'
+﻿import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableCaption } from '@/components/ui/table'
 
@@ -22,6 +22,13 @@ export function DataTable<T extends Record<string, any>>({
 }) {
     const [sortKey, setSortKey] = React.useState<string | null>(null)
     const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc')
+
+    const columnSignature = React.useMemo(() => columns.map((c) => String(c.key)).join('|'), [columns])
+
+    React.useEffect(() => {
+        setSortKey(null)
+        setSortDir('asc')
+    }, [columnSignature])
 
     const sortedRows = React.useMemo(() => {
         const list = rows ?? []
@@ -76,6 +83,10 @@ export function DataTable<T extends Record<string, any>>({
     const paddingBottom = virtualItems.length > 0 ? rowVirtualizer.getTotalSize() - (virtualItems[virtualItems.length - 1]?.end ?? 0) : 0
 
     React.useEffect(() => {
+        rowVirtualizer.measure()
+    }, [columns, rowVirtualizer, sortedRows.length])
+
+    React.useEffect(() => {
         if (sortedRows.length > 0) {
             rowVirtualizer.scrollToIndex(0, { align: 'start' })
         } else {
@@ -101,7 +112,7 @@ export function DataTable<T extends Record<string, any>>({
                                 {c.header ?? String(c.key)}
                                 {sortKey === String(c.key) ? (
                                     <span aria-hidden className="text-muted-foreground">
-                                        {sortDir === 'asc' ? 'â–²' : 'â–¼'}
+                                        {sortDir === 'asc' ? '▲' : '▼'}
                                     </span>
                                 ) : null}
                             </span>
