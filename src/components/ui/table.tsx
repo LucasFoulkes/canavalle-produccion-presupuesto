@@ -3,10 +3,11 @@ import { cn } from '@/lib/utils'
 
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
     containerClassName?: string
+    containerRef?: React.Ref<HTMLDivElement>
 }
 
-const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, containerClassName, ...props }, ref) => (
-    <div className={cn('relative w-full min-w-0 max-w-full overflow-x-auto overflow-y-auto', containerClassName)}>
+const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, containerClassName, containerRef, ...props }, ref) => (
+    <div ref={containerRef} className={cn('relative w-full min-w-0 max-w-full overflow-x-auto overflow-y-auto', containerClassName)}>
         <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
 ))
@@ -80,4 +81,3 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttribu
 TableCaption.displayName = 'TableCaption'
 
 export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption }
-

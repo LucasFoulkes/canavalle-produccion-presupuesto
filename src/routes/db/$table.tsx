@@ -45,13 +45,18 @@ function useDbTable(tableId: string) {
   const [fallbackRows, setFallbackRows] = React.useState<any[] | null>(null)
   React.useEffect(() => {
     if (dexieSupported) return
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setError((prev) => prev ?? 'Sin conexion: datos remotos no disponibles.')
+      setFallbackRows([])
+      return
+    }
     let cancelled = false
-      ; (async () => {
-        const { data, error } = await getTableService(tableId).selectAll('*')
-        if (cancelled) return
-        if (error) setError(error.message)
-        setFallbackRows((data as any[]) ?? [])
-      })()
+    ;(async () => {
+      const { data, error } = await getTableService(tableId).selectAll('*')
+      if (cancelled) return
+      if (error) setError(error.message)
+      setFallbackRows((data as any[]) ?? [])
+    })()
     return () => {
       cancelled = true
     }
@@ -86,15 +91,14 @@ function Page() {
   const { table } = Route.useParams()
   // Limit to known tables to avoid accidental exposure
   if (!getTableConfig(table)) throw notFound()
-  const { columns, rows, } = useDbTable(table)
+  const { columns, rows } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
   // Register columns on changes
   React.useEffect(() => {
     registerColumns(columns.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
-  }, [columns, registerColumns])
+  }, [table, columns, registerColumns])
   const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: true })
-  const baseLoading = rows == null || rows.length === 0
-  const finalLoading = baseLoading || relationLoading
+  const finalLoading = rows == null || relationLoading
   const filtered = React.useMemo(() => {
     let rowsToCheck = displayRows
     if (filters.length) {
@@ -165,4 +169,8 @@ function Page() {
     </div>
   )
 }
+
+
+
+
 

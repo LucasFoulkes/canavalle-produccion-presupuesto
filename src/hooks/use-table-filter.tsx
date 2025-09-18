@@ -1,4 +1,4 @@
-import * as React from 'react'
+﻿import * as React from 'react'
 import { isDateLikeKey } from '@/lib/utils'
 
 export type FilterColumn = { key: string; label: string; type?: 'string' | 'number' | 'date' }
@@ -98,7 +98,7 @@ export function useTableFilter() {
         // Warn once in dev.
         if (process.env.NODE_ENV !== 'production') {
             // eslint-disable-next-line no-console
-            console.warn('[useTableFilter] missing TableFilterProvider – using no-op fallback')
+            console.warn('[useTableFilter] missing TableFilterProvider â€“ using no-op fallback')
         }
         const noop = () => { }
         return {
@@ -114,40 +114,49 @@ export function useTableFilter() {
 
 // Helper to apply filtering to a row list; can be used if needed elsewhere
 export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null | undefined, columns: { key: keyof T; header?: string }[]) {
-    const { query, column, filters } = useTableFilter()
+    const { query, column, filters, columns: filterColumns } = useTableFilter()
     return React.useMemo(() => {
         if (!rows || !rows.length) return rows ?? []
 
         const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, r => `\\${r}`)
         const buildNumericBoundaryRegex = (tok: string) => new RegExp(`\\b${tok}\\b`, 'i')
-        // For free-text tokens: numeric tokens enforce whole-number boundaries; text tokens act as simple substring (case-insensitive)
         const buildStringTokenRegex = (tok: string) => new RegExp(esc(tok), 'i')
         const queryTokens = query.trim() ? query.trim().toLowerCase().split(/\s+/).filter(Boolean) : []
         const queryKeys: string[] = column === '*' ? columns.map(c => c.key as string) : [column]
+
+        const parseNumberValue = (value: any) => {
+            if (typeof value === 'number') return value
+            if (typeof value === 'string') {
+                const normalized = value.trim().replace(/,/g, '.')
+                const parsed = Number(normalized)
+                return Number.isNaN(parsed) ? NaN : parsed
+            }
+            return NaN
+        }
 
         const applyQuery = (row: T) => {
             if (!queryTokens.length) return true
             return queryTokens.every(tok => {
                 const isNum = /^\d+$/.test(tok)
-                return queryKeys.some(k => {
-                    const v = row?.[k]
+                const targetNum = isNum ? Number(tok) : NaN
+                return queryKeys.some(key => {
+                    const v = (row as any)[key]
                     if (v == null) return false
-                    const str = String(v)
-                    if (isNum) return buildNumericBoundaryRegex(tok).test(str)
-                    return buildStringTokenRegex(tok).test(str)
+                    if (isNum) {
+                        const metaType = filterColumns.find(col => col.key === key)?.type
+                        if ((metaType === 'number' || typeof v === 'number') && Number.isFinite(targetNum)) {
+                            const parsed = parseNumberValue(v)
+                            if (!Number.isNaN(parsed)) {
+                                return parsed === targetNum
+                            }
+                        }
+                        return buildNumericBoundaryRegex(tok).test(String(v))
+                    }
+                    return buildStringTokenRegex(tok).test(String(v))
                 })
             })
         }
 
-        const parseNum = (v: any) => {
-            if (typeof v === 'number') return v
-            if (typeof v === 'string') {
-                const t = v.trim().replace(/,/g, '.')
-                const n = Number(t)
-                return isNaN(n) ? NaN : n
-            }
-            return NaN
-        }
         const toDateOnly = (iso: string) => {
             if (!iso) return ''
             const d = new Date(iso)
@@ -158,9 +167,8 @@ export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null 
         const applySavedFilters = (row: T) => {
             if (!filters.length) return true
             return filters.every(f => {
-                const raw = row[f.column]
+                const raw = (row as any)[f.column]
                 if (raw == null) return false
-                // Date handling (stored iso) compare date-only
                 if (f.type === 'date') {
                     const val = toDateOnly(String(raw))
                     if (f.op === 'eq') return val === f.value
@@ -168,8 +176,8 @@ export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null 
                     return false
                 }
                 if (f.type === 'number') {
-                    const valNum = parseNum(raw)
-                    const a = parseNum(f.value)
+                    const valNum = parseNumberValue(raw)
+                    const a = parseNumberValue(f.value)
                     if (isNaN(valNum) || isNaN(a)) return false
                     if (f.op === 'eq') return valNum === a
                     if (['gt', 'lt', 'gte', 'lte'].includes(f.op)) {
@@ -179,13 +187,12 @@ export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null 
                         if (f.op === 'lte') return valNum <= a
                     }
                     if (f.op === 'between') {
-                        const b = parseNum(f.value2)
+                        const b = parseNumberValue(f.value2)
                         if (isNaN(b)) return false
                         return valNum >= Math.min(a, b) && valNum <= Math.max(a, b)
                     }
                     return false
                 }
-                // string ops (case-insensitive)
                 const rawStr = String(raw)
                 const valStr = rawStr.toLowerCase()
                 const needle = f.value.toLowerCase()
@@ -193,17 +200,15 @@ export function useFilteredRows<T extends Record<string, any>>(rows: T[] | null 
                 switch (f.op) {
                     case 'contains':
                         if (isPureNumber) return buildNumericBoundaryRegex(needle).test(rawStr)
-                        // For general strings allow substring but still case-insensitive
                         return valStr.includes(needle)
                     case 'eq': return valStr === needle
                     case 'starts': return valStr.startsWith(needle)
                     case 'ends': return valStr.endsWith(needle)
-                    // between for strings not supported
                     default: return false
                 }
             })
         }
 
         return rows.filter(r => applyQuery(r) && applySavedFilters(r))
-    }, [rows, query, column, columns, filters])
+    }, [rows, query, column, columns, filterColumns, filters])
 }

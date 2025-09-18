@@ -1,20 +1,37 @@
 import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
+import { registerSW } from 'virtual:pwa-register'
 import './index.css'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 import { initDexieSchema } from '@/lib/dexie'
 import { syncAllTables } from '@/services/sync'
+import { NotFound } from '@/components/not-found'
 
 // Create a new router instance
-const router = createRouter({ routeTree })
+const router = createRouter({ routeTree, defaultNotFoundComponent: NotFound })
 
 // Register the router instance for type safety
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
   }
+}
+
+const registerServiceWorker = () => {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
+  registerSW({ immediate: true })
+}
+
+const wireOnlineSync = () => {
+  if (typeof window === 'undefined') return
+  const handleOnline = () => {
+    syncAllTables().catch((error) => {
+      console.warn('[sync] online refresh failed', error)
+    })
+  }
+  window.addEventListener('online', handleOnline)
 }
 
 // Render the app and initialize local cache
@@ -27,15 +44,18 @@ if (!rootElement.innerHTML) {
     </StrictMode>,
   )
 
-    // Fire-and-forget: initialize Dexie and kick off background sync
-    ; (async () => {
-      try {
-        await initDexieSchema()
-        // background sync; don't await to avoid blocking UI
-        syncAllTables().catch(() => { })
-      } catch (e) {
-        // Dexie might not be available (e.g., private mode); ignore
-        console.warn('[dexie] init/sync skipped:', e)
-      }
-    })()
+  registerServiceWorker()
+  wireOnlineSync()
+
+  // Fire-and-forget: initialize Dexie and kick off background sync
+  ;(async () => {
+    try {
+      await initDexieSchema()
+      // background sync; don't await to avoid blocking UI
+      syncAllTables().catch(() => {})
+    } catch (e) {
+      // Dexie might not be available (e.g., private mode); ignore
+      console.warn('[dexie] init/sync skipped:', e)
+    }
+  })()
 }
