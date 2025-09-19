@@ -5,7 +5,7 @@ import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { useTableFilter, useFilteredRows } from '@/hooks/use-table-filter'
 import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { fetchResumenFenologico, ResumenFenologicoResult } from '@/lib/resumen-fenologico'
-import { buildPredictionTimeline, scaleTimelineToTotals } from '@/lib/predicciones'
+import { buildPredictionTimeline, scaleTimelineToTotals, keepOnlyLastCosechaDay } from '@/lib/predicciones'
 import { formatDate, formatDateISO, formatMax2 } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer } from '@/components/ui/chart'
@@ -32,10 +32,11 @@ function LandingCosechaVariedad() {
     return scaleTimelineToTotals(base)
   }, [data])
 
-  // Group by fecha + variedad; sum cosecha
+  // Group by fecha + variedad; sum cosecha, but only from the last cosecha day per (bloqueId,variedadId,fincaId)
   const rows = React.useMemo(() => {
     const acc = new Map<string, Row>()
-    for (const r of timelineRows || []) {
+    const pruned = keepOnlyLastCosechaDay(timelineRows || []) as any[]
+    for (const r of pruned) {
       const cosecha = Number((r as any)?.dias_cosecha || 0)
       if (cosecha <= 0) continue
       const fechaISO = formatDateISO((r as any)?.fecha)

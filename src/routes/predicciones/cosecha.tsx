@@ -6,7 +6,7 @@ import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { formatDate, formatMax2 } from '@/lib/utils'
 import { useFilteredRows, useTableFilter } from '@/hooks/use-table-filter'
 import { fetchResumenFenologico, ResumenFenologicoResult } from '@/lib/resumen-fenologico'
-import { buildPredictionTimeline, scaleTimelineToTotals } from '@/lib/predicciones'
+import { buildPredictionTimeline, scaleTimelineToTotals, keepOnlyLastCosechaDay } from '@/lib/predicciones'
 
 export const Route = createFileRoute('/predicciones/cosecha')({
     component: CosechaPage,
@@ -26,7 +26,7 @@ function CosechaPage() {
     }, [data])
 
     const rows = React.useMemo(() => {
-        return (timelineRows || []).filter((r) => Number((r as any)?.dias_cosecha || 0) > 0)
+        return keepOnlyLastCosechaDay(timelineRows || [])
     }, [timelineRows])
 
     const columns = React.useMemo(

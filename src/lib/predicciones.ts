@@ -117,6 +117,30 @@ export function scaleTimelineToTotals(rows: ResumenFenologicoRow[]): ResumenFeno
   })
 }
 
+// Keep only the final day of cosecha per (bloqueId,variedadId,fincaId)
+// Rationale: being in 'cosecha' stage spans multiple days; we consider actual harvest on the last day only.
+export function keepOnlyLastCosechaDay(rows: ResumenFenologicoRow[]): ResumenFenologicoRow[] {
+  if (!rows?.length) return []
+  const lastByGroup = new Map<string, string>()
+  for (const r of rows) {
+    const v = Number((r as any)?.dias_cosecha || 0)
+    if (v <= 0) continue
+    const key = `${r.bloqueId}|${r.variedadId}|${r.fincaId}`
+    const d = r.fecha || ''
+    const prev = lastByGroup.get(key)
+    if (!prev || String(d).localeCompare(prev) > 0) {
+      lastByGroup.set(key, String(d))
+    }
+  }
+  return rows.filter((r) => {
+    const v = Number((r as any)?.dias_cosecha || 0)
+    if (v <= 0) return false
+    const key = `${r.bloqueId}|${r.variedadId}|${r.fincaId}`
+    const lastDate = lastByGroup.get(key)
+    return lastDate ? String(r.fecha) === lastDate : false
+  })
+}
+
 export function sortEstados(records: any[]): any[] {
   return [...records].sort((a, b) => toMillis(b) - toMillis(a))
 }
