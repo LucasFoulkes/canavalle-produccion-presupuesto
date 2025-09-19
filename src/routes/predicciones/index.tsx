@@ -116,7 +116,7 @@ function PrediccionesPage() {
       >
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Estados fenologicos</DialogTitle>
+            <DialogTitle>Estados fenológicos</DialogTitle>
             {selectedRow ? (
               <DialogDescription>
                 <span className="font-medium">Finca:</span> {selectedRow.finca}{" "}
@@ -163,7 +163,7 @@ function PrediccionesPage() {
               })}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">Sin registros de estados fenologicos para esta combinacion.</div>
+            <div className="text-sm text-muted-foreground">Sin registros de estados fenológicos para esta combinación.</div>
           )}
         </DialogContent>
       </Dialog>

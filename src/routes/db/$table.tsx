@@ -9,6 +9,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { syncTable } from '@/services/sync'
 import { useDottedLookups } from '@/hooks/use-dotted-lookups'
 import { useTableFilter } from '@/hooks/use-table-filter'
+import { useIsMobile } from '@/hooks/use-mobile'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -92,8 +93,10 @@ function useDbTable(tableId: string) {
 
 function Page() {
   const { table } = Route.useParams()
+  const tableConfig = getTableConfig(table)
   // Limit to known tables to avoid accidental exposure
-  if (!getTableConfig(table)) throw notFound()
+  if (!tableConfig) throw notFound()
+  const isMobile = useIsMobile()
   const { columns, rows } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
   // Register columns on changes

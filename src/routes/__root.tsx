@@ -1,5 +1,6 @@
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { ChevronRight } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { ChevronRight, ClipboardList, Home, Sprout } from 'lucide-react'
 import { FilterToolbar } from '@/components/filter-toolbar'
 import { Badge } from '@/components/ui/badge'
 import { useOnlineStatus } from '@/hooks/use-online-status'
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/sidebar'
 import { TABLES } from '@/services/db'
 import { TableFilterProvider } from '@/hooks/use-table-filter'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
@@ -45,8 +47,14 @@ const PREDICTION_LINKS: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/predicciones/cosecha', label: 'Cosecha' },
 ]
 
+const MOBILE_NAV_ITEMS: ReadonlyArray<{ to: string; label: string; icon: LucideIcon; params?: Record<string, string> }> = [
+  { to: '/', label: 'Inicio', icon: Home },
+  { to: '/db/$table', label: 'Observaciones', icon: ClipboardList, params: { table: 'observacion' } },
+]
+
 const RootLayout = () => {
   const online = useOnlineStatus()
+  const isMobile = useIsMobile()
   const currentTitle = useRouterState({
     select: (state) => {
       const dbMatch = state.matches.find((match) => match.routeId === '/db/$table') as
@@ -56,6 +64,35 @@ const RootLayout = () => {
       return tableId ? TABLES[tableId]?.title ?? tableId : 'Canavalle'
     },
   })
+
+  if (isMobile) {
+    return (
+      <TableFilterProvider>
+        <SidebarProvider>
+          <div className="flex h-svh w-full flex-col overflow-hidden bg-background">
+            <header className="space-y-2 border-b px-3 py-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 truncate">
+                  <Sprout className="h-5 w-5 text-primary" aria-hidden />
+                  <span className="font-medium truncate">{currentTitle}</span>
+                </div>
+                {!online && (
+                  <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                    Sin conexión
+                  </Badge>
+                )}
+              </div>
+              <FilterToolbar className="w-full" />
+            </header>
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-3 pb-24">
+              <Outlet />
+            </div>
+            <MobileBottomNav />
+          </div>
+        </SidebarProvider>
+      </TableFilterProvider>
+    )
+  }
 
   return (
     <TableFilterProvider>
@@ -168,7 +205,7 @@ const RootLayout = () => {
               <div className="ml-auto flex items-center gap-2">
                 {!online && (
                   <Badge variant="outline" className="bg-destructive/10 text-destructive">
-                    Sin conexion
+                    Sin conexión
                   </Badge>
                 )}
                 <FilterToolbar className="ml-0" />
@@ -185,3 +222,26 @@ const RootLayout = () => {
 }
 
 export const Route = createRootRoute({ component: RootLayout })
+
+const MobileBottomNav = () => (
+  <nav className="sticky bottom-0 left-0 right-0 border-t bg-background">
+    <div
+      className="mx-auto flex max-w-md items-center justify-around gap-2 px-4 pt-2"
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.5rem)' }}
+    >
+      {MOBILE_NAV_ITEMS.map((item) => (
+        <Link
+          key={item.label}
+          to={item.to}
+          params={item.params}
+          className="flex flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-xs font-medium text-muted-foreground transition-colors data-[active=true]:text-foreground"
+          activeProps={{ 'data-active': 'true' }}
+          preload="intent"
+        >
+          <item.icon className="h-5 w-5" aria-hidden />
+          <span>{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  </nav>
+)

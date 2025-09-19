@@ -256,7 +256,7 @@ function PrediccionesTotalesPage() {
               })}
             </div>
           ) : (
-            <div className="text-sm text-muted-foreground">Sin registros de estados fenologicos para esta combinacion.</div>
+            <div className="text-sm text-muted-foreground">Sin registros de estados fenológicos para esta combinación.</div>
           )}
         </DialogContent>
       </Dialog>
