@@ -23,6 +23,10 @@ type TimelineContext = {
   timeline: Map<string, ResumenFenologicoRow>
 }
 
+// Stronger key types for stage and percentage fields
+type StageKey = typeof STAGE_KEYS[number]
+type PctKey = Extract<`${StageKey}_pct`, keyof ResumenFenologicoRow>
+
 export const predictionConstants = {
   DEFAULT_STAGE_DURATION,
   MIN_STAGE_DURATION,
@@ -137,7 +141,7 @@ function projectSample(sample: ResumenFenologicoRow, context: TimelineContext) {
         const dateKey = toISODate(targetDate)
         const timelineRow = ensureTimelineRow(context, dateKey)
         timelineRow[key] = toNumber(timelineRow[key]) + count
-        const pctKey = `${key}_pct` as keyof ResumenFenologicoRow
+        const pctKey = `${key}_pct` as PctKey
         timelineRow[pctKey] = toNumber(timelineRow[pctKey]) + pct
       }
       offset += duration

@@ -51,12 +51,12 @@ function useDbTable(tableId: string) {
       return
     }
     let cancelled = false
-    ;(async () => {
-      const { data, error } = await getTableService(tableId).selectAll('*')
-      if (cancelled) return
-      if (error) setError(error.message)
-      setFallbackRows((data as any[]) ?? [])
-    })()
+      ; (async () => {
+        const { data, error } = await getTableService(tableId).selectAll('*')
+        if (cancelled) return
+        if (error) setError(error.message)
+        setFallbackRows((data as any[]) ?? [])
+      })()
     return () => {
       cancelled = true
     }

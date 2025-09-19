@@ -1,5 +1,5 @@
 import { getStore } from '@/lib/dexie'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatInt, formatPct3 } from '@/lib/utils'
 
 export type ResumenFenologicoRow = {
   finca: string
@@ -140,28 +140,13 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
 
   let seccionLargoM = 0
   try {
-    const maybeStore: any = (getStore as any)('seccion')
-    if (maybeStore && typeof maybeStore.toArray === 'function') {
-      const secciones = await maybeStore.toArray()
-      if (secciones && secciones.length > 0) {
-        const s0: any = secciones[0]
-        seccionLargoM = Number(s0?.largo_m) || 0
-      }
+    const secciones = await getStore('seccion').toArray()
+    if (secciones && secciones.length > 0) {
+      const s0: any = secciones[0]
+      seccionLargoM = Number(s0?.largo_m) || 0
     }
   } catch {
-    // ignore local fallback errors
-  }
-  if (seccionLargoM <= 0) {
-    try {
-      const { supabase } = await import('@/lib/supabase')
-      const { data: secData } = await supabase.from('seccion').select('largo_m').limit(1)
-      if (secData && secData.length > 0) {
-        const s0: any = secData[0]
-        seccionLargoM = Number(s0?.largo_m) || 0
-      }
-    } catch {
-      // ignore remote fallback errors
-    }
+    // ignore local errors; if not present, the value stays 0
   }
 
   const camasById = mapBy(camas as any[], 'id_cama')
@@ -342,8 +327,8 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
       }
       rowAcc.set(rowKey, row)
     }
-    ;(row as any)[sg.stageKey] = sg.totalCount
-    ;(row as any)[`${sg.stageKey}_pct`] = samplePct
+    ; (row as any)[sg.stageKey] = sg.totalCount
+      ; (row as any)[`${sg.stageKey}_pct`] = samplePct
   }
 
   for (const [bv, dates] of dateTouched.entries()) {
@@ -396,18 +381,14 @@ export const resumenStageHeaders = STAGE_KEYS.map((key) => ({
 
 export const formatResumenStage = (value: number, pct: number) => {
   if ((!value || value === 0) && (!pct || pct === 0)) return null
-  const fmtInt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })
-  const fmtPct = (v: number) => (Number(v || 0)).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
-  return `${fmtInt(value)} (${fmtPct(pct)}%)`
+  return `${formatInt(value)} (${formatPct3(pct)}%)`
 }
 
 export const formatResumenStageRich = (value: number, pct: number) => {
   if ((!value || value === 0) && (!pct || pct === 0)) return null
-  const fmtInt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 0 })
-  const fmtPct = (v: number) => (Number(v || 0)).toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
   return {
-    inline: fmtInt(value),
-    pct: fmtPct(pct),
+    inline: formatInt(value),
+    pct: formatPct3(pct),
   }
 }
 

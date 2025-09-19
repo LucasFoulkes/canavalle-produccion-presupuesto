@@ -43,3 +43,44 @@ export function formatDateRange(from?: any, to?: any): string {
 export function isDateLikeKey(key: string): boolean {
   return /(fecha|creado_en|actualizado_en|eliminado_en|modificado_en)$/i.test(key)
 }
+
+// --- Number formatting helpers (ISO digit grouping) ---
+// Requirement: use space for thousands grouping and '.' as decimal separator everywhere
+// Strategy: format with en-US to get `,` as group and `.` as decimal, then replace `,` with U+202F (narrow no-break space)
+const GROUP_SPACE = '\u202F'
+
+function toFiniteNumber(value: any, fallback = 0): number {
+  const n = Number(value)
+  return Number.isFinite(n) ? n : fallback
+}
+
+export type NumberFormatOptions = {
+  minimumFractionDigits?: number
+  maximumFractionDigits?: number
+}
+
+export function formatNumber(value: any, options?: NumberFormatOptions): string {
+  const n = toFiniteNumber(value, 0)
+  const { minimumFractionDigits, maximumFractionDigits } = options || {}
+  const s = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits,
+    maximumFractionDigits,
+  }).format(n)
+  return s.replace(/,/g, GROUP_SPACE)
+}
+
+export function formatInt(value: any): string {
+  return formatNumber(value, { maximumFractionDigits: 0 })
+}
+
+export function formatMax2(value: any): string {
+  return formatNumber(value, { maximumFractionDigits: 2 })
+}
+
+export function formatFixed2(value: any): string {
+  return formatNumber(value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+export function formatPct3(value: any): string {
+  return formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+}

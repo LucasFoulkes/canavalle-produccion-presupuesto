@@ -3,6 +3,7 @@ import * as React from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { getStore } from '@/lib/dexie'
 import { DataTable } from '@/components/data-table'
+import { formatMax2 } from '@/lib/utils'
 
 export const Route = createFileRoute('/estimados/area')({
     component: Page,
@@ -80,7 +81,7 @@ function Page() {
         { key: 'finca', header: 'Finca' },
         { key: 'bloque', header: 'Bloque' },
         { key: 'variedad', header: 'Variedad' },
-        { key: 'area', header: 'Área (m²)', render: (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 }) },
+        { key: 'area', header: 'Área (m²)', render: (v: number) => formatMax2(v) },
     ], []) as any
 
     return (

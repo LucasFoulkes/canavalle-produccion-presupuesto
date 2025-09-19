@@ -62,6 +62,7 @@ export const TABLES: Record<string, TableConfig> = {
         title: 'Grupo cama',
         columns: cols(
             'id_grupo',
+            'finca.nombre',
             'bloque.nombre',
             'variedad.nombre',
             'fecha_siembra',
@@ -219,6 +220,8 @@ export const SERVICE_PK: Record<string, string> = {
     patron: 'codigo',
     variedad: 'id_variedad',
     usuario: 'id_usuario',
+    // Config/singleton or PK-unknown table: use synthetic key handled in sync
+    seccion: '__key',
 }
 
 const SERVICES = Object.fromEntries(
@@ -241,7 +244,7 @@ export const {
 } = SERVICES
 
 // Special cases
-export const seccionService = makeTableService('seccion') // PK unknown; use base methods
+export const seccionService = makeTableService('seccion') // Supabase access if ever needed
 
 // usuarios: keeps a custom finder by PIN, plus standard PK convenience
 const usuariosBase = makeTableService('usuario')

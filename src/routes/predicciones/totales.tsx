@@ -4,7 +4,7 @@ import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatInt, formatDateISO, formatMax2 } from '@/lib/utils'
 import { useFilteredRows, useTableFilter } from '@/hooks/use-table-filter'
 import {
   fetchResumenFenologico,
@@ -15,6 +15,10 @@ import {
   STAGE_LABELS,
 } from '@/lib/resumen-fenologico'
 import { buildPredictionTimeline, scaleTimelineToTotals, sortEstados } from '@/lib/predicciones'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ChartContainer } from '@/components/ui/chart'
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis } from 'recharts'
+import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/predicciones/totales')({
   component: PrediccionesTotalesPage,
@@ -22,6 +26,7 @@ export const Route = createFileRoute('/predicciones/totales')({
 
 function PrediccionesTotalesPage() {
   const { registerColumns } = useTableFilter()
+  const [showCharts, setShowCharts] = React.useState(false)
   const { data, loading } = useDeferredLiveQuery<ResumenFenologicoResult | undefined>(
     () => fetchResumenFenologico(),
     [],
@@ -91,9 +96,97 @@ function PrediccionesTotalesPage() {
 
   const filteredRows = useFilteredRows(timelineRows, columns)
 
+  // Charts: aggregate dias_cosecha by fecha + variedad across the scaled timeline
+  const allDates = React.useMemo(() => {
+    const s = new Set<string>()
+    for (const r of (timelineRows || []) as any[]) {
+      const iso = formatDateISO((r as any)?.fecha)
+      if (iso) s.add(iso)
+    }
+    return Array.from(s).sort()
+  }, [timelineRows])
+
+  type ChartPoint = { date: string; value: number }
+  const chartSeriesByVariedad = React.useMemo(() => {
+    const byVar = new Map<string, Map<string, number>>()
+    for (const r of (timelineRows || []) as any[]) {
+      const cosecha = Number(r?.dias_cosecha || 0)
+      if (cosecha <= 0) continue
+      const dateIso = formatDateISO(r?.fecha)
+      if (!dateIso) continue
+      const variedad = String(r?.variedad ?? '—')
+      if (!byVar.has(variedad)) byVar.set(variedad, new Map())
+      const m = byVar.get(variedad)!
+      m.set(dateIso, (m.get(dateIso) ?? 0) + cosecha)
+    }
+    const result: Record<string, ChartPoint[]> = {}
+    for (const [v, m] of byVar) {
+      result[v] = allDates.map((d) => ({ date: d, value: m.get(d) ?? 0 }))
+    }
+    return result
+  }, [timelineRows, allDates])
+
+  const hasChartData = React.useMemo(() => {
+    const keys = Object.keys(chartSeriesByVariedad)
+    if (!keys.length) return false
+    for (const k of keys) {
+      const series = chartSeriesByVariedad[k]
+      if (series?.some((p) => Number(p.value) > 0)) return true
+    }
+    return false
+  }, [chartSeriesByVariedad])
+
   return (
-    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
-      {loading ? (
+    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="text-sm text-muted-foreground">Predicciones totales</div>
+        {!loading && (
+          <Button size="sm" variant="outline" onClick={() => setShowCharts((v) => !v)}>
+            {showCharts ? 'Ocultar gráficos' : 'Ver gráficos por variedad'}
+          </Button>
+        )}
+      </div>
+
+      {showCharts ? (
+        <div className="flex-1 min-h-0 overflow-auto pr-1 space-y-3">
+          {!hasChartData && (
+            <div className="text-sm text-muted-foreground px-1">Sin datos de cosecha para graficar.</div>
+          )}
+          {hasChartData &&
+            Object.keys(chartSeriesByVariedad).map((varName) => {
+              const data = chartSeriesByVariedad[varName]
+              return (
+                <Card key={varName} className="py-0">
+                  <CardHeader className="px-4 py-3">
+                    <CardTitle className="text-base">{varName}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-3">
+                    <ChartContainer config={{ value: { label: 'Cosecha', color: '#2563eb' } }} className="w-full h-[240px]">
+                      <BarChart data={data} margin={{ left: 12, right: 12 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="date"
+                          tickLine={false}
+                          axisLine={false}
+                          tickMargin={8}
+                          minTickGap={32}
+                          tickFormatter={(value: string) => {
+                            const d = new Date(value)
+                            const dd = String(d.getUTCDate()).padStart(2, '0')
+                            const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+                            return `${dd}/${mm}`
+                          }}
+                        />
+                        <Tooltip formatter={(v: any) => String(formatMax2(v))} labelFormatter={(value: any) => formatDate(value)} />
+                        <Bar dataKey="value" fill={`var(--color-value, #2563eb)`} />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              )
+            })}
+        </div>
+      ) : loading ? (
         <DataTableSkeleton columns={columns as any} rows={8} />
       ) : (
         <DataTable<ResumenFenologicoRow>
@@ -147,7 +240,7 @@ function PrediccionesTotalesPage() {
                           if (value === undefined || value === null) return null
                           const numeric = Number(value)
                           const rendered = Number.isFinite(numeric)
-                            ? numeric.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                            ? formatInt(numeric)
                             : String(value)
                           return (
                             <tr key={stage} className="border-b last:border-b-0">

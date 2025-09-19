@@ -4,7 +4,7 @@ import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatInt } from '@/lib/utils'
 import { useTableFilter, useFilteredRows } from '@/hooks/use-table-filter'
 import {
   fetchResumenFenologico,
@@ -143,7 +143,7 @@ function Page() {
                           if (value === undefined || value === null) return null
                           const numeric = Number(value)
                           const rendered = Number.isFinite(numeric)
-                            ? numeric.toLocaleString(undefined, { maximumFractionDigits: 0 })
+                            ? formatInt(numeric)
                             : String(value)
                           return (
                             <tr key={stage} className="border-b last:border-b-0">

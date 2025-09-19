@@ -40,17 +40,20 @@ export async function syncTable(table: string): Promise<SyncResult> {
   let offset = 0
   let total = 0
 
-  for (;;) {
+  for (; ;) {
     const from = offset
     const to = offset + pageSize - 1
-    const { data, error } = await supabase
-      .from(table)
-      .select('*')
-      .order(pk, { ascending: true })
-      .range(from, to)
+    const q = supabase.from(table).select('*')
+    // Only order when PK is a real column; for synthetic keys like '__key', skip order
+    const query = pk === '__key' ? q : q.order(pk, { ascending: true })
+    const { data, error } = await query.range(from, to)
 
     if (error) throw new Error(`Failed to fetch ${table} page starting at ${from}: ${error.message}`)
-    const rows = (data as any[]) ?? []
+    let rows = (data as any[]) ?? []
+    if (pk === '__key') {
+      // Inject a stable synthetic key when server doesn't expose a PK
+      rows = rows.map((r, idx) => ({ __key: `${from + idx}`, ...r }))
+    }
     if (rows.length === 0) break
 
     await upsertIntoDexie(table, rows)

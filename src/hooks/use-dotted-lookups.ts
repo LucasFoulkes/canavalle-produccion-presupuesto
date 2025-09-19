@@ -44,6 +44,13 @@ export function useDottedLookups(tableId: string, rows: any[], columns: Column[]
                 { fk: 'id_finca', table: 'finca' },
             ],
         },
+        grupo_cama: {
+            // Resolve finca from grupo_cama via bloque
+            finca: [
+                { fk: 'id_bloque', table: 'bloque' },
+                { fk: 'id_finca', table: 'finca' },
+            ],
+        },
         observacion: {
             variedad: [
                 { fk: 'id_cama', table: 'cama' },

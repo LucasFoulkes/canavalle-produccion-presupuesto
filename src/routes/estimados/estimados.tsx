@@ -4,8 +4,7 @@ import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { getStore } from '@/lib/dexie'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
-import { formatDate } from '@/lib/utils'
-import { supabase } from '@/lib/supabase'
+import { formatDate, formatMax2 } from '@/lib/utils'
 import { useTableFilter, useFilteredRows } from '@/hooks/use-table-filter'
 
 export const Route = createFileRoute('/estimados/estimados' as any)({
@@ -56,7 +55,7 @@ function Page() {
       getStore('variedad').toArray(),
     ])
 
-    // seccion.largo_m (single row used for all camas)
+    // seccion.largo_m (single row used for all camas) from Dexie only
     let seccionLargoM = 0
     try {
       const secciones = await getStore('seccion').toArray()
@@ -64,13 +63,7 @@ function Page() {
         const s0: any = (secciones as any[])[0]
         seccionLargoM = Number(s0?.largo_m) || 0
       }
-    } catch {
-      const { data: secData } = await supabase.from('seccion').select('largo_m').limit(1)
-      if (secData && secData.length > 0) {
-        const s0: any = (secData as any[])[0]
-        seccionLargoM = Number(s0?.largo_m) || 0
-      }
-    }
+    } catch { }
 
     const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
       const m = new Map<string, T>()
@@ -168,7 +161,7 @@ function Page() {
     return rows as Row[]
   }, [], { defer: false })
 
-  const fmt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  const fmt = (v: number) => formatMax2(v)
   const columns = React.useMemo(() => ([
     { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
     { key: 'finca', header: 'Finca' },

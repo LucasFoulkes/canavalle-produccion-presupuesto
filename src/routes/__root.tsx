@@ -42,6 +42,7 @@ const SUMMARY_LINKS: ReadonlyArray<{ to: string; label: string }> = [
 const PREDICTION_LINKS: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/predicciones', label: 'Predicciones' },
   { to: '/predicciones/totales', label: 'Predicciones totales' },
+  { to: '/predicciones/cosecha', label: 'Cosecha' },
 ]
 
 const RootLayout = () => {

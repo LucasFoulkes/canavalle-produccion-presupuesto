@@ -4,10 +4,9 @@ import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { getStore } from '@/lib/dexie'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatMax2 } from '@/lib/utils'
 import { getTableConfig } from '@/services/db'
 import { useDottedLookups } from '@/hooks/use-dotted-lookups'
-import { supabase } from '@/lib/supabase'
 
 export const Route = createFileRoute('/estimados/observaciones-area')({
   component: Page,
@@ -24,7 +23,7 @@ function Page() {
       getStore('grupo_cama').toArray(),
     ])
 
-    // Try to read seccion length locally; fallback to Supabase if not available
+    // Read seccion length from Dexie (offline-first)
     let seccionLargoM = 0
     try {
       const secciones = await getStore('seccion').toArray()
@@ -32,13 +31,7 @@ function Page() {
         const s0: any = (secciones as any[])[0]
         seccionLargoM = Number(s0?.largo_m) || 0
       }
-    } catch {
-      const { data: secData } = await supabase.from('seccion').select('largo_m').limit(1)
-      if (secData && secData.length > 0) {
-        const s0: any = (secData as any[])[0]
-        seccionLargoM = Number(s0?.largo_m) || 0
-      }
-    }
+    } catch { }
 
     const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
       const m = new Map<string, T>()
@@ -83,7 +76,7 @@ function Page() {
   const baseColumns = getTableConfig('observacion')?.columns ?? []
   const columns = React.useMemo(() => {
     const filtered = baseColumns.filter((c: any) => c.key !== 'creado_en' && c.key !== 'fecha')
-    const fmtNum = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    const fmtNum = (v: number) => formatMax2(v)
     const fmtFecha = (v: any) => formatDate(v)
     return [
       { key: 'fecha', header: 'Fecha', render: (v: any) => fmtFecha(v) },

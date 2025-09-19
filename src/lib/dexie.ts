@@ -26,6 +26,7 @@ export async function initDexieSchema() {
     for (const [table, pk] of Object.entries(PK)) {
         // Dexie expects index string like '++id' for auto-increment, or '&id' for primary key
         // Our PKs are natural keys from Supabase; use '&<pk>' for unique primary key
+        // For synthetic keys (e.g., '__key'), still use '&__key'
         schema[table] = `&${pk}`
     }
 

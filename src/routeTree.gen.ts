@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrediccionesIndexRouteImport } from './routes/predicciones/index'
 import { Route as PrediccionesTotalesRouteImport } from './routes/predicciones/totales'
+import { Route as PrediccionesCosechaRouteImport } from './routes/predicciones/cosecha'
 import { Route as EstimadosObservacionesResumenRouteImport } from './routes/estimados/observaciones-resumen'
 import { Route as EstimadosObservacionesAreaRouteImport } from './routes/estimados/observaciones-area'
 import { Route as EstimadosObservacionesRouteImport } from './routes/estimados/observaciones'
@@ -26,13 +27,18 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrediccionesIndexRoute = PrediccionesIndexRouteImport.update({
-  id: '/predicciones',
-  path: '/predicciones',
+  id: '/predicciones/',
+  path: '/predicciones/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrediccionesTotalesRoute = PrediccionesTotalesRouteImport.update({
   id: '/predicciones/totales',
   path: '/predicciones/totales',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrediccionesCosechaRoute = PrediccionesCosechaRouteImport.update({
+  id: '/predicciones/cosecha',
+  path: '/predicciones/cosecha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EstimadosObservacionesResumenRoute =
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/estimados/observaciones': typeof EstimadosObservacionesRoute
   '/estimados/observaciones-area': typeof EstimadosObservacionesAreaRoute
   '/estimados/observaciones-resumen': typeof EstimadosObservacionesResumenRoute
+  '/predicciones/cosecha': typeof PrediccionesCosechaRoute
   '/predicciones/totales': typeof PrediccionesTotalesRoute
   '/predicciones': typeof PrediccionesIndexRoute
 }
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/estimados/observaciones': typeof EstimadosObservacionesRoute
   '/estimados/observaciones-area': typeof EstimadosObservacionesAreaRoute
   '/estimados/observaciones-resumen': typeof EstimadosObservacionesResumenRoute
+  '/predicciones/cosecha': typeof PrediccionesCosechaRoute
   '/predicciones/totales': typeof PrediccionesTotalesRoute
   '/predicciones': typeof PrediccionesIndexRoute
 }
@@ -108,8 +116,9 @@ export interface FileRoutesById {
   '/estimados/observaciones': typeof EstimadosObservacionesRoute
   '/estimados/observaciones-area': typeof EstimadosObservacionesAreaRoute
   '/estimados/observaciones-resumen': typeof EstimadosObservacionesResumenRoute
+  '/predicciones/cosecha': typeof PrediccionesCosechaRoute
   '/predicciones/totales': typeof PrediccionesTotalesRoute
-  '/predicciones': typeof PrediccionesIndexRoute
+  '/predicciones/': typeof PrediccionesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/estimados/observaciones'
     | '/estimados/observaciones-area'
     | '/estimados/observaciones-resumen'
+    | '/predicciones/cosecha'
     | '/predicciones/totales'
     | '/predicciones'
   fileRoutesByTo: FileRoutesByTo
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/estimados/observaciones'
     | '/estimados/observaciones-area'
     | '/estimados/observaciones-resumen'
+    | '/predicciones/cosecha'
     | '/predicciones/totales'
     | '/predicciones'
   id:
@@ -146,8 +157,9 @@ export interface FileRouteTypes {
     | '/estimados/observaciones'
     | '/estimados/observaciones-area'
     | '/estimados/observaciones-resumen'
+    | '/predicciones/cosecha'
     | '/predicciones/totales'
-    | '/predicciones'
+    | '/predicciones/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,6 +171,7 @@ export interface RootRouteChildren {
   EstimadosObservacionesRoute: typeof EstimadosObservacionesRoute
   EstimadosObservacionesAreaRoute: typeof EstimadosObservacionesAreaRoute
   EstimadosObservacionesResumenRoute: typeof EstimadosObservacionesResumenRoute
+  PrediccionesCosechaRoute: typeof PrediccionesCosechaRoute
   PrediccionesTotalesRoute: typeof PrediccionesTotalesRoute
   PrediccionesIndexRoute: typeof PrediccionesIndexRoute
 }
@@ -172,8 +185,8 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/predicciones': {
-      id: '/predicciones'
+    '/predicciones/': {
+      id: '/predicciones/'
       path: '/predicciones'
       fullPath: '/predicciones'
       preLoaderRoute: typeof PrediccionesIndexRouteImport
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       path: '/predicciones/totales'
       fullPath: '/predicciones/totales'
       preLoaderRoute: typeof PrediccionesTotalesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/predicciones/cosecha': {
+      id: '/predicciones/cosecha'
+      path: '/predicciones/cosecha'
+      fullPath: '/predicciones/cosecha'
+      preLoaderRoute: typeof PrediccionesCosechaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/estimados/observaciones-resumen': {
@@ -247,6 +267,7 @@ const rootRouteChildren: RootRouteChildren = {
   EstimadosObservacionesRoute: EstimadosObservacionesRoute,
   EstimadosObservacionesAreaRoute: EstimadosObservacionesAreaRoute,
   EstimadosObservacionesResumenRoute: EstimadosObservacionesResumenRoute,
+  PrediccionesCosechaRoute: PrediccionesCosechaRoute,
   PrediccionesTotalesRoute: PrediccionesTotalesRoute,
   PrediccionesIndexRoute: PrediccionesIndexRoute,
 }

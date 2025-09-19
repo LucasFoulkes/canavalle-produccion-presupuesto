@@ -4,9 +4,8 @@ import { useDeferredLiveQuery } from '@/hooks/use-deferred-live-query'
 import { getStore } from '@/lib/dexie'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
-import { supabase } from '@/lib/supabase'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { formatDate, formatDateRange } from '@/lib/utils'
+import { formatDate, formatDateRange, formatMax2 } from '@/lib/utils'
 
 export const Route = createFileRoute('/estimados/observaciones-resumen' as any)({
     component: Page,
@@ -57,7 +56,7 @@ function Page() {
             getStore('variedad').toArray(),
         ])
 
-        // seccion.largo_m (single row used for all camas)
+        // seccion.largo_m (single row used for all camas) from Dexie only
         let seccionLargoM = 0
         try {
             const secciones = await getStore('seccion').toArray()
@@ -65,13 +64,7 @@ function Page() {
                 const s0: any = (secciones as any[])[0]
                 seccionLargoM = Number(s0?.largo_m) || 0
             }
-        } catch {
-            const { data: secData } = await supabase.from('seccion').select('largo_m').limit(1)
-            if (secData && secData.length > 0) {
-                const s0: any = (secData as any[])[0]
-                seccionLargoM = Number(s0?.largo_m) || 0
-            }
-        }
+        } catch { }
 
         const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
             const m = new Map<string, T>()
@@ -174,7 +167,7 @@ function Page() {
     const [selectedKey, setSelectedKey] = React.useState<string | null>(null)
     const selectedRow = React.useMemo(() => rows.find((r) => `${r.id_cama}|${r.tipo_observacion}` === selectedKey) ?? null, [rows, selectedKey])
 
-    const fmt = (v: number) => (Number(v || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })
+    const fmt = (v: number) => formatMax2(v)
     const columns = React.useMemo(() => ([
         { key: 'finca', header: 'Finca' },
         { key: 'bloque', header: 'Bloque' },
@@ -240,8 +233,8 @@ function Page() {
                                                     <tr key={idx} className="border-b last:border-b-0">
                                                         <td className="py-1.5 px-2 whitespace-nowrap">{formatDate(o.creado_en ?? o.fecha)}</td>
                                                         <td className="py-1.5 px-2 whitespace-nowrap">{o.tipo_observacion ?? ''}</td>
-                                                        <td className="py-1.5 px-2 whitespace-nowrap">{Number(o.cantidad || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                                                        <td className="py-1.5 px-2 whitespace-nowrap">{Number(o.area_observada || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{formatMax2(o.cantidad)}</td>
+                                                        <td className="py-1.5 px-2 whitespace-nowrap">{formatMax2(o.area_observada)}</td>
                                                         <td className="py-1.5 px-2">{o.notas ?? o.descripcion ?? ''}</td>
                                                     </tr>
                                                 ))}
