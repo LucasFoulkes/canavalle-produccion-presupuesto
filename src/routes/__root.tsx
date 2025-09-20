@@ -1,6 +1,6 @@
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import type { LucideIcon } from 'lucide-react'
-import { ChevronRight, ClipboardList, Home, Sprout } from 'lucide-react'
+import { ChevronRight, ClipboardList, Home } from 'lucide-react'
 import { FilterToolbar } from '@/components/filter-toolbar'
 import { Badge } from '@/components/ui/badge'
 import { useOnlineStatus } from '@/hooks/use-online-status'

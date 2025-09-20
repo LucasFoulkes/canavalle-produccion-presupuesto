@@ -79,7 +79,7 @@ function MobileObservationInput() {
             )}
             <h1 className="text-lg font-semibold">{getTitle()}</h1>
           </div>
-          {currentStep === 'input' && Object.values(globalCounters).some(c => c > 0) && (
+          {currentStep === 'input' && Object.values(globalCounters).some((c) => c > 0) && (
             <Button
               onClick={async () => {
                 const observationsToSave = Object.entries(globalCounters).filter(([_, count]) => count > 0)
@@ -169,7 +169,8 @@ function MobileObservationInput() {
                   alert(`Guardadas ${savedCount} observaciones${errorCount > 0 ? ` (${errorCount} errores)` : ''}`)
 
                   // Go back to cama selection
-                  onComplete()
+                  setCurrentStep('cama')
+                  setSelectedCama(null)
                 } else {
                   alert(`Error: No se pudo guardar ninguna observación`)
                 }
@@ -177,7 +178,7 @@ function MobileObservationInput() {
               size="sm"
               className="bg-green-600 text-white hover:bg-green-700"
             >
-              Guardar ({Object.values(globalCounters).filter(c => c > 0).length})
+              Guardar ({Object.values(globalCounters).filter((c) => c > 0).length})
             </Button>
           )}
         </div>
@@ -257,14 +258,14 @@ function FincaSelection({ onSelect }: { onSelect: (finca: any) => void }) {
   ) ?? []
 
   const fincas = React.useMemo(
-    () => allFincas.filter(f => !f.eliminado_en || f.eliminado_en === ''),
+    () => allFincas.filter((f: any) => !f.eliminado_en || f.eliminado_en === ''),
     [allFincas]
   )
 
   const filteredFincas = React.useMemo(() => {
     if (!searchQuery) return fincas
     const query = searchQuery.toLowerCase()
-    return fincas.filter(f => f.nombre.toLowerCase().includes(query))
+    return fincas.filter((f: any) => f.nombre.toLowerCase().includes(query))
   }, [fincas, searchQuery])
 
   if (!fincas.length) {
@@ -287,7 +288,7 @@ function FincaSelection({ onSelect }: { onSelect: (finca: any) => void }) {
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="grid grid-cols-2 gap-3 pb-32">
-          {filteredFincas.map((finca) => (
+          {filteredFincas.map((finca: any) => (
             <button
               key={finca.id_finca}
               onClick={() => onSelect(finca)}
@@ -316,7 +317,7 @@ function BloqueSelection({
   ) ?? []
 
   const bloques = React.useMemo(
-    () => allBloques.filter(b => {
+    () => allBloques.filter((b: any) => {
       // Compare as strings to handle both string and number IDs
       return String(b.id_finca) === String(fincaId) && (!b.eliminado_en || b.eliminado_en === '')
     }),
@@ -326,7 +327,7 @@ function BloqueSelection({
   const filteredBloques = React.useMemo(() => {
     if (!searchQuery) return bloques
     const query = searchQuery.toLowerCase()
-    return bloques.filter(b => b.nombre.toLowerCase().includes(query))
+    return bloques.filter((b: any) => b.nombre.toLowerCase().includes(query))
   }, [bloques, searchQuery])
 
   if (!allBloques.length) {
@@ -353,7 +354,7 @@ function BloqueSelection({
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="grid grid-cols-4 gap-2 pb-32">
-          {filteredBloques.map((bloque) => (
+          {filteredBloques.map((bloque: any) => (
             <button
               key={bloque.id_bloque}
               onClick={() => onSelect(bloque)}
@@ -392,28 +393,28 @@ function VariedadSelection({
 
   const camasData = React.useMemo(() => {
     // Find grupos for this bloque
-    const grupos = allGrupos.filter(g =>
+    const grupos = allGrupos.filter((g: any) =>
       String(g.id_bloque) === String(bloqueId) &&
       (!g.eliminado_en || g.eliminado_en === '')
     )
 
     // Get unique variedad IDs from grupos
-    const variedadIds = [...new Set(grupos.map((g) => g.id_variedad))]
+    const variedadIds = [...new Set(grupos.map((g: any) => g.id_variedad))]
 
     // Get variedades
-    const variedades = allVariedades.filter(v =>
-      variedadIds.some(id => String(id) === String(v.id_variedad))
+    const variedades = allVariedades.filter((v: any) =>
+      variedadIds.some((id) => String(id) === String(v.id_variedad))
     )
 
     // Count camas for each variedad
-    return variedades.map((v) => {
+    return variedades.map((v: any) => {
       // Find grupos for this variedad in this bloque
-      const variedadGrupos = grupos.filter(g => String(g.id_variedad) === String(v.id_variedad))
-      const grupoIds = variedadGrupos.map(g => g.id_grupo)
+      const variedadGrupos = grupos.filter((g: any) => String(g.id_variedad) === String(v.id_variedad))
+      const grupoIds = variedadGrupos.map((g: any) => g.id_grupo)
 
       // Count camas belonging to these grupos
-      const camaCount = allCamas.filter(c =>
-        grupoIds.some(gId => String(c.id_grupo) === String(gId)) &&
+      const camaCount = allCamas.filter((c: any) =>
+        grupoIds.some((gId: any) => String(c.id_grupo) === String(gId)) &&
         (!c.eliminado_en || c.eliminado_en === '')
       ).length
 
@@ -434,7 +435,7 @@ function VariedadSelection({
 
   return (
     <div className="flex flex-col gap-2 p-4 pb-24">
-      {camasData.map((variedad) => (
+      {camasData.map((variedad: any) => (
         <button
           key={variedad.id_variedad}
           onClick={() => onSelect(variedad)}
@@ -483,17 +484,17 @@ function CamaSelection({
 
   const camas = React.useMemo(() => {
     // Find grupos for this bloque and variedad
-    const grupos = allGrupos.filter(g =>
+    const grupos = allGrupos.filter((g: any) =>
       String(g.id_bloque) === String(bloqueId) &&
       String(g.id_variedad) === String(variedadId) &&
       (!g.eliminado_en || g.eliminado_en === '')
     )
 
-    const grupoIds = grupos.map(g => g.id_grupo)
+    const grupoIds = grupos.map((g: any) => g.id_grupo)
 
     // Get camas belonging to these grupos
-    return allCamas.filter(c =>
-      grupoIds.some(gId => String(c.id_grupo) === String(gId)) &&
+    return allCamas.filter((c: any) =>
+      grupoIds.some((gId: any) => String(c.id_grupo) === String(gId)) &&
       (!c.eliminado_en || c.eliminado_en === '')
     )
   }, [allGrupos, allCamas, bloqueId, variedadId])
@@ -501,7 +502,7 @@ function CamaSelection({
   const filteredCamas = React.useMemo(() => {
     if (!searchQuery) return camas
     const query = searchQuery.toLowerCase()
-    return camas.filter((c) => c.nombre.toLowerCase().includes(query))
+    return camas.filter((c: any) => c.nombre.toLowerCase().includes(query))
   }, [camas, searchQuery])
 
   return (
@@ -520,7 +521,7 @@ function CamaSelection({
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="grid grid-cols-4 gap-2 pb-32">
-          {filteredCamas.map((cama) => (
+          {filteredCamas.map((cama: any) => (
             <button
               key={cama.id_cama}
               onClick={() => onSelect(cama)}
@@ -536,13 +537,13 @@ function CamaSelection({
 }
 
 function ObservationInput({
-  finca,
-  bloque,
-  variedad,
-  cama,
+  finca: _finca,
+  bloque: _bloque,
+  variedad: _variedad,
+  cama: _cama,
   counters,
   setCounters,
-  onComplete,
+  onComplete: _onComplete,
 }: {
   finca: any
   bloque: any
@@ -552,10 +553,14 @@ function ObservationInput({
   setCounters: React.Dispatch<React.SetStateAction<Record<string, number>>>
   onComplete: () => void
 }) {
+  // Intentionally unused props kept for API compatibility with parent
+  // and to avoid TypeScript/ESLint unused warnings
+  void _finca; void _bloque; void _variedad; void _cama; void _onComplete;
   const [tipoObservacion, setTipoObservacion] = React.useState('')
   const [cantidad, setCantidad] = React.useState('')
   const [seccion, setSeccion] = React.useState('')
-  const [saving, setSaving] = React.useState(false)
+  // Note: previously had a local saving state and a separate handleSave function,
+  // but saving is handled by the header button; remove unused local state/function.
 
   // Load observation types from database, filtered and ordered by configuration
   const estadoTiposRaw = useLiveQuery(
@@ -605,67 +610,7 @@ function ObservationInput({
     }
   }
 
-  const handleSave = async () => {
-    alert(`handleSave called! tipo=${tipoObservacion}, cantidad=${cantidad}`)
-    console.log('=== HANDLE SAVE CALLED ===')
-
-    if (!tipoObservacion || !cantidad) {
-      console.log('Validation failed:', { tipoObservacion, cantidad })
-      alert('Validation failed - missing tipo or cantidad')
-      return
-    }
-
-    alert('Validation passed, starting save...')
-    setSaving(true)
-    try {
-      console.log('Saving observation:', {
-        id_cama: cama.id_cama,
-        tipo_observacion: tipoObservacion,
-        cantidad: parseFloat(cantidad),
-        ubicacion_seccion: seccion || null,
-      })
-
-      // Use the same pattern as the existing table save functionality
-      const payload = {
-        id_cama: cama.id_cama,
-        tipo_observacion: tipoObservacion,
-        cantidad: parseFloat(cantidad),
-        ubicacion_seccion: seccion || null,
-        id_usuario: 1, // TODO: Get from context
-      }
-
-      console.log('Calling observacionService.insert with:', payload)
-      const { data, error } = await observacionService.insert(payload)
-
-      if (error) {
-        console.error('Service error:', error)
-        throw error
-      }
-
-      console.log('Service response:', data)
-
-      // Update local Dexie store with the created observation
-      const created = data as any
-      if (created) {
-        console.log('Updating local store with:', created)
-        await getStore('observacion').put(created)
-      }
-
-      // Reset form
-      setTipoObservacion('')
-      setCantidad('')
-      setSeccion('')
-      setCounters({})
-
-      console.log('Observation saved successfully')
-      onComplete()
-    } catch (error) {
-      console.error('Error saving observation:', error)
-      alert('Error al guardar la observación: ' + (error as Error).message)
-    } finally {
-      setSaving(false)
-    }
-  }
+  // (removed unused local save handler)
 
   return (
     <div className="h-full flex flex-col">

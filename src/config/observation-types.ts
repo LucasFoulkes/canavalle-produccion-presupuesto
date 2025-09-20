@@ -1,16 +1,23 @@
 // Configuration for which observation types to show in mobile input
 // Controls filtering of estado_fenologico_tipo options
 
-export const OBSERVATION_TYPE_CONFIG = {
+export type ObservationTypeConfig = {
   // Start showing options from this type (inclusive)
   // Set to null to show all options
-  startFromType: 'arroz',
+  startFromType: string | null
 
   // End showing options at this type (inclusive)
   // Set to null to show until the end
-  endAtType: null,
+  endAtType: string | null
 
   // Alternative: specify exact types to include/exclude
+  includeOnly?: string[]
+  exclude?: string[]
+}
+
+export const OBSERVATION_TYPE_CONFIG: ObservationTypeConfig = {
+  startFromType: 'arroz',
+  endAtType: null,
   // includeOnly: ['arroz', 'arveja', 'garbanzo', 'uva', 'rayando_color', 'sepalos_abiertos', 'cosecha'],
   // exclude: ['brotacion', 'cincuenta_mm'],
 }
