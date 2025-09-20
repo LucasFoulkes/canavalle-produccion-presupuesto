@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from '@tanstack/react-router'
+import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import * as React from 'react'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
@@ -97,6 +97,15 @@ function Page() {
   // Limit to known tables to avoid accidental exposure
   if (!tableConfig) throw notFound()
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
+
+  // Redirect mobile users to the mobile input flow for observations
+  React.useEffect(() => {
+    if (isMobile && table === 'observacion') {
+      navigate({ to: '/observaciones/mobile-input' })
+    }
+  }, [isMobile, table, navigate])
+
   const { columns, rows } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
   // Register columns on changes

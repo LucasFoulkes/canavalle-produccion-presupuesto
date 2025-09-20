@@ -49,7 +49,7 @@ const PREDICTION_LINKS: ReadonlyArray<{ to: string; label: string }> = [
 
 const MOBILE_NAV_ITEMS: ReadonlyArray<{ to: string; label: string; icon: LucideIcon; params?: Record<string, string> }> = [
   { to: '/', label: 'Inicio', icon: Home },
-  { to: '/db/$table', label: 'Observaciones', icon: ClipboardList, params: { table: 'observacion' } },
+  { to: '/observaciones/mobile-input', label: 'Observaciones', icon: ClipboardList },
 ]
 
 const RootLayout = () => {
@@ -61,7 +61,7 @@ const RootLayout = () => {
         | { params?: Record<string, unknown> }
         | undefined
       const tableId = (dbMatch?.params?.table as string | undefined) ?? undefined
-      return tableId ? TABLES[tableId]?.title ?? tableId : 'Canavalle'
+      return tableId ? TABLES[tableId]?.title ?? tableId : null
     },
   })
 
@@ -70,20 +70,27 @@ const RootLayout = () => {
       <TableFilterProvider>
         <SidebarProvider>
           <div className="flex h-svh w-full flex-col overflow-hidden bg-background">
-            <header className="space-y-2 border-b px-3 py-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 truncate">
-                  <Sprout className="h-5 w-5 text-primary" aria-hidden />
+            {currentTitle && (
+              <header className="border-b px-3 py-3">
+                <div className="flex items-center justify-between gap-2">
                   <span className="font-medium truncate">{currentTitle}</span>
+                  {!online && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                      Sin conexión
+                    </Badge>
+                  )}
                 </div>
-                {!online && (
+              </header>
+            )}
+            {!currentTitle && !online && (
+              <header className="border-b px-3 py-3">
+                <div className="flex items-center justify-end gap-2">
                   <Badge variant="outline" className="bg-destructive/10 text-destructive">
                     Sin conexión
                   </Badge>
-                )}
-              </div>
-              <FilterToolbar className="w-full" />
-            </header>
+                </div>
+              </header>
+            )}
             <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-3 pb-24">
               <Outlet />
             </div>
