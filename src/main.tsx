@@ -6,7 +6,7 @@ import './index.css'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 import { initDexieSchema } from '@/lib/dexie'
-import { syncAllTables } from '@/services/sync'
+import { syncAllTables, pushPendingObservations } from '@/services/sync'
 import { NotFound } from '@/components/not-found'
 
 // Create a new router instance
@@ -27,9 +27,14 @@ const registerServiceWorker = () => {
 const wireOnlineSync = () => {
   if (typeof window === 'undefined') return
   const handleOnline = () => {
-    syncAllTables().catch((error) => {
-      console.warn('[sync] online refresh failed', error)
-    })
+    // First push any offline-created observations, then refresh pulls
+    pushPendingObservations()
+      .catch((error) => console.warn('[push] online push failed', error))
+      .finally(() => {
+        syncAllTables().catch((error) => {
+          console.warn('[sync] online refresh failed', error)
+        })
+      })
   }
   window.addEventListener('online', handleOnline)
 }
@@ -47,15 +52,16 @@ if (!rootElement.innerHTML) {
   registerServiceWorker()
   wireOnlineSync()
 
-  // Fire-and-forget: initialize Dexie and kick off background sync
-  ;(async () => {
-    try {
-      await initDexieSchema()
-      // background sync; don't await to avoid blocking UI
-      syncAllTables().catch(() => {})
-    } catch (e) {
-      // Dexie might not be available (e.g., private mode); ignore
-      console.warn('[dexie] init/sync skipped:', e)
-    }
-  })()
+    // Fire-and-forget: initialize Dexie and kick off background sync
+    ; (async () => {
+      try {
+        await initDexieSchema()
+        // Try to push pending local changes, then kick off a background pull
+        pushPendingObservations().catch(() => { })
+        syncAllTables().catch(() => { })
+      } catch (e) {
+        // Dexie might not be available (e.g., private mode); ignore
+        console.warn('[dexie] init/sync skipped:', e)
+      }
+    })()
 }

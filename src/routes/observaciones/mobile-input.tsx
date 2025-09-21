@@ -143,8 +143,14 @@ function MobileObservationInput() {
                           console.log(`Synced ${tipo} to Supabase:`, data)
                           // Update the Dexie record with the real data from Supabase
                           if (data) {
-                            await getStore('observacion').put(data as any)
-                            console.log('Updated Dexie with Supabase data')
+                            // Remove temp row and insert server row to avoid duplicates
+                            try {
+                              await getStore('observacion').delete(dexieObservation.id_observacion)
+                            } catch (e) {
+                              console.debug('Could not remove temp observation from Dexie', e)
+                            }
+                            await getStore('observacion').put({ ...(data as any), needs_sync: false })
+                            console.log('Replaced Dexie temp with Supabase data')
                           }
                         }
                       } catch (syncErr: any) {
