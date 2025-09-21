@@ -182,6 +182,25 @@ export const TABLES: Record<string, TableConfig> = {
         title: 'Sección',
         columns: cols('largo_m'),
     },
+    pinche: {
+        id: 'pinche',
+        title: 'Pinche',
+        columns: cols(
+            // 'id',
+            'created_at',
+            'finca.nombre',
+            'bloque.nombre',
+            'variedad.nombre',
+            'cama.nombre',
+            'tipo',
+            'cantidad',
+        ),
+    },
+    pinche_tipo: {
+        id: 'pinche_tipo',
+        title: 'Pinche tipo',
+        columns: cols('codigo'),
+    },
 }
 
 export function getTableConfig(id: string): TableConfig | undefined {
@@ -222,6 +241,8 @@ export const SERVICE_PK: Record<string, string> = {
     usuario: 'id_usuario',
     // Config/singleton or PK-unknown table: use synthetic key handled in sync
     seccion: '__key',
+    pinche: 'id',
+    pinche_tipo: 'codigo',
 }
 
 const SERVICES = Object.fromEntries(
@@ -241,6 +262,8 @@ export const {
     observacion: observacionService,
     patron: patronService,
     variedad: variedadService,
+    pinche: pincheService,
+    pinche_tipo: pincheTipoService,
 } = SERVICES
 
 // Special cases

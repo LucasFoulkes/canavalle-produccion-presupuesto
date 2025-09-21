@@ -28,8 +28,8 @@ const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
   { label: 'Variedades', items: ['variedad', 'breeder', 'patron'] },
   { label: 'Fenología', items: ['estados_fenologicos', 'estado_fenologico_tipo'] },
-  { label: 'Observaciones', items: ['observacion'] },
-  { label: 'Catálogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta'] },
+  { label: 'Observaciones', items: ['observacion', 'pinche'] },
+  { label: 'Catálogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta', 'pinche_tipo'] },
   { label: 'Sistema', items: ['usuario'] },
 ]
 

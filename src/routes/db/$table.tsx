@@ -66,7 +66,25 @@ function useDbTable(tableId: string) {
     }
   }, [tableId, dexieSupported])
 
-  const rows = (liveRows ?? fallbackRows ?? []) as any[]
+  // Remote fallback for Dexie-backed tables with empty cache
+  const [remoteRows, setRemoteRows] = React.useState<any[] | null>(null)
+  React.useEffect(() => {
+    if (!dexieSupported) return
+    // Only try if cache is empty and we're online
+    const emptyCache = Array.isArray(liveRows) && liveRows.length === 0
+    if (!emptyCache) { setRemoteRows(null); return }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return
+    let cancelled = false
+      ; (async () => {
+        const { data, error } = await getTableService(tableId).selectAll('*')
+        if (cancelled) return
+        if (error) setError((prev) => prev ?? error.message)
+        setRemoteRows((data as any[]) ?? [])
+      })()
+    return () => { cancelled = true }
+  }, [tableId, dexieSupported, Array.isArray(liveRows) ? liveRows.length : liveRows])
+
+  const rows = ((liveRows && (liveRows as any[]).length > 0 ? liveRows : remoteRows) ?? fallbackRows ?? []) as any[]
 
   const columns = React.useMemo(() => {
     if (config) {
@@ -106,13 +124,15 @@ function Page() {
     }
   }, [isMobile, table, navigate])
 
-  const { columns, rows } = useDbTable(table)
+  const { columns, rows, error } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
   // Register columns on changes
   React.useEffect(() => {
     registerColumns(columns.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
   }, [table, columns, registerColumns])
-  const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: true })
+  // Some tables (e.g., 'pinche') have nullable FKs; don't block rendering waiting for all dotted lookups
+  const requireAllLookups = table !== 'pinche'
+  const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: requireAllLookups })
   const finalLoading = rows == null || relationLoading
   const filtered = React.useMemo(() => {
     let rowsToCheck = displayRows
@@ -457,6 +477,9 @@ function Page() {
           <Button size="sm" onClick={openCreateObservacion}>Nueva observación</Button>
         )}
       </div>
+      {!!error && (
+        <div className="mb-2 text-sm text-red-600">{error}</div>
+      )}
       {finalLoading ? (
         <DataTableSkeleton columns={columns as any} rows={8} />
       ) : (
