@@ -60,6 +60,31 @@ const MOBILE_NAV_ITEMS: ReadonlyArray<{ to: string; label: string; icon: LucideI
 const RootLayout = () => {
   const online = useOnlineStatus()
   const isMobile = useIsMobile()
+  // Always declare GPS tracker hooks at the top level to keep hooks order stable
+  const { start: startGps, stop: stopGps } = useGpsTracker({ minDistanceMeters: 1, usuarioId: null })
+  const [gpsOn, setGpsOn] = React.useState(false)
+  React.useEffect(() => {
+    // Only run GPS when explicitly enabled by the user and on mobile
+    if (gpsOn && isMobile) {
+      startGps()
+      return () => stopGps()
+    }
+    return undefined
+  }, [gpsOn, isMobile, startGps, stopGps])
+
+  const toggleGps = React.useCallback(async () => {
+    if (!gpsOn) {
+      try {
+        // One-shot read to trigger permission prompt in PWA before starting the watch
+        await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 })
+        setGpsOn(true)
+      } catch {
+        alert('No se pudo activar GPS. Revise permisos de ubicación para la app instalada.')
+      }
+    } else {
+      setGpsOn(false)
+    }
+  }, [gpsOn])
   const currentTitle = useRouterState({
     select: (state) => {
       const dbMatch = state.matches.find((match) => match.routeId === '/db/$table') as
@@ -71,29 +96,7 @@ const RootLayout = () => {
   })
 
   if (isMobile) {
-    // GPS tracker controlled by user gesture to ensure PWA permission prompts work
-    const tracker = useGpsTracker({ minDistanceMeters: 1, usuarioId: null })
-    const [gpsOn, setGpsOn] = React.useState(false)
-    React.useEffect(() => {
-      if (gpsOn) {
-        tracker.start()
-        return () => tracker.stop()
-      }
-      return undefined
-    }, [gpsOn, tracker])
-
-    const toggleGps = React.useCallback(async () => {
-      if (!gpsOn) {
-        try {
-          await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 })
-          setGpsOn(true)
-        } catch {
-          alert('No se pudo activar GPS. Revise permisos de ubicación para la app instalada.')
-        }
-      } else {
-        setGpsOn(false)
-      }
-    }, [gpsOn])
+    // Mobile layout: show GPS toggle UI
     return (
       <TableFilterProvider>
         <SidebarProvider>
