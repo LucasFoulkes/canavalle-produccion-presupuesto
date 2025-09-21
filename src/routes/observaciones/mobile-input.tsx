@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { filterObservationTypes } from '@/config/observation-types'
-import { observacionService } from '@/services/db'
+import { observacionService, pincheService } from '@/services/db'
 
 type Step = 'finca' | 'bloque' | 'variedad' | 'cama' | 'input'
 
@@ -23,6 +23,7 @@ function MobileObservationInput() {
   const [selectedCama, setSelectedCama] = React.useState<any>(null)
   const [searchQuery, setSearchQuery] = React.useState('')
   const [globalCounters, setGlobalCounters] = React.useState<Record<string, number>>({})
+  const [pincheCounters, setPincheCounters] = React.useState<Record<string, number>>({})
 
   const handleBack = () => {
     switch (currentStep) {
@@ -79,13 +80,14 @@ function MobileObservationInput() {
             )}
             <h1 className="text-lg font-semibold">{getTitle()}</h1>
           </div>
-          {currentStep === 'input' && Object.values(globalCounters).some((c) => c > 0) && (
+          {currentStep === 'input' && (Object.values(globalCounters).some((c) => c > 0) || Object.values(pincheCounters).some((c) => c > 0)) && (
             <Button
               onClick={async () => {
                 const observationsToSave = Object.entries(globalCounters).filter(([_, count]) => count > 0)
+                const pinchesToSave = Object.entries(pincheCounters).filter(([_, count]) => count > 0)
 
-                if (observationsToSave.length === 0) {
-                  alert('No hay observaciones para guardar. Incremente al menos un contador.')
+                if (observationsToSave.length === 0 && pinchesToSave.length === 0) {
+                  alert('No hay datos para guardar. Incremente al menos un contador.')
                   return
                 }
 
@@ -169,22 +171,71 @@ function MobileObservationInput() {
                   }
                 }
 
+                // Save pinches
+                for (const [tipo, count] of pinchesToSave) {
+                  try {
+                    if (!selectedCama || !selectedCama.id_cama) {
+                      console.error('ERROR: No cama selected or no id_cama!')
+                      alert('Error: No se ha seleccionado una cama')
+                      return
+                    }
+
+                    const payload = {
+                      bloque: selectedBloque?.id_bloque ?? null,
+                      cama: selectedCama.id_cama,
+                      variedad: selectedVariedad?.id_variedad ?? null,
+                      cantidad: count,
+                      tipo,
+                    }
+
+                    // Save to Dexie first
+                    const dexieRow = {
+                      ...payload,
+                      id: Date.now() + Math.random(), // temporary id
+                      created_at: new Date().toISOString(),
+                      needs_sync: true,
+                    }
+                    await getStore('pinche').put(dexieRow)
+
+                    if (navigator.onLine) {
+                      try {
+                        const { data, error } = await pincheService.insert(payload as any)
+                        if (error) {
+                          console.error(`Error syncing pinche ${tipo} to Supabase:`, error)
+                        } else if (data) {
+                          // Remove temp and insert server row
+                          try { await getStore('pinche').delete(dexieRow.id) } catch (e) { console.debug('Could not delete temp pinche', e) }
+                          await getStore('pinche').put({ ...(data as any), needs_sync: false })
+                        }
+                      } catch (syncErr) {
+                        console.error('Exception syncing pinche:', syncErr)
+                      }
+                    }
+
+                    savedCount++
+                  } catch (err: any) {
+                    console.error(`Exception saving pinche ${tipo}:`, err)
+                    errorCount++
+                  }
+                }
+
                 // Reset counters for saved observations
                 if (savedCount > 0) {
                   setGlobalCounters({})
+                  setPincheCounters({})
                   alert(`Guardadas ${savedCount} observaciones${errorCount > 0 ? ` (${errorCount} errores)` : ''}`)
 
                   // Go back to cama selection
                   setCurrentStep('cama')
                   setSelectedCama(null)
                 } else {
-                  alert(`Error: No se pudo guardar ninguna observación`)
+                  alert(`Error: No se pudo guardar datos`)
                 }
               }}
               size="sm"
               className="bg-green-600 text-white hover:bg-green-700"
             >
-              Guardar ({Object.values(globalCounters).filter((c) => c > 0).length})
+              Guardar ({[...Object.values(globalCounters), ...Object.values(pincheCounters)].filter((c) => c > 0).length})
             </Button>
           )}
         </div>
@@ -245,6 +296,8 @@ function MobileObservationInput() {
             cama={selectedCama}
             counters={globalCounters}
             setCounters={setGlobalCounters}
+            pincheCounters={pincheCounters}
+            setPincheCounters={setPincheCounters}
             onComplete={() => {
               setCurrentStep('cama')
               setSelectedCama(null)
@@ -549,6 +602,8 @@ function ObservationInput({
   cama: _cama,
   counters,
   setCounters,
+  pincheCounters,
+  setPincheCounters,
   onComplete: _onComplete,
 }: {
   finca: any
@@ -557,6 +612,8 @@ function ObservationInput({
   cama: any
   counters: Record<string, number>
   setCounters: React.Dispatch<React.SetStateAction<Record<string, number>>>
+  pincheCounters: Record<string, number>
+  setPincheCounters: React.Dispatch<React.SetStateAction<Record<string, number>>>
   onComplete: () => void
 }) {
   // Intentionally unused props kept for API compatibility with parent
@@ -577,6 +634,12 @@ function ObservationInput({
   const estadoTipos = React.useMemo(() => {
     return filterObservationTypes(estadoTiposRaw)
   }, [estadoTiposRaw])
+
+  // Load pinche types
+  const pincheTipos: any[] = useLiveQuery(
+    () => db.pinche_tipo.toArray(),
+    []
+  ) ?? []
 
   // Sync cantidad input with selected tipo counter
   React.useEffect(() => {
@@ -604,6 +667,14 @@ function ObservationInput({
       }
       return { ...prev, [typeCode]: newValue }
     })
+  }
+
+  const handlePincheIncrement = (typeCode: string) => {
+    setPincheCounters(prev => ({ ...prev, [typeCode]: (prev[typeCode] || 0) + 1 }))
+  }
+
+  const handlePincheDecrement = (typeCode: string) => {
+    setPincheCounters(prev => ({ ...prev, [typeCode]: Math.max(0, (prev[typeCode] || 0) - 1) }))
   }
 
   const handleCantidadChange = (value: string) => {
@@ -677,6 +748,49 @@ function ObservationInput({
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">Cargando tipos de observación...</div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Pinches</label>
+            {pincheTipos.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {pincheTipos.map((type) => {
+                  const code = String((type as any).codigo ?? '')
+                  const count = pincheCounters[code] || 0
+                  return (
+                    <div key={code} className={cn('w-full rounded-lg border transition-colors', count > 0 ? 'border-primary bg-primary/10' : 'border-border bg-card')}>
+                      <div className="p-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => handlePincheDecrement(code)}
+                            disabled={count === 0}
+                            className="w-10 h-10 rounded-full border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg font-medium"
+                          >
+                            −
+                          </button>
+                          <div className="flex-1 mx-3 py-2 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="font-medium">{code}</span>
+                              {count > 0 && (
+                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">{count}</span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handlePincheIncrement(code)}
+                            className="w-10 h-10 rounded-full border bg-background hover:bg-accent flex items-center justify-center text-lg font-medium"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Cargando tipos de pinches...</div>
             )}
           </div>
 
