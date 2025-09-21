@@ -618,7 +618,8 @@ function ObservationInput({
 }) {
   // Intentionally unused props kept for API compatibility with parent
   // and to avoid TypeScript/ESLint unused warnings
-  void _finca; void _bloque; void _variedad; void _cama; void _onComplete;
+  void _finca; void _bloque; void _variedad; void _onComplete;
+  const hasCama = Boolean(_cama && (_cama as any).id_cama)
   const [tipoObservacion, setTipoObservacion] = React.useState('')
   const [cantidad, setCantidad] = React.useState('')
   const [seccion, setSeccion] = React.useState('')
@@ -707,64 +708,66 @@ function ObservationInput({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto p-4">
         <div className="flex flex-col gap-4 pb-32">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Tipo de observación</label>
-            {estadoTipos.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {estadoTipos.map((type) => {
-                  const count = counters[type.codigo] || 0
-                  return (
-                    <div
-                      key={type.codigo}
-                      className={cn(
-                        'w-full rounded-lg border transition-colors',
-                        tipoObservacion === type.codigo
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border bg-card'
-                      )}
-                    >
-                      <div className="p-3">
-                        <div className="flex items-center justify-between">
-                          <button
-                            onClick={() => handleDecrement(type.codigo)}
-                            disabled={count === 0}
-                            className="w-10 h-10 rounded-full border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg font-medium"
-                          >
-                            −
-                          </button>
+          {hasCama && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tipo de observación</label>
+              {estadoTipos.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                  {estadoTipos.map((type) => {
+                    const count = counters[type.codigo] || 0
+                    return (
+                      <div
+                        key={type.codigo}
+                        className={cn(
+                          'w-full rounded-lg border transition-colors',
+                          tipoObservacion === type.codigo
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border bg-card'
+                        )}
+                      >
+                        <div className="p-3">
+                          <div className="flex items-center justify-between">
+                            <button
+                              onClick={() => handleDecrement(type.codigo)}
+                              disabled={count === 0}
+                              className="w-10 h-10 rounded-full border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg font-medium"
+                            >
+                              −
+                            </button>
 
-                          <button
-                            onClick={() => handleIncrement(type.codigo)}
-                            onFocus={() => setTipoObservacion(type.codigo)}
-                            className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
-                          >
-                            <div className="flex items-center justify-center gap-2">
-                              <span className="font-medium">{type.codigo}</span>
-                              {count > 0 && (
-                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
-                                  {count}
-                                </span>
-                              )}
-                            </div>
-                          </button>
+                            <button
+                              onClick={() => handleIncrement(type.codigo)}
+                              onFocus={() => setTipoObservacion(type.codigo)}
+                              className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
+                            >
+                              <div className="flex items-center justify-center gap-2">
+                                <span className="font-medium">{type.codigo}</span>
+                                {count > 0 && (
+                                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">
+                                    {count}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
 
-                          <button
-                            onClick={() => handleIncrement(type.codigo)}
-                            className="w-10 h-10 rounded-full border bg-background hover:bg-accent flex items-center justify-center text-lg font-medium"
-                          >
-                            +
-                          </button>
+                            <button
+                              onClick={() => handleIncrement(type.codigo)}
+                              className="w-10 h-10 rounded-full border bg-background hover:bg-accent flex items-center justify-center text-lg font-medium"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
-                      </div>
 
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">Cargando tipos de observación...</div>
-            )}
-          </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">Cargando tipos de observación...</div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Pinches</label>

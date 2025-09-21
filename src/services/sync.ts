@@ -1,5 +1,5 @@
 ﻿import { AnyRow, getStore, initDexieSchema } from '@/lib/dexie'
-import { SERVICE_PK, observacionService } from '@/services/db'
+import { SERVICE_PK, observacionService, pincheService } from '@/services/db'
 import { supabase } from '@/lib/supabase'
 
 export type SyncResult = { table: string; count: number }
@@ -148,6 +148,66 @@ export async function pushPendingObservations(): Promise<PushResult> {
       result.succeeded++
     } catch (e) {
       console.warn('[push] failed to upload observation', e)
+      result.failed++
+      // keep the row for future retries
+    }
+  }
+
+  return result
+}
+
+// --- Outbound (push) sync: upload offline-created pinches ---
+export async function pushPendingPinches(): Promise<PushResult> {
+  await initDexieSchema()
+
+  const result: PushResult = { attempted: 0, succeeded: 0, failed: 0 }
+
+  if (isOffline()) {
+    console.info('[push] skipped pinches: browser is offline')
+    return result
+  }
+
+  const store = getStore('pinche')
+  const all = (await store.toArray()) as AnyRow[]
+  type PendingPinche = {
+    id: number | string
+    bloque: number | string | null
+    cama: number | string | null
+    variedad: number | string | null
+    cantidad: number
+    tipo: string
+    needs_sync?: boolean
+    [k: string]: unknown
+  }
+  const pending = all.filter((r) => (r as PendingPinche).needs_sync) as PendingPinche[]
+
+  if (pending.length === 0) return result
+
+  for (const row of pending) {
+    result.attempted++
+    const tempId = row.id
+    const payload = {
+      bloque: row.bloque ?? null,
+      cama: row.cama ?? null,
+      variedad: row.variedad ?? null,
+      cantidad: row.cantidad,
+      tipo: row.tipo,
+    }
+
+    try {
+      const { data, error } = await pincheService.insert(payload)
+      if (error) throw error
+
+      // Replace temp row with server row
+      if (typeof tempId !== 'undefined') {
+        try { await store.delete(tempId) } catch (err) { console.debug('[push] could not delete temp pinche', err) }
+      }
+      if (data) {
+        await store.put({ ...(data as unknown as AnyRow), needs_sync: false })
+      }
+      result.succeeded++
+    } catch (e) {
+      console.warn('[push] failed to upload pinche', e)
       result.failed++
       // keep the row for future retries
     }
