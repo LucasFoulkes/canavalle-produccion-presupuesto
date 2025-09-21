@@ -121,24 +121,76 @@ export function scaleTimelineToTotals(rows: ResumenFenologicoRow[]): ResumenFeno
 // Rationale: being in 'cosecha' stage spans multiple days; we consider actual harvest on the last day only.
 export function keepOnlyLastCosechaDay(rows: ResumenFenologicoRow[]): ResumenFenologicoRow[] {
   if (!rows?.length) return []
-  const lastByGroup = new Map<string, string>()
+
+  // Group rows by (bloqueId,variedadId,fincaId), but consider only those with dias_cosecha > 0
+  const byGroup = new Map<string, ResumenFenologicoRow[]>()
   for (const r of rows) {
     const v = Number((r as any)?.dias_cosecha || 0)
     if (v <= 0) continue
     const key = `${r.bloqueId}|${r.variedadId}|${r.fincaId}`
-    const d = r.fecha || ''
-    const prev = lastByGroup.get(key)
-    if (!prev || String(d).localeCompare(prev) > 0) {
-      lastByGroup.set(key, String(d))
+    let arr = byGroup.get(key)
+    if (!arr) {
+      arr = []
+      byGroup.set(key, arr)
     }
+    arr.push(r)
   }
-  return rows.filter((r) => {
-    const v = Number((r as any)?.dias_cosecha || 0)
-    if (v <= 0) return false
-    const key = `${r.bloqueId}|${r.variedadId}|${r.fincaId}`
-    const lastDate = lastByGroup.get(key)
-    return lastDate ? String(r.fecha) === lastDate : false
+
+  const result: ResumenFenologicoRow[] = []
+  byGroup.forEach((arr) => {
+    // Sort ascending by fecha so we can detect contiguous windows
+    const sorted = [...arr].sort((a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')))
+
+    let lastOfWindow: ResumenFenologicoRow | null = null
+    let lastDate: Date | null = null
+
+    const flush = () => {
+      if (lastOfWindow) result.push(lastOfWindow)
+      lastOfWindow = null
+      lastDate = null
+    }
+
+    for (const r of sorted) {
+      const d = parseISODate(r.fecha)
+      if (!d) {
+        // If date is invalid, treat as a window break
+        flush()
+        continue
+      }
+      if (!lastDate) {
+        // start new window
+        lastOfWindow = r
+        lastDate = d
+      } else {
+        // Check if current date is contiguous (+1 day) from lastDate
+        const expected = addDays(lastDate, 1)
+        const isContiguous = toISODate(d) === toISODate(expected)
+        if (isContiguous) {
+          // still in the same window -> update last-of-window
+          lastOfWindow = r
+          lastDate = d
+        } else {
+          // window ended -> keep last-of-window and start a new one
+          flush()
+          lastOfWindow = r
+          lastDate = d
+        }
+      }
+    }
+
+    // Flush the final window if present
+    flush()
   })
+
+  // Keep original sorting order: finca, bloque, variedad, fecha
+  result.sort((a, b) =>
+    a.finca.localeCompare(b.finca, undefined, { sensitivity: 'base' }) ||
+    a.bloque.localeCompare(b.bloque, undefined, { sensitivity: 'base' }) ||
+    a.variedad.localeCompare(b.variedad, undefined, { sensitivity: 'base' }) ||
+    (a.fecha || '').localeCompare(b.fecha || ''),
+  )
+
+  return result
 }
 
 export function sortEstados(records: any[]): any[] {

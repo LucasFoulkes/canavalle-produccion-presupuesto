@@ -128,8 +128,9 @@ const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
 }
 
 export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult> {
-  const [observaciones, camas, grupos, bloques, fincas, variedades, estadosFenologicos] = await Promise.all([
+  const [observaciones, pinches, camas, grupos, bloques, fincas, variedades, estadosFenologicos] = await Promise.all([
     getStore('observacion').toArray(),
+    getStore('pinche').toArray(),
     getStore('cama').toArray(),
     getStore('grupo_cama').toArray(),
     getStore('bloque').toArray(),
@@ -193,6 +194,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     fincaId: string
     dateKey: string
     stageKey: typeof STAGE_KEYS[number]
+    isPinche?: boolean
   }
   const leafAcc = new Map<string, Leaf>()
   const dateTouched = new Map<string, Set<string>>()
@@ -246,6 +248,63 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     }
   }
 
+  // Integrate pinches as 'brotacion' entries affecting predictions directly.
+  // Pinches are "always for 100 of the seccion" -> treat as 100% coverage for that (bloque,variedad) on that date.
+  for (const p of (pinches as any[])) {
+    const bloqueId = String(p?.bloque ?? '')
+    const variedadId = String(p?.variedad ?? '')
+    let camaId: string | null = p?.cama ? String(p.cama) : null
+    // If bloque/variedad missing, try derive from cama
+    let bId = bloqueId
+    let vId = variedadId
+    if ((!bId || !vId) && camaId) {
+      const cama = camasById.get(camaId)
+      if (cama) {
+        const g = gruposById.get(String((cama as any)?.id_grupo))
+        if (g) {
+          bId = String((g as any).id_bloque)
+          vId = String((g as any).id_variedad)
+        }
+      }
+    }
+    if (!bId || !vId) continue
+
+    const b = bloquesById.get(bId)
+    const f = b ? fincasById.get(String((b as any)?.id_finca)) : undefined
+    const fincaId = f ? String((f as any).id_finca) : ''
+
+    const rawDate: any = (p as any)?.created_at
+      ?? (p as any)?.creado_en
+      ?? (p as any)?.fecha
+      ?? (p as any)?.actualizado_en
+      ?? null
+    let dateKey = ''
+    if (rawDate) {
+      const d = new Date(rawDate)
+      if (!Number.isNaN(d.getTime())) dateKey = d.toISOString().slice(0, 10)
+    }
+    if (!dateKey) continue
+
+    const dvKey = `${bId}|${vId}`
+    if (!dateTouched.has(dvKey)) dateTouched.set(dvKey, new Set())
+    dateTouched.get(dvKey)!.add(dateKey)
+
+    const stageKey: typeof STAGE_KEYS[number] = 'dias_brotacion'
+    const cant = parseNumber((p as any)?.cantidad)
+    if (cant <= 0) continue
+
+    // For pinche, force 100% coverage later by marking isPinche.
+    // We can set areaSampled to 0 here; percentage will be overridden.
+    const leafKey = `${bId}|${vId}|${dateKey}|${stageKey}|pinche|${String(p?.id ?? Math.random())}`
+    const existing = leafAcc.get(leafKey)
+    if (existing) {
+      existing.count += cant
+      existing.isPinche = true
+    } else {
+      leafAcc.set(leafKey, { count: cant, areaSampled: 0, bloqueId: bId, variedadId: vId, fincaId, dateKey, stageKey, isPinche: true })
+    }
+  }
+
   interface StageGroup {
     totalCount: number
     totalAreaSampled: number
@@ -254,6 +313,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     fincaId: string
     dateKey: string
     stageKey: typeof STAGE_KEYS[number]
+    hasPinche?: boolean
   }
   const stageGroupAcc = new Map<string, StageGroup>()
   for (const leaf of leafAcc.values()) {
@@ -262,6 +322,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     if (sg) {
       sg.totalCount += leaf.count
       sg.totalAreaSampled += leaf.areaSampled
+      if (leaf.isPinche) sg.hasPinche = true
     } else {
       stageGroupAcc.set(sgKey, {
         totalCount: leaf.count,
@@ -271,6 +332,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
         fincaId: leaf.fincaId,
         dateKey: leaf.dateKey,
         stageKey: leaf.stageKey,
+        hasPinche: Boolean(leaf.isPinche),
       })
     }
   }
@@ -293,9 +355,12 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
   }
 
   for (const sg of stageGroupAcc.values()) {
-    if (sg.totalAreaSampled <= 0) continue
+    // If the group has pinches, we force 100% coverage even if sampled area is 0,
+    // so don't skip those. Otherwise, require sampled area > 0.
+    if (sg.totalAreaSampled <= 0 && !sg.hasPinche) continue
     const areaProductiva = areaByBloqueVar.get(`${sg.bloqueId}|${sg.variedadId}`) || 0
     let samplePct = areaProductiva > 0 ? (sg.totalAreaSampled / areaProductiva) * 100 : 0
+    if (sg.hasPinche) samplePct = 100
     if (samplePct > 100) samplePct = 100
 
     const rowKey = `${sg.bloqueId}|${sg.variedadId}|${sg.fincaId}|${sg.dateKey}`

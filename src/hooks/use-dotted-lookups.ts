@@ -85,6 +85,18 @@ export function useDottedLookups(tableId: string, rows: any[], columns: Column[]
                 { fk: 'id_finca', table: 'finca' },
             ],
         },
+        produccion: {
+            // produccion has direct integer cols: finca, bloque, variedad
+            variedad: [
+                { fk: 'variedad', table: 'variedad' },
+            ],
+            bloque: [
+                { fk: 'bloque', table: 'bloque' },
+            ],
+            finca: [
+                { fk: 'finca', table: 'finca' },
+            ],
+        },
     }
 
     type RelLookup = { mapByRelatedId?: Map<string | number, any>; mapByBasePk?: Map<string | number, any> }

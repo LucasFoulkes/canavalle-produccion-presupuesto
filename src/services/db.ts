@@ -201,6 +201,17 @@ export const TABLES: Record<string, TableConfig> = {
         title: 'Pinche tipo',
         columns: cols('codigo'),
     },
+    produccion: {
+        id: 'produccion',
+        title: 'Producción',
+        columns: cols(
+            'created_at',
+            'finca.nombre',
+            'bloque.nombre',
+            'variedad.nombre',
+            'cantidad',
+        ),
+    },
 }
 
 export function getTableConfig(id: string): TableConfig | undefined {
@@ -243,6 +254,8 @@ export const SERVICE_PK: Record<string, string> = {
     seccion: '__key',
     pinche: 'id',
     pinche_tipo: 'codigo',
+    // produccion has no explicit PK; use synthetic key in Dexie
+    produccion: '__key',
 }
 
 const SERVICES = Object.fromEntries(
@@ -264,6 +277,7 @@ export const {
     variedad: variedadService,
     pinche: pincheService,
     pinche_tipo: pincheTipoService,
+    produccion: produccionService,
 } = SERVICES
 
 // Special cases

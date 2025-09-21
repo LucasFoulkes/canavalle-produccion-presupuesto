@@ -64,10 +64,10 @@ function PrediccionesPage() {
   const columns = React.useMemo(
     () =>
       [
+        { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
         { key: 'finca', header: 'Finca' },
         { key: 'bloque', header: 'Bloque' },
         { key: 'variedad', header: 'Variedad' },
-        { key: 'fecha', header: 'Fecha', render: (v: any) => formatDate(v) },
         { key: 'dias_brotacion', header: STAGE_LABELS.dias_brotacion, render: renderStage('dias_brotacion') },
         { key: 'dias_cincuenta_mm', header: STAGE_LABELS.dias_cincuenta_mm, render: renderStage('dias_cincuenta_mm') },
         { key: 'dias_quince_cm', header: STAGE_LABELS.dias_quince_cm, render: renderStage('dias_quince_cm') },
