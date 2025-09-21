@@ -622,6 +622,7 @@ function ObservationInput({
   const [tipoObservacion, setTipoObservacion] = React.useState('')
   const [cantidad, setCantidad] = React.useState('')
   const [seccion, setSeccion] = React.useState('')
+  const [tipoPinche, setTipoPinche] = React.useState('')
   // Note: previously had a local saving state and a separate handleSave function,
   // but saving is handled by the header button; remove unused local state/function.
 
@@ -647,6 +648,13 @@ function ObservationInput({
       setCantidad(String(counters[tipoObservacion]))
     }
   }, [tipoObservacion, counters])
+
+  // Keep cantidad in sync when selecting a pinche type
+  React.useEffect(() => {
+    if (tipoPinche && pincheCounters[tipoPinche] !== undefined) {
+      setCantidad(String(pincheCounters[tipoPinche]))
+    }
+  }, [tipoPinche, pincheCounters])
 
   const handleIncrement = (typeCode: string) => {
     setTipoObservacion(typeCode)
@@ -685,6 +693,12 @@ function ObservationInput({
         setCounters(prev => ({ ...prev, [tipoObservacion]: num }))
       }
     }
+    if (tipoPinche && value) {
+      const num = parseFloat(value)
+      if (!isNaN(num) && num >= 0) {
+        setPincheCounters(prev => ({ ...prev, [tipoPinche]: num }))
+      }
+    }
   }
 
   // (removed unused local save handler)
@@ -721,6 +735,7 @@ function ObservationInput({
 
                           <button
                             onClick={() => handleIncrement(type.codigo)}
+                            onFocus={() => setTipoObservacion(type.codigo)}
                             className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
                           >
                             <div className="flex items-center justify-center gap-2">
@@ -769,14 +784,17 @@ function ObservationInput({
                           >
                             −
                           </button>
-                          <div className="flex-1 mx-3 py-2 text-center">
+                          <button
+                            onClick={() => setTipoPinche(code)}
+                            className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
+                          >
                             <div className="flex items-center justify-center gap-2">
                               <span className="font-medium">{code}</span>
                               {count > 0 && (
                                 <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">{count}</span>
                               )}
                             </div>
-                          </div>
+                          </button>
                           <button
                             onClick={() => handlePincheIncrement(code)}
                             className="w-10 h-10 rounded-full border bg-background hover:bg-accent flex items-center justify-center text-lg font-medium"
