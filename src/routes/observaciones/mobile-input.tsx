@@ -80,6 +80,19 @@ function MobileObservationInput() {
             )}
             <h1 className="text-lg font-semibold">{getTitle()}</h1>
           </div>
+          {currentStep === 'cama' && (
+            <Button
+              onClick={() => {
+                // Go straight to input to record pinches without cama
+                setSelectedCama(null)
+                setCurrentStep('input')
+              }}
+              size="sm"
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Pinches sin cama
+            </Button>
+          )}
           {currentStep === 'input' && (Object.values(globalCounters).some((c) => c > 0) || Object.values(pincheCounters).some((c) => c > 0)) && (
             <Button
               onClick={async () => {
@@ -97,92 +110,84 @@ function MobileObservationInput() {
                 let savedCount = 0
                 let errorCount = 0
 
-                for (const [tipo, count] of observationsToSave) {
-                  try {
-                    const payload = {
-                      id_cama: selectedCama.id_cama,
-                      tipo_observacion: tipo,
-                      cantidad: count,
-                      ubicacion_seccion: null,
-                      id_usuario: 1,
-                    }
-
-                    console.log(`Saving ${tipo} with count ${count}:`, payload)
-                    console.log('Full cama object:', selectedCama)
-
-                    if (!selectedCama || !selectedCama.id_cama) {
-                      console.error('ERROR: No cama selected or no id_cama!')
-                      alert('Error: No se ha seleccionado una cama')
-                      return
-                    }
-
-                    console.log('About to call observacionService.insert...')
-                    console.log('Navigator online status:', navigator.onLine)
-
-                    // Try saving directly to Dexie first for immediate feedback
-                    const dexieObservation = {
-                      ...payload,
-                      id_observacion: Date.now() + Math.random(), // Temporary ID
-                      creado_en: new Date().toISOString(),
-                      needs_sync: true
-                    }
-
-                    console.log('Saving to Dexie first:', dexieObservation)
-                    await getStore('observacion').put(dexieObservation)
-                    console.log('Saved to Dexie successfully')
-
-                    // Then try to sync to Supabase if online
-                    if (navigator.onLine) {
-                      try {
-                        const { data, error } = await observacionService.insert(payload)
-                        console.log('Service call completed. Data:', data, 'Error:', error)
-
-                        if (error) {
-                          console.error(`Error syncing ${tipo} to Supabase:`, error)
-                          console.error('Full error object:', JSON.stringify(error))
-                          // Don't increment errorCount since we saved to Dexie
-                        } else {
-                          console.log(`Synced ${tipo} to Supabase:`, data)
-                          // Update the Dexie record with the real data from Supabase
-                          if (data) {
-                            // Remove temp row and insert server row to avoid duplicates
-                            try {
-                              await getStore('observacion').delete(dexieObservation.id_observacion)
-                            } catch (e) {
-                              console.debug('Could not remove temp observation from Dexie', e)
-                            }
-                            await getStore('observacion').put({ ...(data as any), needs_sync: false })
-                            console.log('Replaced Dexie temp with Supabase data')
-                          }
-                        }
-                      } catch (syncErr: any) {
-                        console.error(`Exception syncing ${tipo} to Supabase:`, syncErr)
-                        // Don't increment errorCount since we saved to Dexie
+                if (selectedCama && selectedCama.id_cama) {
+                  for (const [tipo, count] of observationsToSave) {
+                    try {
+                      const payload = {
+                        id_cama: selectedCama.id_cama,
+                        tipo_observacion: tipo,
+                        cantidad: count,
+                        ubicacion_seccion: null,
+                        id_usuario: 1,
                       }
-                    } else {
-                      console.log('Offline - observation saved to Dexie only')
-                    }
 
-                    savedCount++
-                  } catch (err: any) {
-                    console.error(`Exception saving ${tipo}:`, err)
-                    console.error('Full exception:', err.message, err.stack)
-                    errorCount++
+                      console.log(`Saving ${tipo} with count ${count}:`, payload)
+                      console.log('Full cama object:', selectedCama)
+
+                      console.log('About to call observacionService.insert...')
+                      console.log('Navigator online status:', navigator.onLine)
+
+                      // Try saving directly to Dexie first for immediate feedback
+                      const dexieObservation = {
+                        ...payload,
+                        id_observacion: Date.now() + Math.random(), // Temporary ID
+                        creado_en: new Date().toISOString(),
+                        needs_sync: true
+                      }
+
+                      console.log('Saving to Dexie first:', dexieObservation)
+                      await getStore('observacion').put(dexieObservation)
+                      console.log('Saved to Dexie successfully')
+
+                      // Then try to sync to Supabase if online
+                      if (navigator.onLine) {
+                        try {
+                          const { data, error } = await observacionService.insert(payload)
+                          console.log('Service call completed. Data:', data, 'Error:', error)
+
+                          if (error) {
+                            console.error(`Error syncing ${tipo} to Supabase:`, error)
+                            console.error('Full error object:', JSON.stringify(error))
+                            // Don't increment errorCount since we saved to Dexie
+                          } else {
+                            console.log(`Synced ${tipo} to Supabase:`, data)
+                            // Update the Dexie record with the real data from Supabase
+                            if (data) {
+                              // Remove temp row and insert server row to avoid duplicates
+                              try {
+                                await getStore('observacion').delete(dexieObservation.id_observacion)
+                              } catch (e) {
+                                console.debug('Could not remove temp observation from Dexie', e)
+                              }
+                              await getStore('observacion').put({ ...(data as any), needs_sync: false })
+                              console.log('Replaced Dexie temp with Supabase data')
+                            }
+                          }
+                        } catch (syncErr: any) {
+                          console.error(`Exception syncing ${tipo} to Supabase:`, syncErr)
+                          // Don't increment errorCount since we saved to Dexie
+                        }
+                      } else {
+                        console.log('Offline - observation saved to Dexie only')
+                      }
+
+                      savedCount++
+                    } catch (err: any) {
+                      console.error(`Exception saving ${tipo}:`, err)
+                      console.error('Full exception:', err.message, err.stack)
+                      errorCount++
+                    }
                   }
+                } else if (observationsToSave.length > 0) {
+                  console.info('Skipping observations since no cama was selected')
                 }
 
                 // Save pinches
                 for (const [tipo, count] of pinchesToSave) {
                   try {
-                    if (!selectedCama || !selectedCama.id_cama) {
-                      console.error('ERROR: No cama selected or no id_cama!')
-                      alert('Error: No se ha seleccionado una cama')
-                      return
-                    }
-
                     const payload = {
                       bloque: selectedBloque?.id_bloque ?? null,
-                      cama: selectedCama.id_cama,
+                      cama: selectedCama?.id_cama ?? null,
                       variedad: selectedVariedad?.id_variedad ?? null,
                       cantidad: count,
                       tipo,
@@ -501,12 +506,6 @@ function VariedadSelection({
           className="flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent active:scale-95"
         >
           <div className="flex items-center gap-3">
-            {variedad.color && (
-              <div
-                className="h-4 w-4 rounded-full"
-                style={{ backgroundColor: variedad.color }}
-              />
-            )}
             <span className="font-medium">{variedad.nombre}</span>
           </div>
           <span className="text-sm text-muted-foreground">
