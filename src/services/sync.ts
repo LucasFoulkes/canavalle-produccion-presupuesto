@@ -1,5 +1,5 @@
 ﻿import { AnyRow, getStore, initDexieSchema } from '@/lib/dexie'
-import { SERVICE_PK, observacionService, pincheService } from '@/services/db'
+import { SERVICE_PK, observacionService, pincheService, produccionService, puntosGpsService } from '@/services/db'
 import { supabase } from '@/lib/supabase'
 
 export type SyncResult = { table: string; count: number }
@@ -211,6 +211,129 @@ export async function pushPendingPinches(): Promise<PushResult> {
       result.failed++
       // keep the row for future retries
     }
+  }
+
+  return result
+}
+
+// --- Outbound (push) sync: upload offline-created produccion ---
+export async function pushPendingProduccion(): Promise<PushResult> {
+  await initDexieSchema()
+
+  const result: PushResult = { attempted: 0, succeeded: 0, failed: 0 }
+
+  if (isOffline()) {
+    console.info('[push] skipped produccion: browser is offline')
+    return result
+  }
+
+  const store = getStore('produccion')
+  const all = (await store.toArray()) as AnyRow[]
+  type PendingProd = {
+    __key: string
+    finca: number | string | null
+    bloque: number | string | null
+    variedad: number | string | null
+    cantidad: number
+    needs_sync?: boolean
+    [k: string]: unknown
+  }
+  const pending = all.filter((r) => (r as PendingProd).needs_sync) as PendingProd[]
+
+  if (pending.length === 0) return result
+
+  let anySucceeded = false
+  for (const row of pending) {
+    result.attempted++
+    const tempKey = row.__key
+    const payload = {
+      finca: row.finca ?? null,
+      bloque: row.bloque ?? null,
+      variedad: row.variedad ?? null,
+      cantidad: row.cantidad,
+    }
+
+    try {
+      const { error } = await produccionService.insert(payload)
+      if (error) throw error
+
+      // Remove temp row; we rely on next pull to bring server rows
+      if (typeof tempKey !== 'undefined') {
+        try { await store.delete(tempKey) } catch (err) { console.debug('[push] could not delete temp produccion', err) }
+      }
+      result.succeeded++
+      anySucceeded = true
+    } catch (e) {
+      console.warn('[push] failed to upload produccion', e)
+      result.failed++
+      // keep the row for future retries
+    }
+  }
+
+  // If at least one row was uploaded, refresh the produccion table
+  if (anySucceeded) {
+    try { await syncTable('produccion') } catch { /* ignore */ }
+  }
+
+  return result
+}
+
+// --- Outbound (push) sync: upload offline-captured puntos_gps ---
+export async function pushPendingPuntosGps(): Promise<PushResult> {
+  await initDexieSchema()
+
+  const result: PushResult = { attempted: 0, succeeded: 0, failed: 0 }
+
+  if (isOffline()) {
+    console.info('[push] skipped puntos_gps: browser is offline')
+    return result
+  }
+
+  const store = getStore('puntos_gps')
+  const all = (await store.toArray()) as AnyRow[]
+  type PendingGps = {
+    __key: string
+    latitud: number
+    longitud: number
+    precision?: number | null
+    altitud?: number | null
+    capturado_en: string
+    observacion?: boolean
+    usuario_id?: number | null
+    needs_sync?: boolean
+  }
+  const pending = all.filter((r) => (r as PendingGps).needs_sync) as PendingGps[]
+
+  if (pending.length === 0) return result
+
+  let anySucceeded = false
+  for (const row of pending) {
+    result.attempted++
+    const tempKey = row.__key
+    const payload = {
+      latitud: row.latitud,
+      longitud: row.longitud,
+      precision: row.precision ?? null,
+      altitud: row.altitud ?? null,
+      capturado_en: row.capturado_en,
+      observacion: row.observacion ?? false,
+      usuario_id: row.usuario_id ?? null,
+    }
+
+    try {
+      const { error } = await puntosGpsService.insert(payload as any)
+      if (error) throw error
+      try { await store.delete(tempKey) } catch { }
+      result.succeeded++
+      anySucceeded = true
+    } catch (e) {
+      console.warn('[push] failed to upload puntos_gps', e)
+      result.failed++
+    }
+  }
+
+  if (anySucceeded) {
+    try { await syncTable('puntos_gps') } catch { }
   }
 
   return result

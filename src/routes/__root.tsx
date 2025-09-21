@@ -1,4 +1,5 @@
 import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
+import * as React from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { ChevronRight, ClipboardList, Home } from 'lucide-react'
 import { FilterToolbar } from '@/components/filter-toolbar'
@@ -23,6 +24,9 @@ import {
 import { TABLES } from '@/services/db'
 import { TableFilterProvider } from '@/hooks/use-table-filter'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { useGpsTracker } from '@/hooks/use-gps-tracker'
+import { Button } from '@/components/ui/button'
+import { getCurrentPosition } from '@/services/gps'
 
 const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
@@ -30,6 +34,7 @@ const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Fenología', items: ['estados_fenologicos', 'estado_fenologico_tipo'] },
   { label: 'Observaciones', items: ['observacion', 'pinche', 'produccion'] },
   { label: 'Catálogos', items: ['grupo_cama_estado', 'grupo_cama_tipo_planta', 'pinche_tipo'] },
+  { label: 'Geolocalización', items: ['puntos_gps'] },
   { label: 'Sistema', items: ['usuario'] },
 ]
 
@@ -66,6 +71,29 @@ const RootLayout = () => {
   })
 
   if (isMobile) {
+    // GPS tracker controlled by user gesture to ensure PWA permission prompts work
+    const tracker = useGpsTracker({ minDistanceMeters: 1, usuarioId: null })
+    const [gpsOn, setGpsOn] = React.useState(false)
+    React.useEffect(() => {
+      if (gpsOn) {
+        tracker.start()
+        return () => tracker.stop()
+      }
+      return undefined
+    }, [gpsOn, tracker])
+
+    const toggleGps = React.useCallback(async () => {
+      if (!gpsOn) {
+        try {
+          await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 10000 })
+          setGpsOn(true)
+        } catch {
+          alert('No se pudo activar GPS. Revise permisos de ubicación para la app instalada.')
+        }
+      } else {
+        setGpsOn(false)
+      }
+    }, [gpsOn])
     return (
       <TableFilterProvider>
         <SidebarProvider>
@@ -74,11 +102,16 @@ const RootLayout = () => {
               <header className="border-b px-3 py-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium truncate">{currentTitle}</span>
-                  {!online && (
-                    <Badge variant="outline" className="bg-destructive/10 text-destructive">
-                      Sin conexión
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {!online && (
+                      <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                        Sin conexión
+                      </Badge>
+                    )}
+                    <Button size="sm" variant={gpsOn ? 'default' : 'outline'} onClick={toggleGps}>
+                      {gpsOn ? 'GPS: On' : 'GPS: Off'}
+                    </Button>
+                  </div>
                 </div>
               </header>
             )}
@@ -88,6 +121,9 @@ const RootLayout = () => {
                   <Badge variant="outline" className="bg-destructive/10 text-destructive">
                     Sin conexión
                   </Badge>
+                  <Button size="sm" variant={gpsOn ? 'default' : 'outline'} onClick={toggleGps}>
+                    {gpsOn ? 'GPS: On' : 'GPS: Off'}
+                  </Button>
                 </div>
               </header>
             )}

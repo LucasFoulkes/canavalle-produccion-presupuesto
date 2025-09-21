@@ -7,7 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { filterObservationTypes } from '@/config/observation-types'
-import { observacionService, pincheService } from '@/services/db'
+import { observacionService, pincheService, produccionService } from '@/services/db'
+import { getCurrentPosition, saveGpsPoint } from '@/services/gps'
+import { syncTable } from '@/services/sync'
 
 type Step = 'finca' | 'bloque' | 'variedad' | 'cama' | 'input'
 
@@ -24,6 +26,7 @@ function MobileObservationInput() {
   const [searchQuery, setSearchQuery] = React.useState('')
   const [globalCounters, setGlobalCounters] = React.useState<Record<string, number>>({})
   const [pincheCounters, setPincheCounters] = React.useState<Record<string, number>>({})
+  const [produccionCount, setProduccionCount] = React.useState<number>(0)
 
   const handleBack = () => {
     switch (currentStep) {
@@ -90,16 +93,17 @@ function MobileObservationInput() {
               size="sm"
               className="bg-blue-600 text-white hover:bg-blue-700"
             >
-              Pinches sin cama
+              Pinches / Producción sin cama
             </Button>
           )}
-          {currentStep === 'input' && (Object.values(globalCounters).some((c) => c > 0) || Object.values(pincheCounters).some((c) => c > 0)) && (
+          {currentStep === 'input' && (Object.values(globalCounters).some((c) => c > 0) || Object.values(pincheCounters).some((c) => c > 0) || produccionCount > 0) && (
             <Button
               onClick={async () => {
                 const observationsToSave = Object.entries(globalCounters).filter(([_, count]) => count > 0)
                 const pinchesToSave = Object.entries(pincheCounters).filter(([_, count]) => count > 0)
+                const hasProduccion = produccionCount > 0
 
-                if (observationsToSave.length === 0 && pinchesToSave.length === 0) {
+                if (observationsToSave.length === 0 && pinchesToSave.length === 0 && !hasProduccion) {
                   alert('No hay datos para guardar. Incremente al menos un contador.')
                   return
                 }
@@ -171,6 +175,20 @@ function MobileObservationInput() {
                         console.log('Offline - observation saved to Dexie only')
                       }
 
+                      // Best-effort: log GPS with observacion=true
+                      try {
+                        const pos = await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
+                        await saveGpsPoint({
+                          latitud: pos.coords.latitude,
+                          longitud: pos.coords.longitude,
+                          precision: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+                          altitud: Number.isFinite(pos.coords.altitude as any) ? (pos.coords.altitude as number) : null,
+                          capturado_en: new Date().toISOString(),
+                          observacion: true,
+                          usuario_id: 1,
+                        })
+                      } catch { }
+
                       savedCount++
                     } catch (err: any) {
                       console.error(`Exception saving ${tipo}:`, err)
@@ -224,11 +242,54 @@ function MobileObservationInput() {
                   }
                 }
 
+                // Save producción (single counter per variedad)
+                if (hasProduccion) {
+                  try {
+                    const payload = {
+                      finca: selectedFinca?.id_finca ?? null,
+                      bloque: selectedBloque?.id_bloque ?? null,
+                      variedad: selectedVariedad?.id_variedad ?? null,
+                      cantidad: produccionCount,
+                    }
+
+                    // Save to Dexie first with synthetic key
+                    const dexieRow = {
+                      __key: `${Date.now()}-${Math.random()}`,
+                      ...payload,
+                      created_at: new Date().toISOString(),
+                      needs_sync: true,
+                    }
+                    await getStore('produccion').put(dexieRow)
+
+                    if (navigator.onLine) {
+                      try {
+                        const { error } = await produccionService.insert(payload)
+                        if (error) {
+                          console.error('Error syncing producción a Supabase:', error)
+                        } else {
+                          // Remove temp row; rely on pull to hydrate server row
+                          try { await getStore('produccion').delete(dexieRow.__key) } catch (e) { console.debug('No se pudo eliminar produccion temporal', e) }
+                          // Refresh only the produccion table so the new server row appears immediately
+                          try { await syncTable('produccion') } catch (e) { console.debug('No se pudo sincronizar produccion inmediatamente', e) }
+                        }
+                      } catch (syncErr) {
+                        console.error('Exception syncing producción:', syncErr)
+                      }
+                    }
+
+                    savedCount++
+                  } catch (err: any) {
+                    console.error('Exception guardando producción:', err)
+                    errorCount++
+                  }
+                }
+
                 // Reset counters for saved observations
                 if (savedCount > 0) {
                   setGlobalCounters({})
                   setPincheCounters({})
-                  alert(`Guardadas ${savedCount} observaciones${errorCount > 0 ? ` (${errorCount} errores)` : ''}`)
+                  setProduccionCount(0)
+                  alert(`Guardadas ${savedCount} entradas${errorCount > 0 ? ` (${errorCount} errores)` : ''}`)
 
                   // Go back to cama selection
                   setCurrentStep('cama')
@@ -240,7 +301,7 @@ function MobileObservationInput() {
               size="sm"
               className="bg-green-600 text-white hover:bg-green-700"
             >
-              Guardar ({[...Object.values(globalCounters), ...Object.values(pincheCounters)].filter((c) => c > 0).length})
+              Guardar ({[...Object.values(globalCounters), ...Object.values(pincheCounters)].filter((c) => c > 0).length + (produccionCount > 0 ? 1 : 0)})
             </Button>
           )}
         </div>
@@ -303,6 +364,8 @@ function MobileObservationInput() {
             setCounters={setGlobalCounters}
             pincheCounters={pincheCounters}
             setPincheCounters={setPincheCounters}
+            produccionCount={produccionCount}
+            setProduccionCount={setProduccionCount}
             onComplete={() => {
               setCurrentStep('cama')
               setSelectedCama(null)
@@ -603,6 +666,8 @@ function ObservationInput({
   setCounters,
   pincheCounters,
   setPincheCounters,
+  produccionCount,
+  setProduccionCount,
   onComplete: _onComplete,
 }: {
   finca: any
@@ -613,6 +678,8 @@ function ObservationInput({
   setCounters: React.Dispatch<React.SetStateAction<Record<string, number>>>
   pincheCounters: Record<string, number>
   setPincheCounters: React.Dispatch<React.SetStateAction<Record<string, number>>>
+  produccionCount: number
+  setProduccionCount: React.Dispatch<React.SetStateAction<number>>
   onComplete: () => void
 }) {
   // Intentionally unused props kept for API compatibility with parent
@@ -623,6 +690,7 @@ function ObservationInput({
   const [cantidad, setCantidad] = React.useState('')
   const [seccion, setSeccion] = React.useState('')
   const [tipoPinche, setTipoPinche] = React.useState('')
+  const [produccionSelected, setProduccionSelected] = React.useState(false)
   // Note: previously had a local saving state and a separate handleSave function,
   // but saving is handled by the header button; remove unused local state/function.
 
@@ -655,6 +723,13 @@ function ObservationInput({
       setCantidad(String(pincheCounters[tipoPinche]))
     }
   }, [tipoPinche, pincheCounters])
+
+  // Keep cantidad in sync when selecting producción
+  React.useEffect(() => {
+    if (produccionSelected) {
+      setCantidad(String(produccionCount || 0))
+    }
+  }, [produccionSelected, produccionCount])
 
   const handleIncrement = (typeCode: string) => {
     setTipoObservacion(typeCode)
@@ -697,6 +772,12 @@ function ObservationInput({
       const num = parseFloat(value)
       if (!isNaN(num) && num >= 0) {
         setPincheCounters(prev => ({ ...prev, [tipoPinche]: num }))
+      }
+    }
+    if (produccionSelected && value) {
+      const num = parseFloat(value)
+      if (!isNaN(num) && num >= 0) {
+        setProduccionCount(num)
       }
     }
   }
@@ -776,7 +857,7 @@ function ObservationInput({
                   const code = String((type as any).codigo ?? '')
                   const count = pincheCounters[code] || 0
                   return (
-                    <div key={code} className={cn('w-full rounded-lg border transition-colors', count > 0 ? 'border-primary bg-primary/10' : 'border-border bg-card')}>
+                    <div key={code} className={cn('w-full rounded-lg border transition-colors', count > 0 || tipoPinche === code ? 'border-primary bg-primary/10' : 'border-border bg-card')}>
                       <div className="p-3">
                         <div className="flex items-center justify-between">
                           <button
@@ -787,7 +868,7 @@ function ObservationInput({
                             −
                           </button>
                           <button
-                            onClick={() => setTipoPinche(code)}
+                            onClick={() => { setTipoPinche(code); setProduccionSelected(false) }}
                             className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
                           >
                             <div className="flex items-center justify-center gap-2">
@@ -812,6 +893,40 @@ function ObservationInput({
             ) : (
               <div className="text-sm text-muted-foreground">Cargando tipos de pinches...</div>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Producción</label>
+            <div className={cn('w-full rounded-lg border transition-colors', produccionSelected || (produccionCount || 0) > 0 ? 'border-primary bg-primary/10' : 'border-border bg-card')}>
+              <div className="p-3">
+                <div className="flex items-center justify-between">
+                  <button
+                    onClick={() => setProduccionCount((c) => Math.max(0, (c || 0) - 1))}
+                    disabled={(produccionCount || 0) === 0}
+                    className="w-10 h-10 rounded-full border bg-background hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-lg font-medium"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => { setProduccionSelected(true); setTipoPinche(''); setTipoObservacion('') }}
+                    className="flex-1 mx-3 py-2 text-center hover:bg-accent/50 rounded-md transition-colors"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="font-medium">Cantidad cortada</span>
+                      {(produccionCount || 0) > 0 && (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary text-primary-foreground">{produccionCount}</span>
+                      )}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setProduccionCount((c) => (c || 0) + 1)}
+                    className="w-10 h-10 rounded-full border bg-background hover:bg-accent flex items-center justify-center text-lg font-medium"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -131,7 +131,7 @@ function Page() {
     registerColumns(columns.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
   }, [table, columns, registerColumns])
   // Some tables (e.g., 'pinche') have nullable FKs; don't block rendering waiting for all dotted lookups
-  const requireAllLookups = table !== 'pinche'
+  const requireAllLookups = table !== 'pinche' && table !== 'produccion' && table !== 'puntos_gps'
   const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: requireAllLookups })
   const finalLoading = rows == null || relationLoading
   const filtered = React.useMemo(() => {

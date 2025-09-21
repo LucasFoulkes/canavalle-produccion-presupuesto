@@ -212,6 +212,19 @@ export const TABLES: Record<string, TableConfig> = {
             'cantidad',
         ),
     },
+    puntos_gps: {
+        id: 'puntos_gps',
+        title: 'Puntos GPS',
+        columns: [
+            { key: 'capturado_en', header: 'Capturado' },
+            { key: 'latitud', header: 'Latitud' },
+            { key: 'longitud', header: 'Longitud' },
+            { key: 'precision', header: 'Precisión (m)' },
+            { key: 'altitud', header: 'Altitud (m)' },
+            { key: 'observacion', header: '¿Observación?' },
+            { key: 'usuario.nombres', header: 'Usuario' },
+        ],
+    },
 }
 
 export function getTableConfig(id: string): TableConfig | undefined {
@@ -256,6 +269,8 @@ export const SERVICE_PK: Record<string, string> = {
     pinche_tipo: 'codigo',
     // produccion has no explicit PK; use synthetic key in Dexie
     produccion: '__key',
+    // puntos_gps: PK unknown; use synthetic for view-only sync
+    puntos_gps: '__key',
 }
 
 const SERVICES = Object.fromEntries(
@@ -278,6 +293,7 @@ export const {
     pinche: pincheService,
     pinche_tipo: pincheTipoService,
     produccion: produccionService,
+    puntos_gps: puntosGpsService,
 } = SERVICES
 
 // Special cases

@@ -97,6 +97,11 @@ export function useDottedLookups(tableId: string, rows: any[], columns: Column[]
                 { fk: 'finca', table: 'finca' },
             ],
         },
+        puntos_gps: {
+            usuario: [
+                { fk: 'usuario_id', table: 'usuario' },
+            ],
+        },
     }
 
     type RelLookup = { mapByRelatedId?: Map<string | number, any>; mapByBasePk?: Map<string | number, any> }

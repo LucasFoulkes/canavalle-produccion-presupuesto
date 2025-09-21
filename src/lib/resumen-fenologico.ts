@@ -60,6 +60,8 @@ export const STAGE_LABELS: Record<typeof STAGE_KEYS[number], string> = {
 export type ResumenFenologicoResult = {
   rows: ResumenFenologicoRow[]
   estados: Map<string, any[]>
+  // Sum of producción by group and date to allow stage adjustments in predictions
+  produccion?: Map<string, number> // key: `${bloqueId}|${variedadId}|${fincaId}|${date}` -> cantidad total
 }
 
 const normalize = (s: any) =>
@@ -128,7 +130,7 @@ const mapBy = <T extends Record<string, any>>(arr: T[], key: string) => {
 }
 
 export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult> {
-  const [observaciones, pinches, camas, grupos, bloques, fincas, variedades, estadosFenologicos] = await Promise.all([
+  const [observaciones, pinches, camas, grupos, bloques, fincas, variedades, estadosFenologicos, producciones] = await Promise.all([
     getStore('observacion').toArray(),
     getStore('pinche').toArray(),
     getStore('cama').toArray(),
@@ -137,6 +139,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     getStore('finca').toArray(),
     getStore('variedad').toArray(),
     getStore('estados_fenologicos').toArray(),
+    getStore('produccion').toArray(),
   ])
 
   let seccionLargoM = 0
@@ -194,7 +197,8 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     fincaId: string
     dateKey: string
     stageKey: typeof STAGE_KEYS[number]
-    isPinche?: boolean
+    // Events like pinche/produccion imply full coverage even without sampled area
+    isFullCoverage?: boolean
   }
   const leafAcc = new Map<string, Leaf>()
   const dateTouched = new Map<string, Set<string>>()
@@ -293,16 +297,58 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     const cant = parseNumber((p as any)?.cantidad)
     if (cant <= 0) continue
 
-    // For pinche, force 100% coverage later by marking isPinche.
+    // For pinche, force 100% coverage later by marking isFullCoverage.
     // We can set areaSampled to 0 here; percentage will be overridden.
     const leafKey = `${bId}|${vId}|${dateKey}|${stageKey}|pinche|${String(p?.id ?? Math.random())}`
     const existing = leafAcc.get(leafKey)
     if (existing) {
       existing.count += cant
-      existing.isPinche = true
+      existing.isFullCoverage = true
     } else {
-      leafAcc.set(leafKey, { count: cant, areaSampled: 0, bloqueId: bId, variedadId: vId, fincaId, dateKey, stageKey, isPinche: true })
+      leafAcc.set(leafKey, { count: cant, areaSampled: 0, bloqueId: bId, variedadId: vId, fincaId, dateKey, stageKey, isFullCoverage: true })
     }
+  }
+
+  // Integrate producción similarly: add as 'brotacion' with full coverage for that bloque/variedad on date.
+  // Also, accumulate producción totals by (bloque,variedad,finca,date) for later cosecha subtraction.
+  const produccionByKeyDate = new Map<string, number>()
+  for (const pr of (producciones as any[])) {
+    const bId = String(pr?.bloque ?? '')
+    const vId = String(pr?.variedad ?? '')
+    const fId = String(pr?.finca ?? '')
+    if (!bId || !vId) continue
+
+    const rawDate: any = (pr as any)?.created_at
+      ?? (pr as any)?.creado_en
+      ?? (pr as any)?.fecha
+      ?? (pr as any)?.actualizado_en
+      ?? null
+    let dateKey = ''
+    if (rawDate) {
+      const d = new Date(rawDate)
+      if (!Number.isNaN(d.getTime())) dateKey = d.toISOString().slice(0, 10)
+    }
+    if (!dateKey) continue
+
+    const dvKey = `${bId}|${vId}`
+    if (!dateTouched.has(dvKey)) dateTouched.set(dvKey, new Set())
+    dateTouched.get(dvKey)!.add(dateKey)
+
+    const stageKey: typeof STAGE_KEYS[number] = 'dias_brotacion'
+    const cant = parseNumber((pr as any)?.cantidad)
+    if (cant <= 0) continue
+
+    const leafKey = `${bId}|${vId}|${dateKey}|${stageKey}|produccion|${String((pr as any)?.__key ?? Math.random())}`
+    const existing = leafAcc.get(leafKey)
+    if (existing) {
+      existing.count += cant
+      existing.isFullCoverage = true
+    } else {
+      leafAcc.set(leafKey, { count: cant, areaSampled: 0, bloqueId: bId, variedadId: vId, fincaId: fId, dateKey, stageKey, isFullCoverage: true })
+    }
+
+    const prodKey = `${bId}|${vId}|${fId}|${dateKey}`
+    produccionByKeyDate.set(prodKey, (produccionByKeyDate.get(prodKey) || 0) + cant)
   }
 
   interface StageGroup {
@@ -313,7 +359,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     fincaId: string
     dateKey: string
     stageKey: typeof STAGE_KEYS[number]
-    hasPinche?: boolean
+    hasFullCoverage?: boolean
   }
   const stageGroupAcc = new Map<string, StageGroup>()
   for (const leaf of leafAcc.values()) {
@@ -322,7 +368,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     if (sg) {
       sg.totalCount += leaf.count
       sg.totalAreaSampled += leaf.areaSampled
-      if (leaf.isPinche) sg.hasPinche = true
+      if (leaf.isFullCoverage) sg.hasFullCoverage = true
     } else {
       stageGroupAcc.set(sgKey, {
         totalCount: leaf.count,
@@ -332,7 +378,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
         fincaId: leaf.fincaId,
         dateKey: leaf.dateKey,
         stageKey: leaf.stageKey,
-        hasPinche: Boolean(leaf.isPinche),
+        hasFullCoverage: Boolean(leaf.isFullCoverage),
       })
     }
   }
@@ -355,12 +401,12 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
   }
 
   for (const sg of stageGroupAcc.values()) {
-    // If the group has pinches, we force 100% coverage even if sampled area is 0,
-    // so don't skip those. Otherwise, require sampled area > 0.
-    if (sg.totalAreaSampled <= 0 && !sg.hasPinche) continue
+    // If the group has full-coverage events (pinches/producción), force 100% coverage even if sampled area is 0.
+    // Otherwise, require sampled area > 0.
+    if (sg.totalAreaSampled <= 0 && !sg.hasFullCoverage) continue
     const areaProductiva = areaByBloqueVar.get(`${sg.bloqueId}|${sg.variedadId}`) || 0
     let samplePct = areaProductiva > 0 ? (sg.totalAreaSampled / areaProductiva) * 100 : 0
-    if (sg.hasPinche) samplePct = 100
+    if (sg.hasFullCoverage) samplePct = 100
     if (samplePct > 100) samplePct = 100
 
     const rowKey = `${sg.bloqueId}|${sg.variedadId}|${sg.fincaId}|${sg.dateKey}`
@@ -436,7 +482,7 @@ export async function fetchResumenFenologico(): Promise<ResumenFenologicoResult>
     (a.fecha || '').localeCompare(b.fecha || '')
   )
 
-  return { rows, estados: estadosByKey }
+  return { rows, estados: estadosByKey, produccion: produccionByKeyDate }
 }
 
 export const resumenStageHeaders = STAGE_KEYS.map((key) => ({

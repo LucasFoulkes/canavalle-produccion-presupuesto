@@ -87,7 +87,26 @@ export function buildPredictionTimeline(
     const dates = Array.from(context.timeline.keys()).sort()
     dates.forEach((dateKey) => {
       const row = context.timeline.get(dateKey)
-      if (row) collected.push(row)
+      if (!row) return
+
+      // Adjustment: subtract producción from cosecha for this group/date.
+      // Note: We already added producción to brotación in the aggregation step,
+      // so do NOT add it again here to avoid double-counting.
+      const prodMap = result.produccion
+      if (prodMap) {
+        const key = `${context.meta.bloqueId}|${context.meta.variedadId}|${context.meta.fincaId}|${dateKey}`
+        const prod = toNumber(prodMap.get(key))
+        if (prod > 0) {
+          const cosecha = toNumber((row as any).dias_cosecha)
+          const cosechaPct = toNumber((row as any).dias_cosecha_pct)
+            // Subtract from cosecha (non-negative)
+            ; (row as any).dias_cosecha = Math.max(0, cosecha - prod)
+            // Keep percentage accumulation unchanged — it reflects coverage, not quantity scaled after subtraction
+            ; (row as any).dias_cosecha_pct = cosechaPct
+        }
+      }
+
+      collected.push(row)
     })
   })
 
