@@ -30,7 +30,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { useGpsTracker } from '@/hooks/use-gps-tracker'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+// Removed mobile search dialog
 
 const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
@@ -158,7 +158,6 @@ const RootLayout = () => {
       .slice(0, 10)
   }, [q, allTables])
   const clearSearch = () => setQ('')
-  const [openSearchMobile, setOpenSearchMobile] = React.useState(false)
 
   if (isMobile) {
     // Mobile layout: show a top header always, with login/logout and GPS toggle
@@ -179,41 +178,6 @@ const RootLayout = () => {
                   )}
                 </div>
                 <div className="flex items-center justify-end gap-2">
-                  <Dialog open={openSearchMobile} onOpenChange={setOpenSearchMobile}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="outline">Buscar</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[420px]">
-                      <DialogHeader>
-                        <DialogTitle>Buscar tabla</DialogTitle>
-                      </DialogHeader>
-                      <div className="mt-2 space-y-2">
-                        <input
-                          value={q}
-                          onChange={(e) => setQ(e.target.value)}
-                          placeholder="Buscar por nombre o id"
-                          className="w-full h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-2"
-                          autoFocus
-                        />
-                        <div className="max-h-64 overflow-auto rounded-md border">
-                          {results.length === 0 ? (
-                            <div className="p-3 text-sm text-muted-foreground">Sin resultados</div>
-                          ) : results.map(r => (
-                            <Link
-                              key={r.id}
-                              to="/db/$table"
-                              params={{ table: r.id }}
-                              className="block px-3 py-2 text-sm hover:bg-muted"
-                              onClick={() => { setOpenSearchMobile(false); clearSearch() }}
-                            >
-                              {r.title}
-                              <span className="text-muted-foreground ml-2">({r.id})</span>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                   {!online && (
                     <Badge variant="outline" className="bg-destructive/10 text-destructive">
                       Sin conexión

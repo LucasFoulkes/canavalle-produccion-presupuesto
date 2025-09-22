@@ -86,19 +86,19 @@ function MiniCosechaChart({ rows, byWeek, onToggle }: { rows: Row[]; byWeek: boo
 
   return (
     <div className="w-full">
-      <div className="mb-2 flex flex-wrap items-center gap-2">
+      <div className="mb-2 flex items-center gap-2 min-w-0">
         <Button size="sm" variant="outline" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onToggle() }}>
           {byWeek ? 'Ver por día' : 'Por semana'}
         </Button>
-        <div className="w-full sm:w-auto sm:ml-auto" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+        <div className="ml-auto flex-1 min-w-0" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
           <Popover open={openCombo} onOpenChange={setOpenCombo}>
             <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" aria-expanded={openCombo} className="h-8 w-full sm:w-[220px] max-w-full justify-between">
-                {variedad === 'todas' ? 'Todas las variedades' : variedad}
+              <Button variant="outline" role="combobox" aria-expanded={openCombo} className="h-8 w-full min-w-0 justify-between">
+                <span className="truncate text-left">{variedad === 'todas' ? 'Todas las variedades' : variedad}</span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[220px] p-0" align="end" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
+            <PopoverContent className="w-[260px] max-w-[80vw] p-0" align="end" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
               <Command>
                 <CommandInput placeholder="Buscar variedad..." />
                 <CommandList>
@@ -392,11 +392,11 @@ function LandingCosechaVariedad() {
         </CardContent>
       </Card>
 
-      {/* Cosecha por variedad - second on mobile */}
+      {/* Cosecha - second on mobile */}
       <Card className="order-2 md:order-none cursor-pointer card-hover transition-colors hover:bg-accent/20" onClick={() => setFocus('charts')}>
         <CardHeader className="pb-2 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
-          <CardTitle className="text-base">Cosecha por variedad</CardTitle>
+          <CardTitle className="text-base">Cosecha</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           <MiniCosechaChart rows={tableSource} byWeek={byWeek} onToggle={() => setByWeek(!byWeek)} />
