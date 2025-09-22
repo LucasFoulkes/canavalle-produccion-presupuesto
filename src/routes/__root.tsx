@@ -67,7 +67,7 @@ const RootLayout = () => {
   const isMobile = useIsMobile()
   const { user, logout } = useAuth()
   // Always declare GPS tracker hooks at the top level to keep hooks order stable
-  const { start: startGps, stop: stopGps } = useGpsTracker({ minDistanceMeters: 1, usuarioId: user?.id_usuario ?? null })
+  const { start: startGps, stop: stopGps } = useGpsTracker({ minDistanceMeters: 3, minAccuracyMeters: 25, usuarioId: user?.id_usuario ?? null })
   // Desktop-only: control which sidebar groups are open (accordion behavior)
   const [openTop, setOpenTop] = React.useState<"tablas" | "resumenes" | "predicciones" | null>("tablas")
   const [openTableGroup, setOpenTableGroup] = React.useState<string | null>(TABLE_GROUPS[0]?.label ?? null)
@@ -264,8 +264,8 @@ const RootLayout = () => {
                 </div>
               </div>
             </header>
-            <div className="flex-1 min-h-0 min-w-0 overflow-auto px-3 pb-24">
-              <div className="animate-fade-in-up min-h-full">
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-3 pb-24">
+              <div className="animate-fade-in-up h-full">
                 <Outlet />
               </div>
             </div>
@@ -484,11 +484,22 @@ const RootLayout = () => {
               </div>
             ) : null}
             <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-              <div className={isHome ? "px-5 pb-5" : "container-app px-5 pb-5"}>
-                <div className="animate-fade-in-up h-full">
-                  <Outlet />
-                </div>
-              </div>
+              {(() => {
+                // Use a fluid container for home and all table-heavy routes (db, estimados, predicciones)
+                const path = routerState.location.pathname
+                const isDb = path.startsWith('/db/')
+                const isEstimados = path.startsWith('/estimados')
+                const isPredicciones = path.startsWith('/predicciones')
+                const isFluid = isHome || isDb || isEstimados || isPredicciones
+                const containerClass = isFluid ? 'px-5 pb-5 h-full' : 'container-app px-5 pb-5 h-full'
+                return (
+                  <div className={containerClass}>
+                    <div className="animate-fade-in-up h-full">
+                      <Outlet />
+                    </div>
+                  </div>
+                )
+              })()}
             </div>
           </SidebarInset>
         </div>

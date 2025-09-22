@@ -112,7 +112,7 @@ function Page() {
           const s0: any = (secciones as any[])[0]
           seccionLargoM = Number(s0?.largo_m) || 0
         }
-      } catch {}
+      } catch { }
 
       const gruposById = mapBy(grupos as any[], 'id_grupo')
       const camasById = mapBy(camas as any[], 'id_cama')
@@ -185,9 +185,13 @@ function Page() {
     return (
       <div className={wrapperClass}>
         {loading ? (
-          <DataTableSkeleton columns={columns as any} rows={8} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <DataTableSkeleton columns={columns as any} rows={8} />
+          </div>
         ) : (
-          <DataTable caption={`${displayRows.length}`} columns={columns} rows={displayRows} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <DataTable caption={`${displayRows.length}`} columns={columns} rows={displayRows} />
+          </div>
         )}
       </div>
     )

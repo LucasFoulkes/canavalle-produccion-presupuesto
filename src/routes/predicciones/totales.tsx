@@ -189,16 +189,18 @@ function PrediccionesTotalesPage() {
       ) : loading ? (
         <DataTableSkeleton columns={columns as any} rows={8} />
       ) : (
-        <DataTable<ResumenFenologicoRow>
-          caption={`${filteredRows?.length ?? 0}`}
-          columns={columns}
-          rows={filteredRows ?? []}
-          getRowKey={(row) => row.rowKey}
-          onRowClick={(row) => {
-            setSelectedKey(row.rowKey)
-            setDialogOpen(true)
-          }}
-        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DataTable<ResumenFenologicoRow>
+            caption={`${filteredRows?.length ?? 0}`}
+            columns={columns}
+            rows={filteredRows ?? []}
+            getRowKey={(row) => row.rowKey}
+            onRowClick={(row) => {
+              setSelectedKey(row.rowKey)
+              setDialogOpen(true)
+            }}
+          />
+        </div>
       )}
       <Dialog
         open={dialogOpen}

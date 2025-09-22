@@ -186,16 +186,18 @@ function Page() {
             {loading ? (
                 <DataTableSkeleton columns={columns as any} rows={8} />
             ) : (
-                <DataTable
-                    caption={`${rows?.length ?? 0}`}
-                    columns={columns}
-                    rows={rows ?? []}
-                    getRowKey={(r: Row) => `${r.id_cama}|${r.tipo_observacion}`}
-                    onRowClick={(r: Row) => {
-                        setSelectedKey(`${r.id_cama}|${r.tipo_observacion}`)
-                        setOpen(true)
-                    }}
-                />
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <DataTable
+                        caption={`${rows?.length ?? 0}`}
+                        columns={columns}
+                        rows={rows ?? []}
+                        getRowKey={(r: Row) => `${r.id_cama}|${r.tipo_observacion}`}
+                        onRowClick={(r: Row) => {
+                            setSelectedKey(`${r.id_cama}|${r.tipo_observacion}`)
+                            setOpen(true)
+                        }}
+                    />
+                </div>
             )}
 
             <Dialog open={open} onOpenChange={setOpen}>

@@ -274,7 +274,7 @@ export async function pushPendingProduccion(): Promise<PushResult> {
 
   // If at least one row was uploaded, refresh the produccion table
   if (anySucceeded) {
-    try { await syncTable('produccion') } catch { /* ignore */ }
+    try { await syncTable('produccion') } catch (err) { console.debug('[push] ignore produccion refresh error', err) }
   }
 
   return result
@@ -325,7 +325,7 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
     try {
       const { error } = await puntosGpsService.insert(payload as any)
       if (error) throw error
-      if (tempId) { try { await store.delete(tempId) } catch { } }
+      if (tempId) { try { await store.delete(tempId) } catch (err) { console.debug('[push] ignore delete temp gps error', err) } }
       result.succeeded++
       anySucceeded = true
     } catch (e) {
@@ -335,7 +335,7 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
   }
 
   if (anySucceeded) {
-    try { await syncTable('puntos_gps') } catch { }
+    try { await syncTable('puntos_gps') } catch (err) { console.debug('[push] ignore puntos_gps refresh error', err) }
   }
 
   return result

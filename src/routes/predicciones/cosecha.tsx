@@ -49,7 +49,7 @@ function CosechaPage() {
 
     return (
         <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-auto">
+            <div className="flex-1 min-h-0 overflow-hidden">
                 {loading ? (
                     <DataTableSkeleton columns={columns as any} rows={8} />
                 ) : (

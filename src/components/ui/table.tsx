@@ -7,7 +7,7 @@ type TableProps = React.HTMLAttributes<HTMLTableElement> & {
 }
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(({ className, containerClassName, containerRef, ...props }, ref) => (
-    <div ref={containerRef} className={cn('relative w-full min-w-0 max-w-full overflow-x-auto overflow-y-auto', containerClassName)}>
+    <div ref={containerRef} className={cn('relative w-full min-w-0 max-w-full max-h-full overflow-x-auto overflow-y-auto', containerClassName)}>
         <table ref={ref} className={cn('w-full caption-bottom text-sm', className)} {...props} />
     </div>
 ))

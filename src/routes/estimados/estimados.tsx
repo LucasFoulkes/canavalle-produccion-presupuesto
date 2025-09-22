@@ -188,7 +188,9 @@ function Page() {
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {loading && <DataTableSkeleton columns={columns as any} rows={8} />}
       {!loading && (
-        <DataTable<Row> caption={`${(filtered || []).length}`} columns={columns} rows={filtered || []} />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DataTable<Row> caption={`${(filtered || []).length}`} columns={columns} rows={filtered || []} />
+        </div>
       )}
     </div>
   )

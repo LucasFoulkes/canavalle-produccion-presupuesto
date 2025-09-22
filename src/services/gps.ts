@@ -31,15 +31,17 @@ export async function saveGpsPoint(point: GpsPoint): Promise<void> {
                 usuario_id: point.usuario_id ?? null,
             } as any)
             if (!error) {
-                try { await store.delete(tempId) } catch { }
+                try { await store.delete(tempId) } catch (err) { console.debug('[gps] ignore delete tempId error', err) }
                 // Upsert the returned row to Dexie to have the UUID available immediately
                 if (data) {
                     await store.put({ ...(data as any), needs_sync: false })
                 } else {
-                    try { await syncTable('puntos_gps') } catch { }
+                    try { await syncTable('puntos_gps') } catch (err) { console.debug('[gps] ignore background sync error', err) }
                 }
             }
-        } catch { }
+        } catch (err) {
+            console.debug('[gps] ignore online insert error', err)
+        }
     }
 }
 

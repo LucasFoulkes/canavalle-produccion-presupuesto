@@ -86,7 +86,9 @@ function Page() {
 
     return (
         <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
-            <DataTable caption={`${rows?.length ?? 0}`} columns={columns} rows={rows ?? []} />
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <DataTable caption={`${rows?.length ?? 0}`} columns={columns} rows={rows ?? []} />
+            </div>
         </div>
     )
 }

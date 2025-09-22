@@ -14,8 +14,9 @@ function haversineMeters(a: { lat: number; lon: number }, b: { lat: number; lon:
     return 2 * R * Math.asin(Math.sqrt(h))
 }
 
-export function useGpsTracker(opts?: { minDistanceMeters?: number; usuarioId?: number | null }) {
-    const minDist = opts?.minDistanceMeters ?? 1
+export function useGpsTracker(opts?: { minDistanceMeters?: number; minAccuracyMeters?: number; usuarioId?: number | null }) {
+    const minDist = opts?.minDistanceMeters ?? 3
+    const minAcc = opts?.minAccuracyMeters ?? 50
     const usuarioId = opts?.usuarioId ?? null
     const watchIdRef = React.useRef<number | null>(null)
     const lastPosRef = React.useRef<{ lat: number; lon: number } | null>(null)
@@ -33,7 +34,11 @@ export function useGpsTracker(opts?: { minDistanceMeters?: number; usuarioId?: n
                 const current = { lat, lon }
                 const last = lastPosRef.current
                 const moved = last ? haversineMeters(last, current) : Infinity
-                if (!last || moved >= minDist) {
+                // Skip low-accuracy fixes (large error radius). Accept if accuracy is unknown.
+                const accOk = !(Number.isFinite(acc) && (acc as number) > minAcc)
+                // Also skip obviously bad zeros
+                const coordOk = !(lat === 0 && lon === 0)
+                if (accOk && coordOk && (!last || moved >= minDist)) {
                     lastPosRef.current = current
                     await saveGpsPoint({
                         latitud: lat,

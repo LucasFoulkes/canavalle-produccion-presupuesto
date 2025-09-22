@@ -483,13 +483,15 @@ function Page() {
       {finalLoading ? (
         <DataTableSkeleton columns={columns as any} rows={8} />
       ) : (
-        <DataTable
-          caption={`${filtered.length}`}
-          columns={columns as any}
-          rows={filtered}
-          getRowKey={(row: any) => (row[SERVICE_PK[table]] ?? row.id ?? row.__key)}
-          onRowClick={isGrupoCama ? (row: any) => openEdit(row) : isEstadosFenologicos ? (row: any) => openEditEstado(row) : undefined}
-        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <DataTable
+            caption={`${filtered.length}`}
+            columns={columns as any}
+            rows={filtered}
+            getRowKey={(row: any) => (row[SERVICE_PK[table]] ?? row.id ?? row.__key)}
+            onRowClick={isGrupoCama ? (row: any) => openEdit(row) : isEstadosFenologicos ? (row: any) => openEditEstado(row) : undefined}
+          />
+        </div>
       )}
 
       {isGrupoCama && (
