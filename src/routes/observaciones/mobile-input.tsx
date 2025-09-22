@@ -452,17 +452,19 @@ function FincaSelection({ onSelect }: { onSelect: (finca: any) => void }) {
           />
         </div>
       </div>
-      <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-2 gap-3 pb-32">
-          {filteredFincas.map((finca: any) => (
-            <button
-              key={finca.id_finca}
-              onClick={() => onSelect(finca)}
-              className="aspect-square flex items-center justify-center rounded-lg border bg-card p-4 text-center transition-colors hover:bg-accent active:scale-95"
-            >
-              <span className="font-medium">{finca.nombre}</span>
-            </button>
-          ))}
+      <div className="flex-1 p-4 md:p-6 overflow-auto md:overflow-hidden">
+        <div className="h-full w-full">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {filteredFincas.map((finca: any) => (
+              <button
+                key={finca.id_finca}
+                onClick={() => onSelect(finca)}
+                className="w-full aspect-square md:w-64 md:h-64 lg:w-72 lg:h-72 flex items-center justify-center rounded-lg border bg-card text-center transition-colors hover:bg-accent active:scale-95 text-base md:text-xl p-6 md:p-8"
+              >
+                <span className="font-medium">{finca.nombre}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -519,16 +521,18 @@ function BloqueSelection({
         </div>
       </div>
       <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-4 gap-2 pb-32">
-          {filteredBloques.map((bloque: any) => (
-            <button
-              key={bloque.id_bloque}
-              onClick={() => onSelect(bloque)}
-              className="aspect-square flex items-center justify-center rounded-lg border bg-card p-2 text-center text-sm transition-colors hover:bg-accent active:scale-95"
-            >
-              <span className="font-medium">{bloque.nombre}</span>
-            </button>
-          ))}
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pb-32">
+            {filteredBloques.map((bloque: any) => (
+              <button
+                key={bloque.id_bloque}
+                onClick={() => onSelect(bloque)}
+                className="aspect-square flex items-center justify-center rounded-lg border bg-card p-2 text-center text-sm transition-colors hover:bg-accent active:scale-95"
+              >
+                <span className="font-medium">{bloque.nombre}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -680,16 +684,18 @@ function CamaSelection({
         </div>
       </div>
       <div className="flex-1 overflow-auto p-4">
-        <div className="grid grid-cols-4 gap-2 pb-32">
-          {filteredCamas.map((cama: any) => (
-            <button
-              key={cama.id_cama}
-              onClick={() => onSelect(cama)}
-              className="aspect-square flex items-center justify-center rounded-lg border bg-card p-2 text-sm transition-colors hover:bg-accent active:scale-95"
-            >
-              <span className="font-medium">{cama.nombre}</span>
-            </button>
-          ))}
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 pb-32">
+            {filteredCamas.map((cama: any) => (
+              <button
+                key={cama.id_cama}
+                onClick={() => onSelect(cama)}
+                className="aspect-square flex items-center justify-center rounded-lg border bg-card p-2 text-sm transition-colors hover:bg-accent active:scale-95"
+              >
+                <span className="font-medium">{cama.nombre}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

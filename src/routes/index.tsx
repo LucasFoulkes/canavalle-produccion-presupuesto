@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from '@tanstack/react-router'
+﻿import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import * as React from 'react'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
@@ -18,6 +18,7 @@ import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { format } from 'date-fns'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 export const Route = createFileRoute('/')({
   component: LandingCosechaVariedad,
@@ -27,6 +28,8 @@ type Row = { fecha: any; variedad: string; dias_cosecha: number; rowKey: string 
 
 function LandingCosechaVariedad() {
   const { registerColumns } = useTableFilter()
+  const isMobile = useIsMobile()
+  const navigate = useNavigate()
   const [showCharts, setShowCharts] = React.useState(false)
   const [showMap, setShowMap] = React.useState(true)
   const [byWeek, setByWeek] = React.useState(false)
@@ -220,6 +223,15 @@ function LandingCosechaVariedad() {
           <Button size="sm" variant="outline" onClick={() => { setShowMap(v => { const next = !v; if (next) setShowCharts(false); return next }) }}>
             {showMap ? 'Ver tabla' : 'Ver mapa'}
           </Button>
+          {!isMobile && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate({ to: '/observaciones/mobile-input' })}
+            >
+              Ingresar observación (móvil)
+            </Button>
+          )}
         </div>
       </div>
 

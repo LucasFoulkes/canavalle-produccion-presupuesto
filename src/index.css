@@ -126,3 +126,59 @@
   margin: 0 auto;
   text-align: center;
 } */
+
+/* Subtle animated neon blue glow utility that hugs the border (no overlay inside) */
+@keyframes neonBlueShadow {
+  0% {
+    box-shadow:
+      0 0 6px 1px oklch(0.72 0.17 240 / 0.14),
+      0 0 14px 3px oklch(0.75 0.20 240 / 0.08);
+  }
+
+  50% {
+    box-shadow:
+      0 0 10px 2px oklch(0.74 0.19 240 / 0.18),
+      0 0 22px 5px oklch(0.78 0.22 240 / 0.12);
+  }
+
+  100% {
+    box-shadow:
+      0 0 6px 1px oklch(0.72 0.17 240 / 0.14),
+      0 0 14px 3px oklch(0.75 0.20 240 / 0.08);
+  }
+}
+
+.neon-blue-glow {
+  position: relative;
+  animation: neonBlueShadow 2.4s ease-in-out infinite;
+  will-change: box-shadow;
+}
+
+/* Animated conic-gradient border that shifts color subtly around the ring */
+@property --ai-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes aiBorderSpin {
+  to {
+    --ai-angle: 360deg;
+  }
+}
+
+.neon-blue-shift {
+  /* Create gradient border without covering the inside */
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    conic-gradient(from var(--ai-angle),
+      oklch(0.78 0.22 250 / 0.18) 0%,
+      oklch(0.74 0.19 235 / 0.16) 20%,
+      oklch(0.70 0.15 220 / 0.16) 40%,
+      oklch(0.74 0.19 235 / 0.16) 60%,
+      oklch(0.78 0.22 250 / 0.18) 80%,
+      oklch(0.78 0.22 250 / 0.18) 100%) border-box;
+  animation: aiBorderSpin 10s linear infinite;
+  will-change: background;
+}
