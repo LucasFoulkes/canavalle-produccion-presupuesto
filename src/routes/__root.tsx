@@ -122,7 +122,7 @@ const RootLayout = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const canShowAndroidInstall = !isIOS && !isInstalled && !!deferredPrompt
+  const canShowAndroidInstall = !isIOS && !isInstalled && !!deferredPrompt && isHome
   // Derive breadcrumb items from the current path
   const breadcrumbs = React.useMemo(() => {
     const path = routerState.location.pathname
@@ -213,12 +213,13 @@ const RootLayout = () => {
                 </div>
                 <div className="flex items-center justify-end gap-2">
                   {/* PWA install actions: Android shows prompt; iOS shows instructions. Hidden if already installed. */}
-                  {!isInstalled && (
+                  {!isInstalled && isHome && (
                     <>
                       {canShowAndroidInstall && (
                         <Button
                           size="sm"
                           variant="outline"
+                          title="Instalar la app en tu dispositivo"
                           onClick={async () => {
                             try {
                               deferredPrompt.prompt()
@@ -235,7 +236,7 @@ const RootLayout = () => {
                       {isIOS && (
                         <Dialog open={openIosInstructions} onOpenChange={setOpenIosInstructions}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline">Instalar</Button>
+                            <Button size="sm" variant="outline" title="Cómo instalar en iPhone/iPad">Instalar</Button>
                           </DialogTrigger>
                           <DialogContent className="sm:max-w-[420px]">
                             <DialogHeader>
