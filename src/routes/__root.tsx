@@ -1,4 +1,4 @@
-import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { createRootRoute, Link, Outlet, useRouterState, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { ChevronRight, ClipboardList, Home } from 'lucide-react'
@@ -11,6 +11,7 @@ import {
   SidebarContent,
   SidebarHeader,
   SidebarInset,
+  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,6 +21,8 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar'
 import { TABLES } from '@/services/db'
 import { TableFilterProvider } from '@/hooks/use-table-filter'
@@ -27,6 +30,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 import { useGpsTracker } from '@/hooks/use-gps-tracker'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/use-auth'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 const TABLE_GROUPS: ReadonlyArray<{ label: string; items: string[] }> = [
   { label: 'Estructura de Finca', items: ['finca', 'bloque', 'cama', 'grupo_cama', 'seccion'] },
@@ -83,6 +87,78 @@ const RootLayout = () => {
       return tableId ? TABLES[tableId]?.title ?? tableId : null
     },
   })
+  const { state: routerState } = useRouter()
+  const isHome = routerState.location.pathname === '/'
+  // Derive breadcrumb items from the current path
+  const breadcrumbs = React.useMemo(() => {
+    const path = routerState.location.pathname
+    const segs = path.split('/').filter(Boolean)
+    if (segs.length === 0) return [] as { label: string; to?: string }[]
+    const items: { label: string; to?: string }[] = []
+    // Home always first
+    items.push({ label: 'Inicio', to: '/' })
+    for (let i = 0; i < segs.length; i++) {
+      const seg = segs[i]
+      const prev = segs[i - 1]
+      const curPath = '/' + segs.slice(0, i + 1).join('/')
+      if (seg === 'db') {
+        items.push({ label: 'Tablas' })
+        continue
+      }
+      if (seg === 'estimados') {
+        items.push({ label: 'Resúmenes' })
+        continue
+      }
+      if (seg === 'predicciones') {
+        items.push({ label: 'Predicciones', to: '/predicciones' })
+        continue
+      }
+      if (seg === 'observaciones') {
+        items.push({ label: 'Observaciones' })
+        continue
+      }
+      // Specific children
+      if (prev === 'db') {
+        const label = TABLES[seg as keyof typeof TABLES]?.title ?? seg
+        items.push({ label, to: curPath })
+        continue
+      }
+      if (prev === 'estimados') {
+        const map: Record<string, string> = {
+          'area': 'Área productiva por variedad',
+          'observaciones-area': 'Observaciones + Área productiva',
+          'observaciones-resumen': 'Resumen observaciones por cama',
+          'estimados': 'Estimados',
+          'estimados-resumen': 'Resumen fenológico',
+        }
+        items.push({ label: map[seg] ?? seg })
+        continue
+      }
+      if (prev === 'predicciones') {
+        const map: Record<string, string> = {
+          'totales': 'Predicciones totales',
+          'cosecha': 'Cosecha',
+        }
+        items.push({ label: map[seg] ?? seg, to: curPath })
+        continue
+      }
+      // Fallback
+      items.push({ label: seg, to: curPath })
+    }
+    return items
+  }, [routerState.location.pathname])
+  // quick search for tables
+  const [q, setQ] = React.useState('')
+  const allTables = React.useMemo(() => Object.values(TABLES).map(t => ({ id: t.id, title: t.title })), [])
+  const results = React.useMemo(() => {
+    const s = q.trim().toLowerCase()
+    if (!s) return [] as { id: string; title: string }[]
+    return allTables
+      .filter(t => t.id.toLowerCase().includes(s) || t.title.toLowerCase().includes(s))
+      .slice(0, 10)
+  }, [q, allTables])
+  const clearSearch = () => setQ('')
+  const [openSearchMobile, setOpenSearchMobile] = React.useState(false)
 
   if (isMobile) {
     // Mobile layout: show a top header always, with login/logout and GPS toggle
@@ -103,6 +179,41 @@ const RootLayout = () => {
                   )}
                 </div>
                 <div className="flex items-center justify-end gap-2">
+                  <Dialog open={openSearchMobile} onOpenChange={setOpenSearchMobile}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline">Buscar</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[420px]">
+                      <DialogHeader>
+                        <DialogTitle>Buscar tabla</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-2 space-y-2">
+                        <input
+                          value={q}
+                          onChange={(e) => setQ(e.target.value)}
+                          placeholder="Buscar por nombre o id"
+                          className="w-full h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-2"
+                          autoFocus
+                        />
+                        <div className="max-h-64 overflow-auto rounded-md border">
+                          {results.length === 0 ? (
+                            <div className="p-3 text-sm text-muted-foreground">Sin resultados</div>
+                          ) : results.map(r => (
+                            <Link
+                              key={r.id}
+                              to="/db/$table"
+                              params={{ table: r.id }}
+                              className="block px-3 py-2 text-sm hover:bg-muted"
+                              onClick={() => { setOpenSearchMobile(false); clearSearch() }}
+                            >
+                              {r.title}
+                              <span className="text-muted-foreground ml-2">({r.id})</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   {!online && (
                     <Badge variant="outline" className="bg-destructive/10 text-destructive">
                       Sin conexión
@@ -115,7 +226,9 @@ const RootLayout = () => {
               </div>
             </header>
             <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-3 pb-24">
-              <Outlet />
+              <div className="animate-fade-in-up h-full">
+                <Outlet />
+              </div>
             </div>
             <MobileBottomNav />
           </div>
@@ -131,9 +244,44 @@ const RootLayout = () => {
           <Sidebar>
             <SidebarHeader>
               <div className="flex items-center justify-between px-2 py-1.5">
-                <Link to="/" preload="intent" className="font-semibold rounded-sm outline-none focus-visible:ring-2 ring-ring">
-                  Canavalle
+                <Link to="/" preload="intent" search={{ focus: 'none', byWeek: false }} className="font-semibold rounded-sm outline-none focus-visible:ring-2 ring-ring flex items-center gap-2">
+                  <Home className="h-4 w-4" aria-hidden />
+                  <span>Canavalle</span>
                 </Link>
+              </div>
+              <div className="px-2 pb-1.5">
+                <SidebarInput
+                  placeholder="Buscar tabla…"
+                  value={q}
+                  onChange={(e) => setQ((e.target as HTMLInputElement).value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && results[0]) {
+                      // programmatic navigation via Link is simpler with a click; but we can also set location
+                      // here we let users click; Enter picks first result
+                      (document.getElementById(`table-result-${results[0].id}`) as HTMLAnchorElement | null)?.click()
+                    }
+                  }}
+                />
+                {q && (
+                  <div className="mt-1 max-h-56 overflow-auto rounded-md border bg-popover p-1 shadow-md">
+                    {results.length === 0 ? (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">Sin resultados</div>
+                    ) : results.map(r => (
+                      <Link
+                        id={`table-result-${r.id}`}
+                        key={r.id}
+                        to="/db/$table"
+                        params={{ table: r.id }}
+                        className="block rounded-[6px] px-2 py-1.5 text-sm hover:bg-muted truncate"
+                        onClick={() => clearSearch()}
+                        title={`${r.title} (${r.id})`}
+                      >
+                        <span className="truncate inline-block max-w-full align-bottom">{r.title}</span>
+                        <span className="text-muted-foreground ml-2">({r.id})</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </SidebarHeader>
             <SidebarContent className="gap-0">
@@ -145,12 +293,12 @@ const RootLayout = () => {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton>
+                      <SidebarMenuButton size="sm" className="uppercase tracking-wide text-[11px] text-muted-foreground/90" title="Tablas">
                         <span>Tablas</span>
                         <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
+                    <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
                       <SidebarMenuSub>
                         {TABLE_GROUPS.map((group) => (
                           <Collapsible
@@ -161,19 +309,19 @@ const RootLayout = () => {
                           >
                             <SidebarMenuItem>
                               <CollapsibleTrigger asChild>
-                                <SidebarMenuSubButton size="sm">
+                                <SidebarMenuSubButton size="sm" title={group.label}>
                                   <span>{group.label}</span>
                                   <ChevronRight className="ml-auto size-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
                                 </SidebarMenuSubButton>
                               </CollapsibleTrigger>
-                              <CollapsibleContent>
+                              <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
                                 <SidebarMenuSub>
                                   {group.items
                                     .map((tableId) => ({ id: tableId, config: TABLES[tableId] }))
                                     .filter((entry) => Boolean(entry.config))
                                     .map((entry) => (
                                       <SidebarMenuSubItem key={entry.id}>
-                                        <SidebarMenuSubButton asChild size="sm">
+                                        <SidebarMenuSubButton asChild size="sm" title={entry.config?.title ?? entry.id}>
                                           <Link to="/db/$table" params={{ table: entry.id }} activeProps={{ 'data-active': 'true' }}>
                                             <span>{entry.config?.title ?? entry.id}</span>
                                           </Link>
@@ -189,6 +337,7 @@ const RootLayout = () => {
                     </CollapsibleContent>
                   </SidebarMenuItem>
                 </Collapsible>
+                <SidebarSeparator />
                 <Collapsible
                   open={openTop === 'resumenes'}
                   onOpenChange={(o) => setOpenTop(o ? 'resumenes' : (openTop === 'resumenes' ? null : openTop))}
@@ -196,16 +345,16 @@ const RootLayout = () => {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton>
+                      <SidebarMenuButton size="sm" className="uppercase tracking-wide text-[11px] text-muted-foreground/90" title="Resumenes">
                         <span>Resumenes</span>
                         <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
+                    <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
                       <SidebarMenuSub>
                         {SUMMARY_LINKS.map((link) => (
                           <SidebarMenuSubItem key={link.to}>
-                            <SidebarMenuSubButton asChild size="sm">
+                            <SidebarMenuSubButton asChild size="sm" title={link.label}>
                               <Link to={link.to} activeProps={{ 'data-active': 'true' }}>
                                 <span>{link.label}</span>
                               </Link>
@@ -216,6 +365,7 @@ const RootLayout = () => {
                     </CollapsibleContent>
                   </SidebarMenuItem>
                 </Collapsible>
+                <SidebarSeparator />
                 <Collapsible
                   open={openTop === 'predicciones'}
                   onOpenChange={(o) => setOpenTop(o ? 'predicciones' : (openTop === 'predicciones' ? null : openTop))}
@@ -223,16 +373,16 @@ const RootLayout = () => {
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
-                      <SidebarMenuButton>
+                      <SidebarMenuButton size="sm" className="uppercase tracking-wide text-[11px] text-muted-foreground/90" title="Predicciones">
                         <span>Predicciones</span>
                         <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
-                    <CollapsibleContent>
+                    <CollapsibleContent className="data-[state=closed]:animate-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1">
                       <SidebarMenuSub>
                         {PREDICTION_LINKS.map((link) => (
                           <SidebarMenuSubItem key={link.to}>
-                            <SidebarMenuSubButton asChild size="sm">
+                            <SidebarMenuSubButton asChild size="sm" title={link.label}>
                               <Link to={link.to} activeProps={{ 'data-active': 'true' }}>
                                 <span>{link.label}</span>
                               </Link>
@@ -245,10 +395,17 @@ const RootLayout = () => {
                 </Collapsible>
               </SidebarMenu>
             </SidebarContent>
+            {!user && (
+              <SidebarFooter className="mt-auto">
+                <Link to={"/signup" as any} className="w-full">
+                  <Button className="w-full bg-amber-500 text-black hover:bg-amber-400">Registrarse</Button>
+                </Link>
+              </SidebarFooter>
+            )}
             <SidebarRail />
           </Sidebar>
           <SidebarInset>
-            <div className="flex h-12 items-center gap-2 border-b px-2">
+            <div className="sticky top-0 z-10 flex h-12 items-center gap-2 border-b px-2 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/65">
               <SidebarTrigger />
               <div className="font-medium">{currentTitle}</div>
               <div className="ml-auto flex items-center gap-2">
@@ -262,16 +419,37 @@ const RootLayout = () => {
                     <Button size="sm" className="bg-green-600 text-white hover:bg-green-700">Conectado</Button>
                     <Button size="sm" variant="outline" onClick={logout}>Salir</Button>
                   </>
-                ) : (
-                  <Link to={"/signup" as any}>
-                    <Button size="sm" className="bg-amber-500 text-white hover:bg-amber-600">Registrarse</Button>
-                  </Link>
-                )}
-                <FilterToolbar className="ml-0" />
+                ) : null}
+                {!isHome && <FilterToolbar className="ml-0" />}
               </div>
             </div>
-            <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-4 pb-4">
-              <Outlet />
+            {/* Breadcrumb under sticky header (hidden on home) */}
+            {!isHome && breadcrumbs.length > 0 ? (
+              <div className="border-b bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+                <nav aria-label="breadcrumb" className="container-app px-5 py-1.5 text-xs text-muted-foreground">
+                  <ol className="flex items-center gap-1.5">
+                    {breadcrumbs.map((b, idx) => (
+                      <React.Fragment key={`${b.label}-${idx}`}>
+                        {idx > 0 && <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />}
+                        {b.to ? (
+                          <Link to={b.to as any} className="hover:text-foreground" title={b.label}>
+                            {b.label}
+                          </Link>
+                        ) : (
+                          <span className="truncate" title={b.label}>{b.label}</span>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </ol>
+                </nav>
+              </div>
+            ) : null}
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+              <div className="container-app px-5 pb-5">
+                <div className="animate-fade-in-up h-full">
+                  <Outlet />
+                </div>
+              </div>
             </div>
           </SidebarInset>
         </div>

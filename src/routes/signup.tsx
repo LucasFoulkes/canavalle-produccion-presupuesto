@@ -25,7 +25,7 @@ function SignupPage() {
     setError(null)
     try {
       await createUser({ nombres, apellidos, rol, clave_pin: pin, cedula })
-      router.navigate({ to: '/' })
+      router.navigate({ to: '/', search: { focus: 'none', byWeek: false } as any })
     } catch (err: any) {
       setError(err?.message ?? 'Error al crear usuario')
     } finally {

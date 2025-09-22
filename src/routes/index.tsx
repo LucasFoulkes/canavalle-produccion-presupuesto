@@ -11,28 +11,134 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer } from '@/components/ui/chart'
 import { BarChart, Bar, CartesianGrid, XAxis, Tooltip } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { FilterToolbar } from '@/components/filter-toolbar'
 import { DatePicker, DateRangePicker, DateRangeValue } from '@/components/date-picker'
+import { Map as MapIcon, BarChart3, Table as TableIcon, ClipboardList, ChevronsUpDown, Check } from 'lucide-react'
 import { getStore } from '@/lib/dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { format } from 'date-fns'
-import { useIsMobile } from '@/hooks/use-mobile'
+// import { useIsMobile } from '@/hooks/use-mobile'
 
 export const Route = createFileRoute('/')({
+  validateSearch: (search: Record<string, unknown>) => {
+    const rawFocus = (search?.focus as string | undefined) ?? 'none'
+    const focus: 'none' | 'map' | 'charts' | 'table' =
+      rawFocus === 'map' || rawFocus === 'charts' || rawFocus === 'table' ? rawFocus : 'none'
+    const byWeek = Boolean(search?.byWeek)
+    return { focus, byWeek }
+  },
   component: LandingCosechaVariedad,
 })
 
 type Row = { fecha: any; variedad: string; dias_cosecha: number; rowKey: string }
 
+// Mini chart for the dashboard card
+function MiniCosechaChart({ rows, byWeek, onToggle }: { rows: Row[]; byWeek: boolean; onToggle: () => void }) {
+  const [variedad, setVariedad] = React.useState<string | 'todas'>('todas')
+  const [openCombo, setOpenCombo] = React.useState(false)
+  const allVariedades = React.useMemo(() => Array.from(new Set(rows.map(r => r.variedad))).sort(), [rows])
+  const filteredRows = React.useMemo(() => (variedad === 'todas' ? rows : rows.filter(r => r.variedad === variedad)), [rows, variedad])
+
+  const series = React.useMemo(() => {
+    const weekKeyOfLocal = (dateInput: any) => {
+      const d = new Date(dateInput)
+      if (isNaN(d.getTime())) return ''
+      const day = d.getUTCDay()
+      const isoDay = (day + 6) % 7
+      const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+      monday.setUTCDate(monday.getUTCDate() - isoDay)
+      return monday.toISOString().slice(0, 10)
+    }
+    const acc = new Map<string, number>()
+    for (const r of filteredRows) {
+      const key = byWeek ? weekKeyOfLocal(r.fecha) : formatDateISO(r.fecha)
+      if (!key) continue
+      acc.set(key, (acc.get(key) ?? 0) + Number(r.dias_cosecha || 0))
+    }
+    return Array.from(acc.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }))
+  }, [filteredRows, byWeek])
+
+  return (
+    <div className="w-full">
+      <div className="mb-2 flex items-center gap-2">
+        <Button size="sm" variant="outline" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onToggle() }}>
+          {byWeek ? 'Ver por día' : 'Por semana'}
+        </Button>
+        <div className="ml-auto" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+          <Popover open={openCombo} onOpenChange={setOpenCombo}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={openCombo} className="h-8 w-[220px] justify-between">
+                {variedad === 'todas' ? 'Todas las variedades' : variedad}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[220px] p-0" align="end" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
+              <Command>
+                <CommandInput placeholder="Buscar variedad..." />
+                <CommandList>
+                  <CommandEmpty>Sin resultados.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem value="todas" onSelect={() => { setVariedad('todas'); setOpenCombo(false) }}>
+                      <Check className={`mr-2 h-4 w-4 ${variedad === 'todas' ? 'opacity-100' : 'opacity-0'}`} />
+                      Todas las variedades
+                    </CommandItem>
+                    {allVariedades.map((v) => (
+                      <CommandItem key={v} value={v} onSelect={(currentValue) => { setVariedad(currentValue as any); setOpenCombo(false) }}>
+                        <Check className={`mr-2 h-4 w-4 ${variedad === v ? 'opacity-100' : 'opacity-0'}`} />
+                        {v}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      <ChartContainer config={{ value: { label: 'Cosecha', color: 'var(--chart-1)' } }} className="w-full h-[160px]">
+        <BarChart data={series} margin={{ left: 12, right: 12 }}>
+          <CartesianGrid vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickLine={false}
+            axisLine={false}
+            tickMargin={6}
+            minTickGap={28}
+            tickFormatter={(value: string) => {
+              const d = new Date((value.length === 10 ? value + 'T00:00:00Z' : value))
+              if (byWeek) return `Sem ${getISOWeek(d)}`
+              const dd = String(d.getUTCDate()).padStart(2, '0')
+              const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+              return `${dd}/${mm}`
+            }}
+          />
+          <Tooltip formatter={(v: any) => String(formatMax2(v))} labelFormatter={(value: any) => formatDate(value)} />
+          <Bar dataKey="value" fill={`var(--color-value, #2563eb)`} />
+        </BarChart>
+      </ChartContainer>
+    </div>
+  )
+}
+
 function LandingCosechaVariedad() {
   const { registerColumns } = useTableFilter()
-  const isMobile = useIsMobile()
+  // const isMobile = useIsMobile()
   const navigate = useNavigate()
-  const [showCharts, setShowCharts] = React.useState(false)
-  const [showMap, setShowMap] = React.useState(true)
-  const [byWeek, setByWeek] = React.useState(false)
+  // Bind dashboard focus and grouping to URL for predictable back/forward
+  const search = Route.useSearch() as { focus: 'none' | 'map' | 'charts' | 'table'; byWeek?: boolean }
+  const focus = search.focus ?? 'none'
+  const byWeek = Boolean(search.byWeek)
+  const setFocus = (next: 'none' | 'map' | 'charts' | 'table') => {
+    navigate({ to: '/', search: (prev: any) => ({ ...prev, focus: next === 'none' ? undefined : next }) })
+  }
+  const setByWeek = (next: boolean) => {
+    navigate({ to: '/', search: (prev: any) => ({ ...prev, byWeek: next ? true : undefined }) })
+  }
   const { data, loading } = useDeferredLiveQuery<ResumenFenologicoResult | undefined>(
     () => fetchResumenFenologico(),
     [],
@@ -195,54 +301,150 @@ function LandingCosechaVariedad() {
     return false
   }, [chartSeriesByVariedad])
 
+  // (removed mini table summary chart; no dailyTotals needed here)
+
+  // Overview cards (dashboard)
+  // Small, non-blocking data previews
+  const today = React.useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }, [])
+
+  const uniqueUsersToday = useLiveQuery(async () => {
+    const store = getStore('puntos_gps')
+    const all = await store.toArray()
+    const start = new Date(today)
+    const end = new Date(today); end.setHours(23, 59, 59, 999)
+    const setIds = new Set<number | string | undefined>()
+    for (const p of all || []) {
+      const ts = new Date((p as any).capturado_en)
+      if (ts >= start && ts <= end) setIds.add((p as any).usuario_id ?? 'na')
+    }
+    return setIds.size
+  }, [today])
+
+  const lastPointToday = useLiveQuery(async () => {
+    const store = getStore('puntos_gps')
+    const all = await store.toArray()
+    const start = new Date(today)
+    const end = new Date(today); end.setHours(23, 59, 59, 999)
+    let maxTs: number | null = null
+    for (const p of all || []) {
+      const ts = new Date((p as any).capturado_en)
+      if (ts >= start && ts <= end) {
+        const t = ts.getTime()
+        if (maxTs == null || t > maxTs) maxTs = t
+      }
+    }
+    return maxTs ? new Date(maxTs).toISOString() : null
+  }, [today])
+
+  // Removed previous totalCosecha aggregate (unused) to keep lint clean
+
+  // Additional metrics for cards
+  const todayISO = React.useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d
+  }, [])
+  const todayKey = (d: Date) => d.toISOString().slice(0, 10)
+  const rowsByDate = React.useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of rows || []) {
+      const iso = typeof r.fecha === 'string' ? r.fecha.slice(0, 10) : formatDateISO(r.fecha)
+      if (!iso) continue
+      m.set(iso, (m.get(iso) ?? 0) + Number(r.dias_cosecha || 0))
+    }
+    return m
+  }, [rows])
+  const todayTotal = React.useMemo(() => rowsByDate.get(todayKey(todayISO)) ?? 0, [rowsByDate, todayISO])
+  // Removed last7Total, varietiesCount, rowCount, distinctDays, lastDateStr per simplified previews
+
+  const Overview = (
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 animate-fade-in">
+      {/* Observacion - first on mobile */}
+      <Card className="order-1 md:order-none md:col-span-3 cursor-pointer transition-colors hover:bg-accent/20 border-muted" onClick={() => navigate({ to: '/observaciones/mobile-input' })}>
+        <CardHeader className="pb-2 flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-primary" />
+          <CardTitle className="text-base">Observacion</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md border px-2 py-1 text-foreground text-xs">Abrir formulario</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cosecha por variedad - second on mobile */}
+      <Card className="order-2 md:order-none md:col-span-6 cursor-pointer card-hover transition-colors hover:bg-accent/20 border-muted" onClick={() => setFocus('charts')}>
+        <CardHeader className="pb-2 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          <CardTitle className="text-base">Cosecha por variedad</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <MiniCosechaChart rows={tableSource} byWeek={byWeek} onToggle={() => setByWeek(!byWeek)} />
+        </CardContent>
+      </Card>
+
+      {/* Tabla - third on mobile */}
+      <Card className="order-3 md:order-none md:col-span-3 cursor-pointer card-hover transition-colors hover:bg-accent/30" onClick={() => setFocus('table')}>
+        <CardHeader className="pb-2 flex items-center gap-2">
+          <TableIcon className="h-4 w-4 text-primary" />
+          <CardTitle className="text-base">Tabla</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md border px-2 py-1 text-foreground text-xs">Hoy: {formatMax2(todayTotal)}</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mapa GPS - fourth on mobile */}
+      <Card className="order-4 md:order-none md:col-span-6 cursor-pointer card-hover transition-colors hover:bg-accent/20 border-muted" onClick={() => setFocus('map')}>
+        <CardHeader className="pb-2 flex items-center gap-2">
+          <MapIcon className="h-4 w-4 text-primary" />
+          <CardTitle className="text-base">Mapa GPS</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md border px-2 py-1 text-foreground text-xs">
+              {uniqueUsersToday ?? 0} usuarios
+            </div>
+            <div className="rounded-md border px-2 py-1 text-foreground text-xs">
+              última {(() => { try { return new Date(lastPointToday ?? '').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) } catch { return '—' } })()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+
   return (
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-4">
       {/* Global controls */}
       <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-sm text-muted-foreground">
-          {showMap ? 'Mapa GPS' : 'Cosecha por variedad'}
-        </div>
+        {(focus === 'charts' || focus === 'table') ? (
+          <FilterToolbar className="ml-0" />
+        ) : <div />}
         <div className="flex items-center gap-2">
-          {!showMap && (
-            <Button size="sm" variant="outline" onClick={() => {
-              setByWeek((prev) => {
-                const next = !prev
-                // When switching back to daily, default to table view to clearly show per-day rows
-                if (!next) setShowCharts(false)
-                return next
-              })
-            }}>
-              {byWeek ? 'Ver por día' : 'Acumular por semana'}
-            </Button>
+          {focus === 'charts' && (
+            <Button size="sm" variant="outline" onClick={() => setByWeek(!byWeek)}>{byWeek ? 'Ver por día' : 'Acumular por semana'}</Button>
           )}
-          {!showMap && (
-            <Button size="sm" variant="outline" onClick={() => { setShowCharts(v => { const next = !v; if (next) setShowMap(false); return next }) }}>
-              {showCharts ? 'Ocultar gráficos' : 'Ver gráficos por variedad'}
-            </Button>
-          )}
-          <Button size="sm" variant="outline" onClick={() => { setShowMap(v => { const next = !v; if (next) setShowCharts(false); return next }) }}>
-            {showMap ? 'Ver tabla' : 'Ver mapa'}
-          </Button>
-          {!isMobile && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate({ to: '/observaciones/mobile-input' })}
-            >
-              Ingresar observación (móvil)
-            </Button>
+          {focus !== 'none' && (
+            <Button size="sm" variant="outline" onClick={() => setFocus('none')}>Volver</Button>
           )}
         </div>
       </div>
 
-      {/* Content: either map (full) or table/charts (full) */}
+      {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-        {showMap ? (
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <AllGpsMapSection onShowTable={() => { setShowMap(false); setShowCharts(false) }} />
+        {focus === 'none' && (
+          <div className="flex-1 min-h-0 overflow-auto animate-fade-in">
+            {Overview}
           </div>
-        ) : showCharts ? (
-          <div className="flex-1 min-h-0 overflow-auto pr-1 space-y-3">
+        )}
+        {focus === 'map' && (
+          <div className="flex-1 min-h-0 overflow-hidden animate-fade-in-up">
+            <AllGpsMapSection />
+          </div>
+        )}
+        {focus === 'charts' && (
+          <div className="flex-1 min-h-0 overflow-auto pr-1 space-y-3 animate-fade-in-up">
             {!hasChartData && (
               <div className="text-sm text-muted-foreground px-1">Sin datos de cosecha para graficar.</div>
             )}
@@ -254,7 +456,7 @@ function LandingCosechaVariedad() {
                     <CardTitle className="text-base">{varName}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-2 pb-3">
-                    <ChartContainer config={{ value: { label: 'Cosecha', color: '#2563eb' } }} className="w-full h-[260px]">
+                    <ChartContainer config={{ value: { label: 'Cosecha', color: 'var(--chart-1)' } }} className="w-full h-[260px]">
                       <BarChart data={data} margin={{ left: 12, right: 12 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis
@@ -282,8 +484,9 @@ function LandingCosechaVariedad() {
               )
             })}
           </div>
-        ) : (
-          <div className="flex-1 min-h-0 overflow-auto">
+        )}
+        {focus === 'table' && (
+          <div className="flex-1 min-h-0 overflow-auto animate-fade-in-up">
             {loading ? (
               <DataTableSkeleton columns={columns as any} rows={8} />
             ) : (
@@ -330,7 +533,7 @@ function colorForUser(id?: number | null): string {
   return userColors[idx]
 }
 
-function AllGpsMapSection({ onShowTable }: { onShowTable?: () => void }) {
+function AllGpsMapSection() {
   const [range, setRange] = React.useState<DateRangeValue>(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     return { from: today, to: today }
@@ -389,12 +592,8 @@ function AllGpsMapSection({ onShowTable }: { onShowTable?: () => void }) {
 
   return (
     <section className="flex min-h-0 h-full flex-col overflow-hidden">
-      <header className="shrink-0 flex flex-wrap items-center gap-2 px-0 pb-2">
-        <div className="font-medium">GPS de todos los usuarios</div>
-        <div className="ml-auto flex items-center gap-2">
-          {onShowTable ? (
-            <Button variant="outline" size="sm" onClick={() => onShowTable()}>Ver tabla</Button>
-          ) : null}
+      <header className="shrink-0 flex flex-wrap items-center gap-2 px-0 pb-2 justify-center">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => {
             const from = range.from ? new Date(range.from) : new Date()
             from.setDate(from.getDate() - 1); from.setHours(0, 0, 0, 0)
@@ -418,12 +617,7 @@ function AllGpsMapSection({ onShowTable }: { onShowTable?: () => void }) {
             setRange({ from, to: from })
             setTimeCutoff(24 * 60)
           }}>Día siguiente</Button>
-          <DateRangePicker
-            value={range}
-            onChange={(r) => setRange(r)}
-            placeholder="Rango de fechas"
-            className="w-[240px]"
-          />
+          <DateRangePicker value={range} onChange={(r) => setRange(r)} placeholder="Rango de fechas" className="w-[240px]" />
         </div>
       </header>
 
@@ -440,7 +634,7 @@ function AllGpsMapSection({ onShowTable }: { onShowTable?: () => void }) {
                 position={[p.latitud, p.longitud] as any}
                 icon={L.divIcon({
                   className: 'custom-marker',
-                  html: `<div style="background:${colorForUser(p.usuario_id)};width:10px;height:10px;border-radius:50%;border:1px solid white;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div>`
+                  html: `<div style="background:${colorForUser(p.usuario_id)};width:10px;height:10px;border-radius:50%;border:1px solid white;"></div>`
                 })}
               />
             ))}

@@ -161,7 +161,7 @@ function PrediccionesTotalesPage() {
                     <CardTitle className="text-base">{varName}</CardTitle>
                   </CardHeader>
                   <CardContent className="px-2 pb-3">
-                    <ChartContainer config={{ value: { label: 'Cosecha', color: '#2563eb' } }} className="w-full h-[260px]">
+                    <ChartContainer config={{ value: { label: 'Cosecha', color: 'var(--chart-1)' } }} className="w-full h-[260px]">
                       <BarChart data={data} margin={{ left: 12, right: 12 }}>
                         <CartesianGrid vertical={false} />
                         <XAxis
