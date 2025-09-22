@@ -264,8 +264,8 @@ const RootLayout = () => {
                 </div>
               </div>
             </header>
-            <div className="flex-1 min-h-0 min-w-0 overflow-hidden px-3 pb-24">
-              <div className="animate-fade-in-up h-full">
+            <div className="flex-1 min-h-0 min-w-0 overflow-auto px-3 pb-24">
+              <div className="animate-fade-in-up min-h-full">
                 <Outlet />
               </div>
             </div>
