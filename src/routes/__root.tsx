@@ -29,6 +29,7 @@ import { TableFilterProvider } from '@/hooks/use-table-filter'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useGpsTracker } from '@/hooks/use-gps-tracker'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useAuth } from '@/hooks/use-auth'
 // Removed mobile search dialog
 
@@ -89,6 +90,39 @@ const RootLayout = () => {
   })
   const { state: routerState } = useRouter()
   const isHome = routerState.location.pathname === '/'
+  // PWA install state (mobile only)
+  const [deferredPrompt, setDeferredPrompt] = React.useState<any>(null)
+  const [isInstalled, setIsInstalled] = React.useState<boolean>(false)
+  const [openIosInstructions, setOpenIosInstructions] = React.useState(false)
+  const isIOS = React.useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+  }, [])
+  const displayModeStandalone = React.useMemo(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+  }, [])
+  React.useEffect(() => {
+    // Determine if already installed (iOS Safari exposes navigator.standalone)
+    const installed = displayModeStandalone || (typeof navigator !== 'undefined' && (navigator as any).standalone === true)
+    setIsInstalled(Boolean(installed))
+    const onBeforeInstallPrompt = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    const onAppInstalled = () => {
+      setIsInstalled(true)
+      setDeferredPrompt(null)
+    }
+    window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt as any)
+    window.addEventListener('appinstalled', onAppInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt as any)
+      window.removeEventListener('appinstalled', onAppInstalled)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const canShowAndroidInstall = !isIOS && !isInstalled && !!deferredPrompt
   // Derive breadcrumb items from the current path
   const breadcrumbs = React.useMemo(() => {
     const path = routerState.location.pathname
@@ -178,6 +212,46 @@ const RootLayout = () => {
                   )}
                 </div>
                 <div className="flex items-center justify-end gap-2">
+                  {/* PWA install actions: Android shows prompt; iOS shows instructions. Hidden if already installed. */}
+                  {!isInstalled && (
+                    <>
+                      {canShowAndroidInstall && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              deferredPrompt.prompt()
+                              const choice = await deferredPrompt.userChoice
+                              if (choice && choice.outcome) {
+                                setDeferredPrompt(null)
+                              }
+                            } catch { /* noop */ }
+                          }}
+                        >
+                          Instalar
+                        </Button>
+                      )}
+                      {isIOS && (
+                        <Dialog open={openIosInstructions} onOpenChange={setOpenIosInstructions}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">Instalar</Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[420px]">
+                            <DialogHeader>
+                              <DialogTitle>Instalar en iPhone/iPad</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-2 text-sm">
+                              <p>1. Abre esta página en Safari.</p>
+                              <p>2. Toca el botón Compartir (ícono de cuadrado con flecha arriba).</p>
+                              <p>3. Selecciona "Añadir a pantalla de inicio".</p>
+                              <p>4. Confirma para crear el acceso directo.</p>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </>
+                  )}
                   {!online && (
                     <Badge variant="outline" className="bg-destructive/10 text-destructive">
                       Sin conexión
