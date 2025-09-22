@@ -456,7 +456,9 @@ function LandingCosechaVariedad() {
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {focus === 'none' && (
-          <>{Overview}</>
+          <div className="flex-1 min-h-0 overflow-auto pr-1 pb-1">
+            {Overview}
+          </div>
         )}
         {focus === 'map' && (
           <div className="flex-1 min-h-0 overflow-hidden animate-fade-in-up">
