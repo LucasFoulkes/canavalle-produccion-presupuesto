@@ -29,7 +29,8 @@ export const Route = createFileRoute('/')({
     const rawFocus = (search?.focus as string | undefined) ?? 'none'
     const focus: 'none' | 'map' | 'charts' | 'table' =
       rawFocus === 'map' || rawFocus === 'charts' || rawFocus === 'table' ? rawFocus : 'none'
-    const byWeek = Boolean(search?.byWeek)
+    // Default to weekly view when param is absent; allow explicit false via query
+    const byWeek = (search?.byWeek === undefined ? true : Boolean(search?.byWeek))
     return { focus, byWeek }
   },
   component: LandingCosechaVariedad,
@@ -54,25 +55,45 @@ function MiniCosechaChart({ rows, byWeek, onToggle }: { rows: Row[]; byWeek: boo
       monday.setUTCDate(monday.getUTCDate() - isoDay)
       return monday.toISOString().slice(0, 10)
     }
+
+    const normalize = (dateInput: any) => (byWeek ? weekKeyOfLocal(dateInput) : formatDateISO(dateInput))
+    // Aggregate values by normalized date key
     const acc = new Map<string, number>()
+    const keys: string[] = []
     for (const r of filteredRows) {
-      const key = byWeek ? weekKeyOfLocal(r.fecha) : formatDateISO(r.fecha)
+      const key = normalize(r.fecha)
       if (!key) continue
       acc.set(key, (acc.get(key) ?? 0) + Number(r.dias_cosecha || 0))
+      keys.push(key)
     }
-    return Array.from(acc.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([date, value]) => ({ date, value }))
+    if (keys.length === 0) return []
+    // Build continuous domain between min and max, step = 7 days for weeks, else 1 day
+    const toDate = (iso: string) => new Date(iso + 'T00:00:00Z')
+    const addDays = (d: Date, days: number) => { const x = new Date(d.getTime()); x.setUTCDate(x.getUTCDate() + days); return x }
+    const toISO = (d: Date) => d.toISOString().slice(0, 10)
+    const sorted = Array.from(new Set(keys)).sort((a, b) => a.localeCompare(b))
+    const start = toDate(sorted[0])
+    const end = toDate(sorted[sorted.length - 1])
+    const step = byWeek ? 7 : 1
+    const domain: string[] = []
+    let cur = start
+    while (cur.getTime() <= end.getTime()) {
+      domain.push(toISO(cur))
+      cur = addDays(cur, step)
+    }
+    return domain.map((date) => ({ date, value: acc.get(date) ?? 0 }))
   }, [filteredRows, byWeek])
 
   return (
     <div className="w-full">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onToggle() }}>
           {byWeek ? 'Ver por día' : 'Por semana'}
         </Button>
-        <div className="ml-auto" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+        <div className="w-full sm:w-auto sm:ml-auto" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
           <Popover open={openCombo} onOpenChange={setOpenCombo}>
             <PopoverTrigger asChild>
-              <Button variant="outline" role="combobox" aria-expanded={openCombo} className="h-8 w-[220px] justify-between">
+              <Button variant="outline" role="combobox" aria-expanded={openCombo} className="h-8 w-full sm:w-[220px] max-w-full justify-between">
                 {variedad === 'todas' ? 'Todas las variedades' : variedad}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -130,14 +151,15 @@ function LandingCosechaVariedad() {
   // const isMobile = useIsMobile()
   const navigate = useNavigate()
   // Bind dashboard focus and grouping to URL for predictable back/forward
-  const search = Route.useSearch() as { focus: 'none' | 'map' | 'charts' | 'table'; byWeek?: boolean }
+  const search = Route.useSearch() as { focus: 'none' | 'map' | 'charts' | 'table'; byWeek: boolean }
   const focus = search.focus ?? 'none'
-  const byWeek = Boolean(search.byWeek)
+  const byWeek = search.byWeek
   const setFocus = (next: 'none' | 'map' | 'charts' | 'table') => {
     navigate({ to: '/', search: (prev: any) => ({ ...prev, focus: next === 'none' ? undefined : next }) })
   }
   const setByWeek = (next: boolean) => {
-    navigate({ to: '/', search: (prev: any) => ({ ...prev, byWeek: next ? true : undefined }) })
+    // Persist explicit boolean so false overrides the default
+    navigate({ to: '/', search: (prev: any) => ({ ...prev, byWeek: next }) })
   }
   const { data, loading } = useDeferredLiveQuery<ResumenFenologicoResult | undefined>(
     () => fetchResumenFenologico(),
@@ -356,9 +378,9 @@ function LandingCosechaVariedad() {
   // Removed last7Total, varietiesCount, rowCount, distinctDays, lastDateStr per simplified previews
 
   const Overview = (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 animate-fade-in">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 animate-fade-in">
       {/* Observacion - first on mobile */}
-      <Card className="order-1 md:order-none md:col-span-3 cursor-pointer transition-colors hover:bg-accent/20 border-muted" onClick={() => navigate({ to: '/observaciones/mobile-input' })}>
+      <Card className="order-1 md:order-none cursor-pointer transition-colors bg-[#2563eb]/20 hover:bg-[#2563eb]/30" onClick={() => navigate({ to: '/observaciones/mobile-input' })}>
         <CardHeader className="pb-2 flex items-center gap-2">
           <ClipboardList className="h-4 w-4 text-primary" />
           <CardTitle className="text-base">Observacion</CardTitle>
@@ -371,7 +393,7 @@ function LandingCosechaVariedad() {
       </Card>
 
       {/* Cosecha por variedad - second on mobile */}
-      <Card className="order-2 md:order-none md:col-span-6 cursor-pointer card-hover transition-colors hover:bg-accent/20 border-muted" onClick={() => setFocus('charts')}>
+      <Card className="order-2 md:order-none cursor-pointer card-hover transition-colors hover:bg-accent/20" onClick={() => setFocus('charts')}>
         <CardHeader className="pb-2 flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-primary" />
           <CardTitle className="text-base">Cosecha por variedad</CardTitle>
@@ -382,7 +404,7 @@ function LandingCosechaVariedad() {
       </Card>
 
       {/* Tabla - third on mobile */}
-      <Card className="order-3 md:order-none md:col-span-3 cursor-pointer card-hover transition-colors hover:bg-accent/30" onClick={() => setFocus('table')}>
+      <Card className="order-3 md:order-none cursor-pointer card-hover transition-colors hover:bg-accent/30" onClick={() => setFocus('table')}>
         <CardHeader className="pb-2 flex items-center gap-2">
           <TableIcon className="h-4 w-4 text-primary" />
           <CardTitle className="text-base">Tabla</CardTitle>
@@ -395,7 +417,7 @@ function LandingCosechaVariedad() {
       </Card>
 
       {/* Mapa GPS - fourth on mobile */}
-      <Card className="order-4 md:order-none md:col-span-6 cursor-pointer card-hover transition-colors hover:bg-accent/20 border-muted" onClick={() => setFocus('map')}>
+      <Card className="order-4 md:order-none cursor-pointer card-hover transition-colors hover:bg-accent/20" onClick={() => setFocus('map')}>
         <CardHeader className="pb-2 flex items-center gap-2">
           <MapIcon className="h-4 w-4 text-primary" />
           <CardTitle className="text-base">Mapa GPS</CardTitle>
@@ -415,7 +437,7 @@ function LandingCosechaVariedad() {
   )
 
   return (
-    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-4">
+    <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
       {/* Global controls */}
       <div className="mb-2 flex items-center justify-between gap-2">
         {(focus === 'charts' || focus === 'table') ? (
@@ -434,9 +456,7 @@ function LandingCosechaVariedad() {
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {focus === 'none' && (
-          <div className="flex-1 min-h-0 overflow-auto animate-fade-in">
-            {Overview}
-          </div>
+          <>{Overview}</>
         )}
         {focus === 'map' && (
           <div className="flex-1 min-h-0 overflow-hidden animate-fade-in-up">

@@ -445,7 +445,7 @@ const RootLayout = () => {
               </div>
             ) : null}
             <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-              <div className="container-app px-5 pb-5">
+              <div className={isHome ? "px-5 pb-5" : "container-app px-5 pb-5"}>
                 <div className="animate-fade-in-up h-full">
                   <Outlet />
                 </div>
