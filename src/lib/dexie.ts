@@ -36,10 +36,35 @@ export async function initDexieSchema() {
     const wantedStores = Object.keys(schema)
     const needsDefine = wantedStores.some((s) => !currentStores.includes(s))
 
-    if (needsDefine || db.verno === 0) {
+    // Detect schema signature changes (e.g., PK switch) using a simple hash persisted in localStorage
+    let schemaChanged = false
+    try {
+        const hash = JSON.stringify(schema)
+        const prev = (typeof localStorage !== 'undefined') ? localStorage.getItem('dexieSchemaHash') : null
+        schemaChanged = prev !== hash
+        if (schemaChanged && typeof localStorage !== 'undefined') {
+            localStorage.setItem('dexieSchemaHash', hash)
+        }
+    } catch { /* ignore storage errors (private mode, etc.) */ }
+
+    if (needsDefine || db.verno === 0 || schemaChanged) {
         // Version must be bumped if db already has a schema
         const nextVersion = Math.max(1, Math.ceil(db.verno) + (db.verno > 0 ? 1 : 0))
-        db.version(nextVersion).stores(schema)
+        db.version(nextVersion).stores(schema).upgrade(async (tx) => {
+            // Migration: puntos_gps primary key changed from '__key' to 'id' (UUID).
+            // Ensure every existing row has an 'id'. If missing, synthesize a temporary one from previous __key.
+            try {
+                const gps = (tx as any).table('puntos_gps')
+                if (gps) {
+                    await gps.toCollection().modify((obj: any) => {
+                        if (!obj.id) {
+                            const suffix = obj.__key ? String(obj.__key) : `${Date.now()}-${Math.random()}`
+                            obj.id = `temp:${suffix}`
+                        }
+                    })
+                }
+            } catch { /* best-effort migration */ }
+        })
     }
 }
 

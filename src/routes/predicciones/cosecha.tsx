@@ -7,6 +7,7 @@ import { formatDate, formatMax2 } from '@/lib/utils'
 import { useFilteredRows, useTableFilter } from '@/hooks/use-table-filter'
 import { fetchResumenFenologico, ResumenFenologicoResult } from '@/lib/resumen-fenologico'
 import { buildPredictionTimeline, scaleTimelineToTotals, keepOnlyLastCosechaDay } from '@/lib/predicciones'
+// (Map UI moved to home page)
 
 export const Route = createFileRoute('/predicciones/cosecha')({
     component: CosechaPage,
@@ -48,16 +49,19 @@ function CosechaPage() {
 
     return (
         <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden">
-            {loading ? (
-                <DataTableSkeleton columns={columns as any} rows={8} />
-            ) : (
-                <DataTable
-                    caption={`${filteredRows?.length ?? 0}`}
-                    columns={columns as any}
-                    rows={filteredRows ?? []}
-                    getRowKey={(row: any) => row.rowKey}
-                />
-            )}
+            <div className="flex-1 min-h-0 overflow-auto">
+                {loading ? (
+                    <DataTableSkeleton columns={columns as any} rows={8} />
+                ) : (
+                    <DataTable
+                        caption={`${filteredRows?.length ?? 0}`}
+                        columns={columns as any}
+                        rows={filteredRows ?? []}
+                        getRowKey={(row: any) => row.rowKey}
+                    />
+                )}
+            </div>
         </div>
     )
 }
+// Map UI moved out

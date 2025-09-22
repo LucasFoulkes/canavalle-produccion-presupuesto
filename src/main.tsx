@@ -8,6 +8,7 @@ import { routeTree } from './routeTree.gen'
 import { initDexieSchema } from '@/lib/dexie'
 import { syncAllTables, pushPendingObservations, pushPendingPinches, pushPendingProduccion, pushPendingPuntosGps } from '@/services/sync'
 import { NotFound } from '@/components/not-found'
+import { AuthProvider } from '@/hooks/use-auth'
 
 // Create a new router instance
 const router = createRouter({ routeTree, defaultNotFoundComponent: NotFound })
@@ -46,30 +47,30 @@ const wireOnlineSync = () => {
 
 // Render the app and initialize local cache
 const rootElement = document.getElementById('root')!
-if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(
-    <StrictMode>
+const root = ReactDOM.createRoot(rootElement)
+root.render(
+  <StrictMode>
+    <AuthProvider>
       <RouterProvider router={router} />
-    </StrictMode>,
-  )
+    </AuthProvider>
+  </StrictMode>,
+)
 
-  registerServiceWorker()
-  wireOnlineSync()
+registerServiceWorker()
+wireOnlineSync()
 
-    // Fire-and-forget: initialize Dexie and kick off background sync
-    ; (async () => {
-      try {
-        await initDexieSchema()
-        // Try to push pending local changes, then kick off a background pull
-        pushPendingObservations().catch(() => { })
-        pushPendingPinches().catch(() => { })
-        pushPendingProduccion().catch(() => { })
-        pushPendingPuntosGps().catch(() => { })
-        syncAllTables().catch(() => { })
-      } catch (e) {
-        // Dexie might not be available (e.g., private mode); ignore
-        console.warn('[dexie] init/sync skipped:', e)
-      }
-    })()
-}
+  // Fire-and-forget: initialize Dexie and kick off background sync
+  ; (async () => {
+    try {
+      await initDexieSchema()
+      // Try to push pending local changes, then kick off a background pull
+      pushPendingObservations().catch(() => { })
+      pushPendingPinches().catch(() => { })
+      pushPendingProduccion().catch(() => { })
+      pushPendingPuntosGps().catch(() => { })
+      syncAllTables().catch(() => { })
+    } catch (e) {
+      // Dexie might not be available (e.g., private mode); ignore
+      console.warn('[dexie] init/sync skipped:', e)
+    }
+  })()

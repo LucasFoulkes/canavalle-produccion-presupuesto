@@ -10,6 +10,7 @@ import { filterObservationTypes } from '@/config/observation-types'
 import { observacionService, pincheService, produccionService } from '@/services/db'
 import { getCurrentPosition, saveGpsPoint } from '@/services/gps'
 import { syncTable } from '@/services/sync'
+import { useAuth } from '@/hooks/use-auth'
 
 type Step = 'finca' | 'bloque' | 'variedad' | 'cama' | 'input'
 
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/observaciones/mobile-input')({
 })
 
 function MobileObservationInput() {
+  const { user } = useAuth()
   const [currentStep, setCurrentStep] = React.useState<Step>('finca')
   const [selectedFinca, setSelectedFinca] = React.useState<any>(null)
   const [selectedBloque, setSelectedBloque] = React.useState<any>(null)
@@ -117,12 +119,61 @@ function MobileObservationInput() {
                 if (selectedCama && selectedCama.id_cama) {
                   for (const [tipo, count] of observationsToSave) {
                     try {
+                      // Best-effort: capture GPS first so we can link its UUID to the observation when online
+                      let gpsId: string | undefined
+                      try {
+                        const pos = await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
+                        if (navigator.onLine) {
+                          // Try to insert GPS immediately and get its UUID
+                          const { data, error } = await (async () => {
+                            try {
+                              return await (await import('@/services/db')).puntosGpsService.insert({
+                                latitud: pos.coords.latitude,
+                                longitud: pos.coords.longitude,
+                                precision: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+                                altitud: Number.isFinite(pos.coords.altitude as any) ? (pos.coords.altitude as number) : null,
+                                capturado_en: new Date().toISOString(),
+                                observacion: true,
+                                usuario_id: user?.id_usuario ?? null,
+                              } as any)
+                            } catch (e) { return { data: null, error: e as any } as any }
+                          })()
+                          if (!error && (data as any)?.id) {
+                            gpsId = (data as any).id as string
+                            // also upsert locally so map sees it immediately
+                            try { await getStore('puntos_gps').put({ ...(data as any), needs_sync: false }) } catch { }
+                          } else {
+                            // fallback: save offline; will not have UUID yet
+                            await saveGpsPoint({
+                              latitud: pos.coords.latitude,
+                              longitud: pos.coords.longitude,
+                              precision: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+                              altitud: Number.isFinite(pos.coords.altitude as any) ? (pos.coords.altitude as number) : null,
+                              capturado_en: new Date().toISOString(),
+                              observacion: true,
+                              usuario_id: user?.id_usuario ?? null,
+                            })
+                          }
+                        } else {
+                          await saveGpsPoint({
+                            latitud: pos.coords.latitude,
+                            longitud: pos.coords.longitude,
+                            precision: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+                            altitud: Number.isFinite(pos.coords.altitude as any) ? (pos.coords.altitude as number) : null,
+                            capturado_en: new Date().toISOString(),
+                            observacion: true,
+                            usuario_id: user?.id_usuario ?? null,
+                          })
+                        }
+                      } catch { }
+
                       const payload = {
                         id_cama: selectedCama.id_cama,
                         tipo_observacion: tipo,
                         cantidad: count,
                         ubicacion_seccion: null,
-                        id_usuario: 1,
+                        id_usuario: user?.id_usuario ?? null,
+                        punto_gps: gpsId ?? null,
                       }
 
                       console.log(`Saving ${tipo} with count ${count}:`, payload)
@@ -175,19 +226,7 @@ function MobileObservationInput() {
                         console.log('Offline - observation saved to Dexie only')
                       }
 
-                      // Best-effort: log GPS with observacion=true
-                      try {
-                        const pos = await getCurrentPosition({ enableHighAccuracy: true, maximumAge: 0, timeout: 8000 })
-                        await saveGpsPoint({
-                          latitud: pos.coords.latitude,
-                          longitud: pos.coords.longitude,
-                          precision: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
-                          altitud: Number.isFinite(pos.coords.altitude as any) ? (pos.coords.altitude as number) : null,
-                          capturado_en: new Date().toISOString(),
-                          observacion: true,
-                          usuario_id: 1,
-                        })
-                      } catch { }
+                      // GPS already handled above
 
                       savedCount++
                     } catch (err: any) {

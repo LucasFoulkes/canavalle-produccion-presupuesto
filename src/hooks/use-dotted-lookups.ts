@@ -68,6 +68,10 @@ export function useDottedLookups(tableId: string, rows: any[], columns: Column[]
                 { fk: 'id_bloque', table: 'bloque' },
                 { fk: 'id_finca', table: 'finca' },
             ],
+            // Direct link to puntos_gps by UUID in column 'punto_gps'
+            puntos_gps: [
+                { fk: 'punto_gps', table: 'puntos_gps' },
+            ],
         },
         pinche: {
             // pinche has direct FKs: cama, bloque, variedad

@@ -116,6 +116,7 @@ export async function pushPendingObservations(): Promise<PushResult> {
     cantidad: number
     ubicacion_seccion?: string | null
     id_usuario: number | string
+    punto_gps?: string | null
     needs_sync?: boolean
     [k: string]: unknown
   }
@@ -132,6 +133,7 @@ export async function pushPendingObservations(): Promise<PushResult> {
       cantidad: row.cantidad,
       ubicacion_seccion: row.ubicacion_seccion ?? null,
       id_usuario: row.id_usuario,
+      punto_gps: (row as any).punto_gps ?? null,
     }
 
     try {
@@ -292,7 +294,7 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
   const store = getStore('puntos_gps')
   const all = (await store.toArray()) as AnyRow[]
   type PendingGps = {
-    __key: string
+    id?: string
     latitud: number
     longitud: number
     precision?: number | null
@@ -309,7 +311,7 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
   let anySucceeded = false
   for (const row of pending) {
     result.attempted++
-    const tempKey = row.__key
+    const tempId = (row as any).id ?? null
     const payload = {
       latitud: row.latitud,
       longitud: row.longitud,
@@ -323,7 +325,7 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
     try {
       const { error } = await puntosGpsService.insert(payload as any)
       if (error) throw error
-      try { await store.delete(tempKey) } catch { }
+      if (tempId) { try { await store.delete(tempId) } catch { } }
       result.succeeded++
       anySucceeded = true
     } catch (e) {

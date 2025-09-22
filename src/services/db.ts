@@ -155,6 +155,7 @@ export const TABLES: Record<string, TableConfig> = {
             'tipo_observacion',
             'cantidad',
             'id_usuario',
+            'punto_gps',
             // 'eliminado_en',
         ),
     },
@@ -269,8 +270,8 @@ export const SERVICE_PK: Record<string, string> = {
     pinche_tipo: 'codigo',
     // produccion has no explicit PK; use synthetic key in Dexie
     produccion: '__key',
-    // puntos_gps: PK unknown; use synthetic for view-only sync
-    puntos_gps: '__key',
+    // puntos_gps now has UUID PK 'id'
+    puntos_gps: 'id',
 }
 
 const SERVICES = Object.fromEntries(

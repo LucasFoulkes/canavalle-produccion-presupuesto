@@ -10,17 +10,18 @@ export type GpsPoint = {
     capturado_en: string
     observacion?: boolean
     usuario_id?: number | null
+    id?: string // server UUID, if known
 }
 
 export async function saveGpsPoint(point: GpsPoint): Promise<void> {
     const store = getStore('puntos_gps')
-    const tempKey = `${Date.now()}-${Math.random()}`
-    const tempRow = { __key: tempKey, ...point, needs_sync: true }
+    const tempId = `temp:${Date.now()}-${Math.random()}`
+    const tempRow = { id: tempId, ...point, needs_sync: true }
     await store.put(tempRow as any)
 
     if (typeof navigator !== 'undefined' && navigator.onLine) {
         try {
-            const { error } = await puntosGpsService.insert({
+            const { data, error } = await puntosGpsService.insert({
                 latitud: point.latitud,
                 longitud: point.longitud,
                 precision: point.precision ?? null,
@@ -30,8 +31,13 @@ export async function saveGpsPoint(point: GpsPoint): Promise<void> {
                 usuario_id: point.usuario_id ?? null,
             } as any)
             if (!error) {
-                try { await store.delete(tempKey) } catch { }
-                try { await syncTable('puntos_gps') } catch { }
+                try { await store.delete(tempId) } catch { }
+                // Upsert the returned row to Dexie to have the UUID available immediately
+                if (data) {
+                    await store.put({ ...(data as any), needs_sync: false })
+                } else {
+                    try { await syncTable('puntos_gps') } catch { }
+                }
             }
         } catch { }
     }
