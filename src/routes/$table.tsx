@@ -78,7 +78,7 @@ function TableRoute() {
                 data={data}
                 loading={loading}
                 error={error}
-                caption={`${tableName} (${data.length})`}
+                caption={`${data.length}`}
                 keyField={tableName === 'finca' ? 'id_finca' : tableName === 'bloque' ? 'id_bloque' : tableName === 'cama' ? 'id_cama' : undefined}
                 columnLabels={tableName === 'finca' ? {
                     id_finca: 'ID',
