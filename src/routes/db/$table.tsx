@@ -126,10 +126,25 @@ function Page() {
 
   const { columns, rows, error } = useDbTable(table)
   const { registerColumns, query, column, filters } = useTableFilter()
+  // Extend columns for grupo_cama to include cama_range and camas_count
+  const columnsWithRange = React.useMemo(() => {
+    if (table !== 'grupo_cama') return columns
+    const keys = new Set(columns.map(c => String((c as any).key)))
+    // Determine insertion index (after 'numero_camas' if present, else before 'total_plantas', else end)
+    const idxNumero = columns.findIndex(c => String((c as any).key) === 'numero_camas')
+    const idxTotal = columns.findIndex(c => String((c as any).key) === 'total_plantas')
+    const insertAt = idxNumero >= 0 ? idxNumero + 1 : (idxTotal >= 0 ? idxTotal : columns.length)
+    const result = [...columns]
+    const toInsert: any[] = []
+    if (!keys.has('cama_range')) toInsert.push({ key: 'cama_range', header: 'Rango camas' })
+    if (!keys.has('camas_count')) toInsert.push({ key: 'camas_count', header: 'Camas (#)' })
+    if (toInsert.length) result.splice(insertAt, 0, ...toInsert)
+    return result
+  }, [table, columns])
   // Register columns on changes
   React.useEffect(() => {
-    registerColumns(columns.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
-  }, [table, columns, registerColumns])
+    registerColumns(columnsWithRange.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
+  }, [table, columnsWithRange, registerColumns])
   // Some tables (e.g., 'pinche') have nullable FKs; don't block rendering waiting for all dotted lookups
   const requireAllLookups = table !== 'pinche' && table !== 'produccion' && table !== 'puntos_gps'
   const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: requireAllLookups })
@@ -244,6 +259,7 @@ function Page() {
       return { ...r, cama_range: range, camas_count: nums.length }
     })
   }, [table, filtered, camas, numberFromCamaNombre])
+  const rowsForTable = React.useMemo(() => table === 'grupo_cama' ? rowsWithRange : filtered, [table, rowsWithRange, filtered])
 
   React.useEffect(() => {
     if (!isGrupoCama && !isEstadosFenologicos && !isObservacion) return
@@ -300,6 +316,7 @@ function Page() {
       tipo_planta: '',
       numero_camas: '',
       total_plantas: '',
+      cama_range: '',
     })
     setErrorMsg(null)
     setEditorOpen(true)
@@ -341,6 +358,7 @@ function Page() {
       tipo_planta: row.tipo_planta ?? '',
       numero_camas: row.numero_camas ?? '',
       total_plantas: row.total_plantas ?? '',
+      cama_range: row.cama_range ?? '',
     })
     setErrorMsg(null)
     setEditorOpen(true)
@@ -419,6 +437,33 @@ function Page() {
           if (error) throw error
           const updated = (data as any)
           if (updated) await getStore('grupo_cama').put(updated as any)
+          // Reassign camas if cama_range provided
+          if (editing.cama_range) {
+            const m = String(editing.cama_range).trim().match(/^(\d+)\s*[-–]\s*(\d+)$/)
+            if (m) {
+              const a = Number(m[1]); const b = Number(m[2])
+              const min = Math.min(a, b); const max = Math.max(a, b)
+              // Determine same bloque/variedad for this grupo
+              const grp = grupos.find((g: any) => String(g.id_grupo) === String(id))
+              const id_bloque = grp ? (grp as any).id_bloque : editing.id_bloque
+              const id_variedad = grp ? (grp as any).id_variedad : editing.id_variedad
+              const affected = camas.filter((c: any) => {
+                const n = numberFromCamaNombre((c as any).nombre)
+                if (n == null || n < min || n > max) return false
+                const g = grupos.find((gg: any) => String(gg.id_grupo) === String((c as any).id_grupo))
+                if (!g) return false
+                return String((g as any).id_bloque) === String(id_bloque) && String((g as any).id_variedad) === String(id_variedad)
+              })
+              for (const cm of affected) {
+                const { data: d2, error: e2 } = await camaService.updateById((cm as any).id_cama, { id_grupo: id })
+                if (!e2 && d2) {
+                  await getStore('cama').put(d2 as any)
+                }
+              }
+              // Refresh local state list for immediate UI update
+              setCamas(await getStore('cama').toArray() as any[])
+            }
+          }
         } else {
           const payload: any = { ...editing }
           delete payload.id_finca
@@ -426,6 +471,31 @@ function Page() {
           if (error) throw error
           const created = (data as any)
           if (created) await getStore('grupo_cama').put(created as any)
+          // After create, optionally reassign camas to the new group
+          if (created && editing.cama_range) {
+            const m = String(editing.cama_range).trim().match(/^(\d+)\s*[-–]\s*(\d+)$/)
+            if (m) {
+              const a = Number(m[1]); const b = Number(m[2])
+              const min = Math.min(a, b); const max = Math.max(a, b)
+              const id = (created as any).id_grupo
+              const id_bloque = (created as any).id_bloque ?? editing.id_bloque
+              const id_variedad = (created as any).id_variedad ?? editing.id_variedad
+              const affected = camas.filter((c: any) => {
+                const n = numberFromCamaNombre((c as any).nombre)
+                if (n == null || n < min || n > max) return false
+                const g = grupos.find((gg: any) => String(gg.id_grupo) === String((c as any).id_grupo))
+                if (!g) return false
+                return String((g as any).id_bloque) === String(id_bloque) && String((g as any).id_variedad) === String(id_variedad)
+              })
+              for (const cm of affected) {
+                const { data: d2, error: e2 } = await camaService.updateById((cm as any).id_cama, { id_grupo: id })
+                if (!e2 && d2) {
+                  await getStore('cama').put(d2 as any)
+                }
+              }
+              setCamas(await getStore('cama').toArray() as any[])
+            }
+          }
         }
       } else if (isEstadosFenologicos) {
         if (editing.id_estado_fenologico) {
@@ -510,13 +580,13 @@ function Page() {
         <div className="mb-2 text-sm text-red-600">{error}</div>
       )}
       {finalLoading ? (
-        <DataTableSkeleton columns={columns as any} rows={8} />
+        <DataTableSkeleton columns={columnsWithRange as any} rows={8} />
       ) : (
         <div className="flex-1 min-h-0 overflow-hidden">
           <DataTable
             caption={`${filtered.length}`}
-            columns={columns as any}
-            rows={filtered}
+            columns={columnsWithRange as any}
+            rows={rowsForTable}
             getRowKey={(row: any) => (row[SERVICE_PK[table]] ?? row.id ?? row.__key)}
             onRowClick={isGrupoCama ? (row: any) => openEdit(row) : isEstadosFenologicos ? (row: any) => openEditEstado(row) : undefined}
           />
@@ -632,6 +702,18 @@ function Page() {
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Total plantas</label>
                 <Input type="number" value={editing?.total_plantas ?? ''} onChange={(e) => setEditing((p: any) => ({ ...p, total_plantas: e.target.value }))} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs text-muted-foreground mb-1">Rango de camas (ej: 1-20)</label>
+                <Input
+                  type="text"
+                  placeholder="1-20"
+                  value={editing?.cama_range ?? ''}
+                  onChange={(e) => setEditing((p: any) => ({ ...p, cama_range: e.target.value }))}
+                />
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  Al guardar, las camas con números en ese rango y que pertenezcan al mismo bloque/variedad se asignarán a este grupo.
+                </div>
               </div>
             </div>
             {errorMsg ? <div className="text-sm text-red-600 mt-2">{errorMsg}</div> : null}
