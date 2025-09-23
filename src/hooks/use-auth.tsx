@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { usuariosService } from '@/services/db'
+import { getStore } from '@/lib/dexie'
 
 export type Usuario = {
     id_usuario: number
@@ -47,7 +48,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } catch { }
             return true
         }
-        // Offline fallback: only allow if pin matches last logged-in pin
+        // Offline: try local Dexie lookup by PIN; fallback to lastPin cache
+        try {
+            const store = getStore('usuario')
+            const all = (await store.toArray()) as any[]
+            const found = all.find((u) => String(u?.clave_pin ?? '') === String(pin))
+            if (found) {
+                setUser(found as Usuario)
+                try {
+                    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(found))
+                    localStorage.setItem(STORAGE_LAST_PIN_KEY, pin)
+                } catch { }
+                return true
+            }
+        } catch { /* ignore dexie issues */ }
         try {
             const lastPin = localStorage.getItem(STORAGE_LAST_PIN_KEY)
             const raw = localStorage.getItem(STORAGE_USER_KEY)
@@ -69,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [])
 
     const createUser = React.useCallback(async (input: { nombres?: string; apellidos?: string; rol?: string; clave_pin: string; cedula?: string }) => {
-        if (!navigator.onLine) throw new Error('Se requiere conexión para crear usuario')
         const payload = {
             nombres: input.nombres ?? null,
             apellidos: input.apellidos ?? null,
@@ -77,15 +90,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             clave_pin: input.clave_pin,
             cedula: input.cedula ?? null,
         }
-        const { data, error } = await usuariosService.insert(payload as any)
-        if (error || !data) throw error ?? new Error('No se pudo crear usuario')
-        const u = data as unknown as Usuario
-        setUser(u)
+
+        // If online, try server first
+        if (typeof navigator === 'undefined' || navigator.onLine) {
+            const { data, error } = await usuariosService.insert(payload as any)
+            if (!error && data) {
+                const u = data as unknown as Usuario
+                // Upsert to Dexie
+                try { await getStore('usuario').put(u as any) } catch { }
+                setUser(u)
+                try {
+                    localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(u))
+                    localStorage.setItem(STORAGE_LAST_PIN_KEY, input.clave_pin)
+                } catch { }
+                return u
+            }
+            // If server failed for a transient reason, fall through to offline path
+        }
+
+        // Offline (or server failed): create a temporary local user to allow immediate usage
+        const tempUser: Usuario = {
+            id_usuario: (Date.now() + Math.random()) as any, // temporary key (string/number ok for Dexie)
+            creado_en: new Date().toISOString(),
+            nombres: payload.nombres ?? undefined,
+            apellidos: payload.apellidos ?? undefined,
+            rol: payload.rol ?? undefined,
+            clave_pin: payload.clave_pin,
+            cedula: payload.cedula ?? undefined,
+        }
         try {
-            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(u))
+            await getStore('usuario').put({ ...(tempUser as any), needs_sync: true })
+        } catch { }
+        setUser(tempUser)
+        try {
+            localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(tempUser))
             localStorage.setItem(STORAGE_LAST_PIN_KEY, input.clave_pin)
         } catch { }
-        return u
+        return tempUser
     }, [])
 
     const value: AuthContextType = React.useMemo(() => ({ user, loginWithPin, logout, createUser }), [user, loginWithPin, logout, createUser])

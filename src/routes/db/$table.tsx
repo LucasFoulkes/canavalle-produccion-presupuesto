@@ -2,7 +2,7 @@ import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router'
 import * as React from 'react'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
-import { getTableConfig, getTableService, SERVICE_PK, grupoCamaService, estadosFenologicosService, observacionService } from '@/services/db'
+import { getTableConfig, getTableService, SERVICE_PK, grupoCamaService, estadosFenologicosService, observacionService, camaService } from '@/services/db'
 import { formatDate, isDateLikeKey, formatDateISO } from '@/lib/utils'
 import { getStore } from '@/lib/dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
@@ -215,6 +215,35 @@ function Page() {
   const [grupos, setGrupos] = React.useState<any[]>([])
   const [estadoTipos, setEstadoTipos] = React.useState<any[]>([])
   const [usuarios, setUsuarios] = React.useState<any[]>([])
+
+  // For grupo_cama: compute cama_range (min-max parsed from cama.nombre) and camas_count
+  const numberFromCamaNombre = React.useCallback((nombre: any): number | null => {
+    if (nombre == null) return null
+    const m = String(nombre).match(/\d+/)
+    if (!m) return null
+    const n = Number(m[0])
+    return Number.isFinite(n) ? n : null
+  }, [])
+
+  const rowsWithRange = React.useMemo(() => {
+    if (table !== 'grupo_cama') return filtered
+    return filtered.map((r: any) => {
+      const gid = String(r.id_grupo)
+      const nums: number[] = []
+      for (const c of camas) {
+        if (String((c as any).id_grupo) !== gid) continue
+        const n = numberFromCamaNombre((c as any).nombre)
+        if (n != null) nums.push(n)
+      }
+      let range = ''
+      if (nums.length > 0) {
+        const min = Math.min(...nums)
+        const max = Math.max(...nums)
+        range = `${min}-${max}`
+      }
+      return { ...r, cama_range: range, camas_count: nums.length }
+    })
+  }, [table, filtered, camas, numberFromCamaNombre])
 
   React.useEffect(() => {
     if (!isGrupoCama && !isEstadosFenologicos && !isObservacion) return

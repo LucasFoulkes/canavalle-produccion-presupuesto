@@ -6,7 +6,7 @@ import './index.css'
 // Import the generated route tree
 import { routeTree } from './routeTree.gen'
 import { initDexieSchema } from '@/lib/dexie'
-import { syncAllTables, pushPendingObservations, pushPendingPinches, pushPendingProduccion, pushPendingPuntosGps } from '@/services/sync'
+import { syncAllTables, pushPendingObservations, pushPendingPinches, pushPendingProduccion, pushPendingPuntosGps, pushPendingUsuarios } from '@/services/sync'
 import { NotFound } from '@/components/not-found'
 import { AuthProvider } from '@/hooks/use-auth'
 
@@ -34,6 +34,7 @@ const wireOnlineSync = () => {
       pushPendingPinches(),
       pushPendingProduccion(),
       pushPendingPuntosGps(),
+      pushPendingUsuarios(),
     ])
       .catch((error) => console.warn('[push] online push failed', error))
       .finally(() => {
@@ -68,6 +69,7 @@ wireOnlineSync()
       pushPendingPinches().catch(() => { })
       pushPendingProduccion().catch(() => { })
       pushPendingPuntosGps().catch(() => { })
+      pushPendingUsuarios().catch(() => { })
       syncAllTables().catch(() => { })
     } catch (e) {
       // Dexie might not be available (e.g., private mode); ignore

@@ -1,5 +1,5 @@
 ﻿import { AnyRow, getStore, initDexieSchema } from '@/lib/dexie'
-import { SERVICE_PK, observacionService, pincheService, produccionService, puntosGpsService } from '@/services/db'
+import { SERVICE_PK, observacionService, pincheService, produccionService, puntosGpsService, usuariosService } from '@/services/db'
 import { supabase } from '@/lib/supabase'
 
 export type SyncResult = { table: string; count: number }
@@ -336,6 +336,64 @@ export async function pushPendingPuntosGps(): Promise<PushResult> {
 
   if (anySucceeded) {
     try { await syncTable('puntos_gps') } catch (err) { console.debug('[push] ignore puntos_gps refresh error', err) }
+  }
+
+  return result
+}
+
+// --- Outbound (push) sync: upload offline-created usuarios ---
+export async function pushPendingUsuarios(): Promise<PushResult> {
+  await initDexieSchema()
+
+  const result: PushResult = { attempted: 0, succeeded: 0, failed: 0 }
+
+  if (isOffline()) {
+    console.info('[push] skipped usuarios: browser is offline')
+    return result
+  }
+
+  const store = getStore('usuario')
+  const all = (await store.toArray()) as AnyRow[]
+  type PendingUsuario = {
+    id_usuario?: number | string
+    nombres?: string | null
+    apellidos?: string | null
+    rol?: string | null
+    clave_pin: string
+    cedula?: string | null
+    needs_sync?: boolean
+    [k: string]: unknown
+  }
+  const pending = all.filter((r) => (r as PendingUsuario).needs_sync) as PendingUsuario[]
+
+  if (pending.length === 0) return result
+
+  for (const row of pending) {
+    result.attempted++
+    const tempId = row.id_usuario
+    const payload = {
+      nombres: row.nombres ?? null,
+      apellidos: row.apellidos ?? null,
+      rol: row.rol ?? null,
+      clave_pin: row.clave_pin,
+      cedula: row.cedula ?? null,
+    }
+
+    try {
+      const { data, error } = await usuariosService.insert(payload as any)
+      if (error) throw error
+
+      if (typeof tempId !== 'undefined') {
+        try { await store.delete(tempId) } catch (err) { console.debug('[push] could not delete temp usuario', err) }
+      }
+      if (data) {
+        await store.put({ ...(data as unknown as AnyRow), needs_sync: false })
+      }
+      result.succeeded++
+    } catch (e) {
+      console.warn('[push] failed to upload usuario', e)
+      result.failed++
+    }
   }
 
   return result
