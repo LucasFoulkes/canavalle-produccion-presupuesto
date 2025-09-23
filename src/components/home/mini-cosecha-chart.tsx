@@ -67,7 +67,7 @@ export function MiniCosechaChart({ rows, byWeek, onToggle }: { rows: MiniRow[]; 
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[260px] max-w-[80vw] p-0" align="end" sideOffset={4} onOpenAutoFocus={(e) => e.preventDefault()}>
+                        <PopoverContent className="w-[260px] max-w-[80vw] p-0" align="end" sideOffset={4} onOpenAutoFocus={(e: Event) => e.preventDefault()}>
                             <Command>
                                 <CommandInput placeholder="Buscar variedad..." />
                                 <CommandList>

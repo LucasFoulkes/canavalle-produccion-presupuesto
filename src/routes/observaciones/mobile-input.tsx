@@ -4,6 +4,7 @@ import { ChevronLeft, Search } from 'lucide-react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, getStore } from '@/lib/dexie'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { filterObservationTypes } from '@/config/observation-types'
@@ -95,7 +96,7 @@ function MobileObservationInput() {
               size="sm"
               className="bg-blue-600 text-white hover:bg-blue-700"
             >
-              Pinches / Producción sin cama
+              Sin cama
             </Button>
           )}
           {currentStep === 'input' && (Object.values(globalCounters).some((c) => c > 0) || Object.values(pincheCounters).some((c) => c > 0) || produccionCount > 0) && (
@@ -636,6 +637,7 @@ function CamaSelection({
   onSearchChange: (query: string) => void
   onSelect: (cama: any) => void
 }) {
+  const observaciones = useLiveQuery(() => db.observacion.toArray(), []) ?? []
   const allGrupos = useLiveQuery(
     () => db.grupo_cama.toArray(),
     []
@@ -645,6 +647,14 @@ function CamaSelection({
     () => db.cama.toArray(),
     []
   ) ?? []
+
+  // Today boundaries in local time
+  const [dayStart, dayEnd] = React.useMemo(() => {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    return [start.getTime(), end.getTime()]
+  }, [])
 
   const camas = React.useMemo(() => {
     // Find grupos for this bloque and variedad
@@ -669,6 +679,33 @@ function CamaSelection({
     return camas.filter((c: any) => c.nombre.toLowerCase().includes(query))
   }, [camas, searchQuery])
 
+  // Aggregate today's observations for bloque+variedad to show at top as badges
+  const bloqueVariedadBadges = React.useMemo(() => {
+    if (!bloqueId || !variedadId) return [] as { tipo: string; total: number }[]
+    // Map cama ids belonging to this bloque/variedad for quick checks
+    const grupos = allGrupos.filter((g: any) => String(g.id_bloque) === String(bloqueId) && String(g.id_variedad) === String(variedadId) && (!g.eliminado_en || g.eliminado_en === ''))
+    const grupoIds = new Set(grupos.map((g: any) => String(g.id_grupo)))
+    const camasIds = new Set(
+      allCamas
+        .filter((c: any) => grupoIds.has(String(c.id_grupo)) && (!c.eliminado_en || c.eliminado_en === ''))
+        .map((c: any) => String(c.id_cama))
+    )
+    const acc = new Map<string, number>()
+    for (const o of observaciones as any[]) {
+      const camaId = String((o as any)?.id_cama ?? '')
+      if (!camaId || !camasIds.has(camaId)) continue
+      const created = (o as any)?.creado_en ?? (o as any)?.created_at
+      const t = Date.parse(String(created ?? ''))
+      if (!Number.isFinite(t) || t < dayStart || t > dayEnd) continue
+      const tipo = String((o as any)?.tipo_observacion ?? '')
+      if (!tipo) continue
+      const cant = Number((o as any)?.cantidad)
+      const add = Number.isFinite(cant) ? cant : 0
+      acc.set(tipo, (acc.get(tipo) || 0) + add)
+    }
+    return Array.from(acc.entries()).map(([tipo, total]) => ({ tipo, total })).sort((a, b) => b.total - a.total).slice(0, 20)
+  }, [observaciones, allGrupos, allCamas, bloqueId, variedadId, dayStart, dayEnd])
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-shrink-0 bg-background p-4 border-b">
@@ -682,6 +719,19 @@ function CamaSelection({
             className="pl-9"
           />
         </div>
+        {bloqueVariedadBadges.length > 0 && (
+          <div className="mt-3">
+            <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Hoy en este bloque · variedad</div>
+            <div className="flex flex-wrap gap-1.5">
+              {bloqueVariedadBadges.map((b) => (
+                <Badge key={`bv-${b.tipo}`} title={`${b.tipo}: ${b.total}`}>
+                  <span className="truncate max-w-[120px]">{b.tipo}</span>
+                  <span className="opacity-75">{b.total}</span>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="mx-auto max-w-7xl">
@@ -776,6 +826,83 @@ function ObservationInput({
     }
   }, [produccionSelected, produccionCount])
 
+  // --- Aggregate existing observations for bloque and cama to show as badges ---
+  const observaciones = useLiveQuery(() => db.observacion.toArray(), []) ?? []
+  const allCamas = useLiveQuery(() => db.cama.toArray(), []) ?? []
+  const allGrupos = useLiveQuery(() => db.grupo_cama.toArray(), []) ?? []
+
+  const selectedBloqueId = React.useMemo(() => String((_bloque as any)?.id_bloque ?? ''), [_bloque])
+  const selectedVariedadId = React.useMemo(() => String((_variedad as any)?.id_variedad ?? ''), [_variedad])
+  const selectedCamaId = React.useMemo(() => String((_cama as any)?.id_cama ?? ''), [_cama])
+
+  // Today boundaries in local time
+  const [dayStart, dayEnd] = React.useMemo(() => {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    return [start.getTime(), end.getTime()]
+  }, [])
+
+  const camasById = React.useMemo(() => {
+    const m = new Map<string, any>()
+    for (const c of allCamas as any[]) m.set(String((c as any).id_cama), c)
+    return m
+  }, [allCamas])
+  const gruposById = React.useMemo(() => {
+    const m = new Map<string, any>()
+    for (const g of allGrupos as any[]) m.set(String((g as any).id_grupo), g)
+    return m
+  }, [allGrupos])
+
+  type BadgeItem = { tipo: string; total: number }
+  const bloqueBadges: BadgeItem[] = React.useMemo(() => {
+    if (!selectedBloqueId) return []
+    const acc = new Map<string, number>()
+    for (const o of (observaciones as any[])) {
+      const camaId = String((o as any)?.id_cama ?? '')
+      if (!camaId) continue
+      const created = (o as any)?.creado_en ?? (o as any)?.created_at
+      const t = Date.parse(String(created ?? ''))
+      if (!Number.isFinite(t) || t < dayStart || t > dayEnd) continue
+      const cama = camasById.get(camaId)
+      if (!cama) continue
+      const grupo = gruposById.get(String((cama as any).id_grupo))
+      if (!grupo) continue
+      const bloqueOk = String((grupo as any).id_bloque) === selectedBloqueId
+      const variedadOk = selectedVariedadId ? String((grupo as any).id_variedad) === selectedVariedadId : true
+      if (!bloqueOk || !variedadOk) continue
+      const tipo = String((o as any)?.tipo_observacion ?? '')
+      if (!tipo) continue
+      const cant = Number((o as any)?.cantidad)
+      const add = Number.isFinite(cant) ? cant : 0
+      acc.set(tipo, (acc.get(tipo) || 0) + add)
+    }
+    return Array.from(acc.entries())
+      .map(([tipo, total]) => ({ tipo, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 20)
+  }, [observaciones, camasById, gruposById, selectedBloqueId, selectedVariedadId, dayStart, dayEnd])
+
+  // For cama, show individual entries for today (not aggregated)
+  const camaEntries: { id: string; tipo: string; cantidad: number }[] = React.useMemo(() => {
+    if (!selectedCamaId) return []
+    const rows: { id: string; tipo: string; cantidad: number }[] = []
+    for (const o of (observaciones as any[])) {
+      const camaId = String((o as any)?.id_cama ?? '')
+      if (camaId !== selectedCamaId) continue
+      const created = (o as any)?.creado_en ?? (o as any)?.created_at
+      const t = Date.parse(String(created ?? ''))
+      if (!Number.isFinite(t) || t < dayStart || t > dayEnd) continue
+      const tipo = String((o as any)?.tipo_observacion ?? '')
+      if (!tipo) continue
+      const cant = Number((o as any)?.cantidad)
+      const cantidad = Number.isFinite(cant) ? cant : 0
+      const id = String((o as any)?.id_observacion ?? `${tipo}-${t}-${rows.length}`)
+      rows.push({ id, tipo, cantidad })
+    }
+    return rows
+  }, [observaciones, selectedCamaId, dayStart, dayEnd])
+
   const handleIncrement = (typeCode: string) => {
     setTipoObservacion(typeCode)
     setCounters(prev => {
@@ -833,6 +960,38 @@ function ObservationInput({
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto p-4">
         <div className="flex flex-col gap-4 pb-32">
+          {/* Existing observations for today: first for bloque/variedad (aggregated), then for cama (individual) */}
+          {(bloqueBadges.length > 0 || camaEntries.length > 0) && (
+            <div className="space-y-3">
+              {bloqueBadges.length > 0 && (
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Hoy en este bloque{selectedVariedadId ? ' · variedad' : ''}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {bloqueBadges.map((b) => (
+                      <Badge key={`blk-${b.tipo}`} title={`${b.tipo}: ${b.total}`}>
+                        <span className="truncate max-w-[120px]">{b.tipo}</span>
+                        <span className="opacity-75">{b.total}</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {camaEntries.length > 0 && (
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">Hoy en esta cama</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {camaEntries.map((r) => (
+                      <Badge key={`cama-${r.id}`} variant="outline" title={`${r.tipo}: ${r.cantidad}`}>
+                        <span className="truncate max-w-[120px]">{r.tipo}</span>
+                        <span className="opacity-75">{r.cantidad}</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {hasCama && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Tipo de observación</label>

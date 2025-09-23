@@ -80,11 +80,13 @@ function PopoverContent({
   align = "center",
   sideOffset = 4,
   style,
+  onOpenAutoFocus,
   ...props
 }: {
   className?: string
   align?: 'start' | 'center' | 'end'
   sideOffset?: number
+  onOpenAutoFocus?: (e: Event) => void
 } & React.HTMLAttributes<HTMLDivElement>) {
   const ctx = React.useContext(PopoverCtx)
   if (!ctx) return null
@@ -109,6 +111,16 @@ function PopoverContent({
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open, setOpen, triggerRef])
+
+  // Call optional onOpenAutoFocus handler when opening, to emulate Radix's API surface
+  React.useEffect(() => {
+    if (open && typeof onOpenAutoFocus === 'function') {
+      try {
+        const ev = new Event('openAutoFocus')
+          ; (onOpenAutoFocus as any)(ev)
+      } catch { }
+    }
+  }, [open, onOpenAutoFocus])
 
   if (!open) return null
   const alignClass = align === 'start' ? 'justify-start' : align === 'end' ? 'justify-end' : 'justify-center'
