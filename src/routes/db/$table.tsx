@@ -3,16 +3,17 @@ import * as React from 'react'
 import { DataTable } from '@/components/data-table'
 import { DataTableSkeleton } from '@/components/data-table-skeleton'
 import { getTableConfig, getTableService, SERVICE_PK, grupoCamaService, estadosFenologicosService, observacionService, camaService } from '@/services/db'
-import { formatDate, isDateLikeKey, formatDateISO } from '@/lib/utils'
+import { formatDate, isDateLikeKey } from '@/lib/utils'
 import { getStore } from '@/lib/dexie'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { syncTable } from '@/services/sync'
 import { useDottedLookups } from '@/hooks/use-dotted-lookups'
-import { useTableFilter } from '@/hooks/use-table-filter'
+import { useFilteredRows, useTableFilter } from '@/hooks/use-table-filter'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { GpsTableMap } from '@/components/gps-table-map'
 
 export const Route = createFileRoute('/db/$table')({
   component: Page,
@@ -125,7 +126,7 @@ function Page() {
   }, [isMobile, table, navigate])
 
   const { columns, rows, error } = useDbTable(table)
-  const { registerColumns, query, column, filters } = useTableFilter()
+  const { registerColumns } = useTableFilter()
   // Extend columns for grupo_cama to include cama_range and camas_count
   const columnsWithRange = React.useMemo(() => {
     if (table !== 'grupo_cama') return columns
@@ -141,77 +142,27 @@ function Page() {
     if (toInsert.length) result.splice(insertAt, 0, ...toInsert)
     return result
   }, [table, columns])
-  // Register columns on changes
+  // Register columns on changes (stabilize to avoid update loops)
+  const filterCols = React.useMemo(() => columnsWithRange.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key), type: (c as any).type })), [columnsWithRange])
+  const lastRegRef = React.useRef<string>('')
   React.useEffect(() => {
-    registerColumns(columnsWithRange.map(c => ({ key: String((c as any).key), label: (c as any).header ?? String((c as any).key) })))
-  }, [table, columnsWithRange, registerColumns])
+    const sig = JSON.stringify(filterCols)
+    if (lastRegRef.current === sig) return
+    lastRegRef.current = sig
+    registerColumns(filterCols as any)
+  }, [filterCols, registerColumns])
   // Some tables (e.g., 'pinche') have nullable FKs; don't block rendering waiting for all dotted lookups
   const requireAllLookups = table !== 'pinche' && table !== 'produccion' && table !== 'puntos_gps'
   const { displayRows, relationLoading } = useDottedLookups(table, rows, columns as any, { requireAll: requireAllLookups })
   const finalLoading = rows == null || relationLoading
-  const filtered = React.useMemo(() => {
-    let rowsToCheck = displayRows
-    if (filters.length) {
-      rowsToCheck = rowsToCheck.filter(r => {
-        return filters.every(f => {
-          const raw = (r as any)[f.column]
-          if (raw == null) return false
-          const valStr = String(raw)
-          const lower = valStr.toLowerCase()
-          switch (f.op) {
-            case 'eq':
-              return lower === f.value.toLowerCase()
-            case 'contains':
-              return lower.includes(f.value.toLowerCase())
-            case 'starts':
-              return lower.startsWith(f.value.toLowerCase())
-            case 'ends':
-              return lower.endsWith(f.value.toLowerCase())
-            case 'gt': {
-              const a = Number(raw); const b = Number(f.value); if (isNaN(a) || isNaN(b)) return false; return a > b
-            }
-            case 'lt': {
-              const a = Number(raw); const b = Number(f.value); if (isNaN(a) || isNaN(b)) return false; return a < b
-            }
-            case 'gte': {
-              const a = Number(raw); const b = Number(f.value); if (isNaN(a) || isNaN(b)) return false; return a >= b
-            }
-            case 'lte': {
-              const a = Number(raw); const b = Number(f.value); if (isNaN(a) || isNaN(b)) return false; return a <= b
-            }
-            case 'between': {
-              // Date or number range
-              if (!f.value2) return false
-              if (isDateLikeKey(f.column)) {
-                const d = formatDateISO(raw)
-                const a = f.value
-                const b = f.value2
-                if (!d || !a || !b) return false
-                return d >= a && d <= b
-              } else {
-                const aNum = Number(f.value); const bNum = Number(f.value2); const n = Number(raw)
-                if ([aNum, bNum, n].some(isNaN)) return false
-                return n >= aNum && n <= bNum
-              }
-            }
-            default:
-              return lower.includes(f.value.toLowerCase())
-          }
-        })
-      })
-    }
-    if (!query) return rowsToCheck
-    const q = query.toLowerCase()
-    const keys = column === '*' ? columns.map(c => String(c.key)) : [column]
-    return rowsToCheck.filter(r => keys.some(k => {
-      const v = (r as any)[k]
-      if (v == null) return false
-      return String(v).toLowerCase().includes(q)
-    }))
-  }, [query, column, displayRows, columns, filters])
+  const filtered = useFilteredRows(displayRows, columnsWithRange as any)
   const isGrupoCama = table === 'grupo_cama'
   const isEstadosFenologicos = table === 'estados_fenologicos'
   const isObservacion = table === 'observacion'
+  const isPuntosGps = table === 'puntos_gps'
+
+  // Toggle map view for puntos_gps
+  const [showGpsMap, setShowGpsMap] = React.useState(false)
 
   // Editor state (only for grupo_cama)
   const [editorOpen, setEditorOpen] = React.useState(false)
@@ -566,15 +517,22 @@ function Page() {
     <div className="h-full min-h-0 min-w-0 flex flex-col overflow-hidden p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="text-sm text-muted-foreground">{getTableConfig(table)?.title ?? table}</div>
-        {isGrupoCama && (
-          <Button size="sm" onClick={openCreate}>Nuevo grupo</Button>
-        )}
-        {isEstadosFenologicos && (
-          <Button size="sm" onClick={openCreateEstado}>Nuevo estado</Button>
-        )}
-        {isObservacion && (
-          <Button size="sm" onClick={openCreateObservacion}>Nueva observación</Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isPuntosGps && (
+            <Button size="sm" variant={showGpsMap ? 'secondary' : 'default'} onClick={() => setShowGpsMap(v => !v)}>
+              {showGpsMap ? 'Ver tabla' : 'Ver mapa'}
+            </Button>
+          )}
+          {isGrupoCama && (
+            <Button size="sm" onClick={openCreate}>Nuevo grupo</Button>
+          )}
+          {isEstadosFenologicos && (
+            <Button size="sm" onClick={openCreateEstado}>Nuevo estado</Button>
+          )}
+          {isObservacion && (
+            <Button size="sm" onClick={openCreateObservacion}>Nueva observación</Button>
+          )}
+        </div>
       </div>
       {!!error && (
         <div className="mb-2 text-sm text-red-600">{error}</div>
@@ -583,13 +541,19 @@ function Page() {
         <DataTableSkeleton columns={columnsWithRange as any} rows={8} />
       ) : (
         <div className="flex-1 min-h-0 overflow-hidden">
-          <DataTable
-            caption={`${filtered.length}`}
-            columns={columnsWithRange as any}
-            rows={rowsForTable}
-            getRowKey={(row: any) => (row[SERVICE_PK[table]] ?? row.id ?? row.__key)}
-            onRowClick={isGrupoCama ? (row: any) => openEdit(row) : isEstadosFenologicos ? (row: any) => openEditEstado(row) : undefined}
-          />
+          {isPuntosGps && showGpsMap ? (
+            <div className="h-full">
+              <GpsTableMap rows={rowsForTable as any} className="relative w-full h-full min-h-[320px] overflow-hidden rounded-md border" />
+            </div>
+          ) : (
+            <DataTable
+              caption={`${filtered.length}`}
+              columns={columnsWithRange as any}
+              rows={rowsForTable}
+              getRowKey={(row: any) => (row[SERVICE_PK[table]] ?? row.id ?? row.__key)}
+              onRowClick={isGrupoCama ? (row: any) => openEdit(row) : isEstadosFenologicos ? (row: any) => openEditEstado(row) : undefined}
+            />
+          )}
         </div>
       )}
 

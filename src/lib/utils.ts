@@ -41,7 +41,8 @@ export function formatDateRange(from?: any, to?: any): string {
 
 // Detect probable date/time column keys for generic tables
 export function isDateLikeKey(key: string): boolean {
-  return /(fecha|creado_en|actualizado_en|eliminado_en|modificado_en)$/i.test(key)
+  // Detect Spanish and English date/time field patterns and generic *_at fields
+  return /(fecha|capturado_en|creado_en|actualizado_en|eliminado_en|modificado_en|_at)$/i.test(key)
 }
 
 // --- Number formatting helpers (ISO digit grouping) ---

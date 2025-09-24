@@ -28,30 +28,35 @@ type TableFilterState = {
 
 const TableFilterContext = React.createContext<TableFilterState | null>(null)
 
+// Stable, top-level inference helper to avoid changing function identities across renders
+const inferTypeByKey = (key: string): 'string' | 'number' | 'date' => {
+    if (isDateLikeKey(key)) return 'date'
+    // Common numeric prefixes and fields
+    if (/^(id_|id$|numero_|num_|cant(idad)?|total_|area_|largo_|ancho_|dias_|latitud$|longitud$|precision$|altitud$)/i.test(key)) return 'number'
+    return 'string'
+}
+
 export const TableFilterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [query, setQuery] = React.useState('')
     const [column, setColumn] = React.useState<string>('*')
     const [columns, setColumns] = React.useState<FilterColumn[]>([])
     const [filters, setFilters] = React.useState<SavedFilter[]>([])
 
-    // Basic heuristic type inference (can be refined later)
-    const inferType = (key: string): 'string' | 'number' | 'date' => {
-        if (isDateLikeKey(key)) return 'date'
-        if (/^(id_|numero_|cantidad|total_|area_|largo_|ancho_|dias_)/i.test(key)) return 'number'
-        return 'string'
-    }
-
     const registerColumns = React.useCallback((cols: FilterColumn[]) => {
-        // If keys changed, update; else ignore to avoid re-renders
         setColumns((prev) => {
-            const prevKeys = prev.map((c) => c.key).join('|')
-            const nextKeys = cols.map((c) => c.key).join('|')
-            if (prevKeys === nextKeys) return prev
-            // When table changes (different set of columns) reset query & selected column
+            const nextList = cols.map(c => ({ ...c, type: c.type ?? inferTypeByKey(c.key) }))
+            const sameLength = prev.length === nextList.length
+            const keysSame = sameLength && prev.every((c, i) => c.key === nextList[i].key)
+            if (keysSame) {
+                // If only labels/types changed, update; else avoid setState
+                const changed = prev.some((c, i) => c.label !== nextList[i].label || c.type !== nextList[i].type)
+                return changed ? nextList : prev
+            }
+            // Columns set changed (likely a different table) — reset filter state
             setQuery('')
             setColumn('*')
             setFilters([])
-            return cols.map(c => ({ ...c, type: c.type ?? inferType(c.key) }))
+            return nextList
         })
     }, [])
 
