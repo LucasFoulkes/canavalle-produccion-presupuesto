@@ -98,7 +98,7 @@ export const db = new Dexie('CanavalleDB') as Dexie & {
 }
 
 // Single latest schema version (no historical versions kept)
-db.version(2).stores({
+db.version(3).stores({
     finca: '++id_finca, nombre, creado_en, eliminado_en',
     bloque: '++id_bloque, id_finca, nombre, creado_en, eliminado_en, numero_camas, area_m2',
     cama: '++id_cama, nombre, creado_en, eliminado_en, largo_metros, plantas_totales, id_grupo, ancho_metros',
@@ -114,7 +114,7 @@ db.version(2).stores({
     pinche_tipo: 'codigo',
     puntos_gps: 'id, latitud, longitud, precision, altitud, capturado_en, creado_en, observacion, usuario_id',
     usuario: '++id_usuario, creado_en, nombres, apellidos, rol, clave_pin, cedula',
-    variedad: '++id_variedad',
+    variedad: '++id_variedad, nombre, color, id_breeder, creado_en, eliminado_en',
     produccion: '++id, created_at, finca, bloque, variedad, cantidad',
     seccion: '++id, largo_m',
 })

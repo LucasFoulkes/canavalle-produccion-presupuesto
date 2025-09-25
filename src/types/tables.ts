@@ -159,4 +159,9 @@ export type Usuario = {
 
 export type Variedad = {
     id_variedad: number
+    nombre: string
+    color: string | null
+    id_breeder: number | null
+    creado_en: string | null
+    eliminado_en: string | null
 }

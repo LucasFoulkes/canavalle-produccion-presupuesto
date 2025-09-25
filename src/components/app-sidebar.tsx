@@ -70,6 +70,22 @@ const data = {
                     url: '/breeder',
                 },
             ],
+        },
+        {
+            title: 'Fenología',
+            url: '/fenologia',
+            icon: PieChart,
+            isActive: false,
+            items: [
+                {
+                    title: "Estados Fenológicos",
+                    url: "/estados_fenologicos",
+                },
+                {
+                    title: "Tipos de Estado Fenológico",
+                    url: "/estado_fenologico_tipo",
+                },
+            ],
         }
     ],
     projects: [
