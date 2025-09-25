@@ -34,7 +34,7 @@ const data = {
             title: "Estructura",
             url: "/finca",
             icon: SquareTerminal,
-            isActive: true,
+            isActive: false,
             items: [
                 {
                     title: "Finca",

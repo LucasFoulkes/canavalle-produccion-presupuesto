@@ -9,50 +9,62 @@ export type TableResult = {
     columns?: string[]
 }
 
+// --- Small DRY helpers: refresh from Supabase then read from Dexie ---
+type DexieTable<T> = { bulkPut: (rows: T[]) => Promise<unknown>; toArray: () => Promise<T[]> }
+
+async function refreshTable<T>(
+    tableName: string,
+    dexieTable: DexieTable<T>,
+    select: string = '*',
+    label?: string,
+): Promise<void> {
+    try {
+        const { data, error } = await supabase.from(tableName).select(select)
+        if (error) throw error
+        const rows = (data ?? []) as T[]
+        await dexieTable.bulkPut(rows)
+    } catch (e) {
+        console.warn(`${label ?? tableName}: refresh failed; using cache`, e)
+    }
+}
+
+async function readAll<T>(dexieTable: DexieTable<T>): Promise<T[]> {
+    return dexieTable.toArray()
+}
+
 
 export async function fetchFincas(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('finca').select('*')
-        if (error) throw error
-        const fincas = (data ?? []) as Finca[]
-        await db.transaction('rw', db.finca, async () => {
-            await db.finca.bulkPut(fincas)
-        })
-    } catch (e) {
-        console.warn('fetchFincas: network refresh failed; using cache', e)
-    }
-    const list = await db.finca.toArray()
+    await refreshTable<Finca>('finca', db.finca, '*', 'fetchFincas')
+    const list = await readAll(db.finca)
     const rows = list.map(({ id_finca, nombre }) => ({ id_finca, nombre } as Record<string, unknown>))
     return { rows, columns: ['nombre'] }
 }
 
 
 export async function fetchBloque(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('bloque').select('*')
-        if (error) throw error
-        const rows = (data ?? []) as Bloque[]
-        await db.transaction('rw', db.bloque, async () => {
-            await db.bloque.bulkPut(rows)
-        })
-    } catch (e) {
-        console.warn('fetchBloque: refresh bloque failed; using cache', e)
-    }
-
-    try { await fetchFincas() } catch (e) { console.warn('fetchBloque: refresh finca failed; using cache', e) }
+    await refreshTable<Bloque>('bloque', db.bloque, '*', 'fetchBloque')
+    await refreshTable<Finca>('finca', db.finca, '*', 'fetchBloque:finca')
     const [bloques, fincas] = await Promise.all([
-        db.bloque.toArray(),
-        db.finca.toArray(),
+        readAll(db.bloque),
+        readAll(db.finca),
     ])
 
+    // If no bloques, return empty with known columns to avoid Arquero schema issues
+    if (!bloques.length) {
+        return { rows: [], columns: ['finca', 'nombre', 'numero_camas', 'area_m2'] }
+    }
+
+    // Normalize: ensure id_finca exists on all bloque rows
+    const bloquesNorm = bloques.map((b) => ({ ...b, id_finca: b.id_finca ?? null }))
+
     // Build Arquero tables and perform a left join on id_finca
-    const tBloque = aq.from(bloques).rename({ nombre: 'bloque_nombre' })
+    const tBloque = aq.from(bloquesNorm).rename({ nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
     const tFinca = aq.from(fincas).rename({ nombre: 'finca_nombre' })
 
     const joinedBloque = tBloque
-        .join_left(tFinca, ['id_finca', 'id_finca'])
+        .join_left(tFinca, ['bloque_id_finca', 'id_finca'])
         .derive({
-            finca: (d) => (d.finca_nombre ?? (d.id_finca != null ? '' + d.id_finca : '')),
+            finca: (d) => (d.finca_nombre ?? (d.bloque_id_finca != null ? '' + d.bloque_id_finca : '')),
         })
         .select('finca', 'bloque_nombre', 'numero_camas', 'area_m2')
         .rename({ bloque_nombre: 'nombre' })
@@ -64,17 +76,8 @@ export async function fetchBloque(): Promise<TableResult> {
 
 // Fetch breeders and cache; return simple listing
 export async function fetchBreeder(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('breeder').select('*')
-        if (error) throw error
-        const rows = (data ?? []) as Breeder[]
-        await db.transaction('rw', db.breeder, async () => {
-            await db.breeder.bulkPut(rows)
-        })
-    } catch (e) {
-        console.warn('fetchBreeder: refresh failed; using cache', e)
-    }
-    const list = await db.breeder.toArray()
+    await refreshTable<Breeder>('breeder', db.breeder, '*', 'fetchBreeder')
+    const list = await readAll(db.breeder)
     const rows = list.map(({ id_breeder, nombre }) => ({ id_breeder, nombre } as Record<string, unknown>))
     return { rows, columns: ['nombre'] }
 }
@@ -82,58 +85,37 @@ export async function fetchBreeder(): Promise<TableResult> {
 // Dedicated fetcher for 'cama' returning only selected columns
 export async function fetchCama(): Promise<TableResult> {
     // Best-effort: refresh caches from network
-    try {
-        const { data, error } = await supabase.from('cama').select('*')
-        if (error) throw error
-        const rows = (data ?? []) as Cama[]
-        await db.transaction('rw', db.cama, async () => {
-            await db.cama.bulkPut(rows)
-        })
-    } catch (e) {
-        console.warn('fetchCama: refresh cama failed; using cache', e)
-    }
-    // Refresh related references: grupo_cama and bloque, and reuse fetchFincas for finca
-    try {
-        const { data, error } = await supabase.from('grupo_cama').select('*')
-        if (error) throw error
-        const rows = (data ?? []) as GrupoCama[]
-        await db.transaction('rw', db.grupo_cama, async () => {
-            await db.grupo_cama.bulkPut(rows)
-        })
-    } catch (e) {
-        console.warn('fetchCama: refresh grupo_cama failed; using cache', e)
-    }
-    try {
-        const { data, error } = await supabase.from('bloque').select('*')
-        if (error) throw error
-        const rows = (data ?? []) as Bloque[]
-        await db.transaction('rw', db.bloque, async () => {
-            await db.bloque.bulkPut(rows)
-        })
-    } catch (e) {
-        console.warn('fetchCama: refresh bloque failed; using cache', e)
-    }
-    try { await fetchFincas() } catch (e) { console.warn('fetchCama: refresh finca failed; using cache', e) }
+    await refreshTable<Cama>('cama', db.cama, '*', 'fetchCama:cama')
+    await refreshTable<GrupoCama>('grupo_cama', db.grupo_cama, '*', 'fetchCama:grupo_cama')
+    await refreshTable<Bloque>('bloque', db.bloque, '*', 'fetchCama:bloque')
+    await refreshTable<Finca>('finca', db.finca, '*', 'fetchCama:finca')
 
     // Single return path: read from cache, then join with Arquero
     const [camas, grupos, bloques, fincas] = await Promise.all([
-        db.cama.toArray(),
-        db.grupo_cama.toArray(),
-        db.bloque.toArray(),
-        db.finca.toArray(),
+        readAll(db.cama),
+        readAll(db.grupo_cama),
+        readAll(db.bloque),
+        readAll(db.finca),
     ])
+
+    // If no camas, return empty with known columns to avoid Arquero schema issues
+    if (!camas.length) {
+        return { rows: [], columns: ['finca', 'bloque', 'nombre', 'id_grupo', 'largo_metros'] }
+    }
 
     const tCama = aq.from(camas).rename({ nombre: 'cama_nombre' })
     const tGrupo = aq.from(grupos).rename({ id_bloque: 'grupo_id_bloque' })
-    const tBloque = aq.from(bloques).rename({ nombre: 'bloque_nombre' })
+    // Normalize: ensure id_finca exists on all bloque rows used in cama join
+    const bloquesNorm2 = bloques.map((b) => ({ ...b, id_finca: b.id_finca ?? null }))
+    const tBloque = aq.from(bloquesNorm2).rename({ nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
     const tFinca = aq.from(fincas).rename({ nombre: 'finca_nombre' })
 
     const joinedCama = tCama
         .join_left(tGrupo, ['id_grupo', 'id_grupo'])
         .join_left(tBloque, ['grupo_id_bloque', 'id_bloque'])
-        .join_left(tFinca, ['id_finca', 'id_finca'])
+        .join_left(tFinca, ['bloque_id_finca', 'id_finca'])
         .derive({
-            finca: (d) => (d.finca_nombre ?? (d.id_finca != null ? '' + d.id_finca : '')),
+            finca: (d) => (d.finca_nombre ?? (d.bloque_id_finca != null ? '' + d.bloque_id_finca : '')),
             bloque: (d) => (d.bloque_nombre ?? (d.id_bloque != null ? '' + d.id_bloque : '')),
         })
         .select('finca', 'bloque', 'cama_nombre', 'id_grupo', 'largo_metros')
@@ -146,23 +128,13 @@ export async function fetchCama(): Promise<TableResult> {
 
 
 export async function fetchVariedad(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('variedad').select('*')
-        if (error) throw error
-        const variedades = (data ?? []) as Variedad[]
-        await db.transaction('rw', db.variedad, async () => {
-            await db.variedad.bulkPut(variedades)
-        })
-    } catch (e) {
-        console.warn('fetchVariedad: refresh failed; using cache', e)
-    }
-    // Ensure breeder cache is refreshed (best effort)
-    try { await fetchBreeder() } catch (e) { console.warn('fetchVariedad: refresh breeder failed; using cache', e) }
+    await refreshTable<Variedad>('variedad', db.variedad, '*', 'fetchVariedad')
+    await refreshTable<Breeder>('breeder', db.breeder, '*', 'fetchVariedad:breeder')
 
     // Join variedad with breeder to show breeder name
     const [varList, breeders] = await Promise.all([
-        db.variedad.toArray(),
-        db.breeder.toArray(),
+        readAll(db.variedad),
+        readAll(db.breeder),
     ])
 
     const tVariedad = aq.from(varList).rename({ nombre: 'variedad_nombre' })
@@ -183,60 +155,83 @@ export async function fetchVariedad(): Promise<TableResult> {
 
 
 export async function fetchEstadoFenologicoTipo(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('estado_fenologico_tipo').select('*')
-        if (error) throw error
-        const estados = (data ?? []) as EstadoFenologicoTipo[]
-        await db.transaction('rw', db.estado_fenologico_tipo, async () => {
-            await db.estado_fenologico_tipo.bulkPut(estados)
-        })
-    } catch (e) {
-        console.warn('fetchEstadosFenologicosTipo: network refresh failed; using cache', e)
-    }
-    const list = await db.estado_fenologico_tipo.toArray()
+    await refreshTable<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*', 'fetchEstadoFenologicoTipo')
+    const list = await readAll(db.estado_fenologico_tipo)
     const rows = list.map(({ codigo, orden }) => ({ codigo, orden } as Record<string, unknown>))
     return { rows, columns: ['codigo', 'orden'] }
 }
 
 // Basic fetch for estados_fenologicos (no joins yet)
 export async function fetchEstadosFenologicos(): Promise<TableResult> {
-    try {
-        const { data, error } = await supabase.from('estados_fenologicos').select('*')
-        if (error) throw error
-        const estados = (data ?? []) as EstadosFenologicos[]
-        await db.transaction('rw', db.estados_fenologicos, async () => {
-            await db.estados_fenologicos.bulkPut(estados)
-        })
-    } catch (e) {
-        console.warn('fetchEstadosFenologicos: network refresh failed; using cache', e)
+    await refreshTable<EstadosFenologicos>('estados_fenologicos', db.estados_fenologicos, '*', 'fetchEstadosFenologicos')
+    await refreshTable<Finca>('finca', db.finca, '*', 'fetchEstadosFenologicos:finca')
+    await refreshTable<Bloque>('bloque', db.bloque, '*', 'fetchEstadosFenologicos:bloque')
+    await refreshTable<Variedad>('variedad', db.variedad, '*', 'fetchEstadosFenologicos:variedad')
+    const [estados, fincas, bloques, variedades] = await Promise.all([
+        readAll(db.estados_fenologicos),
+        readAll(db.finca),
+        readAll(db.bloque),
+        readAll(db.variedad),
+    ])
+
+    // If no estados, return empty with known columns to avoid Arquero schema issues
+    if (!estados.length) {
+        return {
+            rows: [],
+            columns: [
+                'finca', 'bloque', 'variedad',
+                'dias_brotacion', 'dias_cincuenta_mm', 'dias_quince_cm', 'dias_veinte_cm', 'dias_primera_hoja', 'dias_espiga', 'dias_arroz', 'dias_arveja', 'dias_garbanzo', 'dias_uva', 'dias_rayando_color', 'dias_sepalos_abiertos', 'dias_cosecha'
+            ]
+        }
     }
-    const list = await db.estados_fenologicos.toArray()
-    const rows = list.map((e) => ({
-        id_estado_fenologico: e.id_estado_fenologico,
-        id_finca: e.id_finca,
-        id_bloque: e.id_bloque,
-        id_variedad: e.id_variedad,
-        dias_brotacion: e.dias_brotacion,
-        dias_cincuenta_mm: e.dias_cincuenta_mm,
-        dias_quince_cm: e.dias_quince_cm,
-        dias_veinte_cm: e.dias_veinte_cm,
-        dias_primera_hoja: e.dias_primera_hoja,
-        dias_espiga: e.dias_espiga,
-        dias_arroz: e.dias_arroz,
-        dias_arveja: e.dias_arveja,
-        dias_garbanzo: e.dias_garbanzo,
-        dias_uva: e.dias_uva,
-        dias_rayando_color: e.dias_rayando_color,
-        dias_sepalos_abiertos: e.dias_sepalos_abiertos,
-        dias_cosecha: e.dias_cosecha,
-        creado_en: e.creado_en,
-        eliminado_en: e.eliminado_en,
-    } as Record<string, unknown>))
+
+    // Normalize: ensure id_finca and id_bloque columns exist on all rows
+    const estadosNorm = estados.map((e) => ({
+        ...e,
+        id_finca: e.id_finca ?? null,
+        id_bloque: e.id_bloque ?? null,
+        id_variedad: e.id_variedad ?? null,
+    }))
+
+    const tEstados = aq.from(estadosNorm).rename({ id_finca: 'estado_id_finca', id_bloque: 'estado_id_bloque', id_variedad: 'estado_id_variedad' })
+    const tFincas = aq.from(fincas).rename({ nombre: 'finca_nombre' })
+    const tBloques = aq.from(bloques).rename({ nombre: 'bloque_nombre' })
+    const tVariedades = aq.from(variedades).rename({ nombre: 'variedad_nombre' })
+
+    const joined = tEstados
+        .join_left(tFincas, ['estado_id_finca', 'id_finca'])
+        .join_left(tBloques, ['estado_id_bloque', 'id_bloque'])
+        .join_left(tVariedades, ['estado_id_variedad', 'id_variedad'])
+        .derive({
+            finca: (d) => (d.finca_nombre ?? (d.estado_id_finca != null ? '' + d.estado_id_finca : '')),
+            bloque: (d) => (d.bloque_nombre ?? (d.estado_id_bloque != null ? '' + d.estado_id_bloque : '')),
+            variedad: (d) => (d.variedad_nombre ?? (d.estado_id_variedad != null ? '' + d.estado_id_variedad : '')),
+        })
+        .select(
+            'id_estado_fenologico',
+            'finca',
+            'bloque',
+            'variedad',
+            'dias_brotacion',
+            'dias_cincuenta_mm',
+            'dias_quince_cm',
+            'dias_veinte_cm',
+            'dias_primera_hoja',
+            'dias_espiga',
+            'dias_arroz',
+            'dias_arveja',
+            'dias_garbanzo',
+            'dias_uva',
+            'dias_rayando_color',
+            'dias_sepalos_abiertos',
+            'dias_cosecha'
+        )
+
+    const rows = joined.objects() as Array<Record<string, unknown>>
     return {
         rows, columns: [
-            'id_finca', 'id_bloque', 'id_variedad',
-            'dias_brotacion', 'dias_cincuenta_mm', 'dias_quince_cm', 'dias_veinte_cm', 'dias_primera_hoja', 'dias_espiga', 'dias_arroz', 'dias_arveja', 'dias_garbanzo', 'dias_uva', 'dias_rayando_color', 'dias_sepalos_abiertos', 'dias_cosecha',
-            'creado_en', 'eliminado_en'
+            'finca', 'bloque', 'variedad',
+            'dias_brotacion', 'dias_cincuenta_mm', 'dias_quince_cm', 'dias_veinte_cm', 'dias_primera_hoja', 'dias_espiga', 'dias_arroz', 'dias_arveja', 'dias_garbanzo', 'dias_uva', 'dias_rayando_color', 'dias_sepalos_abiertos', 'dias_cosecha'
         ]
     }
 }
