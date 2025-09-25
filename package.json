@@ -21,6 +21,7 @@
     "@tailwindcss/vite": "^4.1.13",
     "@tanstack/react-router": "^1.131.50",
     "@tanstack/react-router-devtools": "^1.131.50",
+    "arquero": "^8.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.2.0",

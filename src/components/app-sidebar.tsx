@@ -25,14 +25,14 @@ import { Link } from '@tanstack/react-router'
 
 const data = {
     user: {
-        name: "shadcn",
-        email: "m@example.com",
+        name: "Lucas Foulkes",
+        email: "lukas@cananvalle.com",
         avatar: "/avatars/shadcn.jpg",
     },
     navMain: [
         {
             title: "Estructura",
-            url: "#",
+            url: "/finca",
             icon: SquareTerminal,
             isActive: true,
             items: [
@@ -49,7 +49,28 @@ const data = {
                     url: "/cama",
                 },
             ],
+
         },
+        {
+            title: "Variedades",
+            url: "/variedad",
+            icon: Frame,
+            isActive: false,
+            items: [
+                {
+                    title: "Variedad",
+                    url: "/variedad",
+                },
+                {
+                    title: 'Patron',
+                    url: '/patron',
+                },
+                {
+                    title: 'Breeder',
+                    url: '/breeder',
+                },
+            ],
+        }
     ],
     projects: [
         {
@@ -82,8 +103,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                     <Command className="size-4" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-medium">Acme Inc</span>
-                                    <span className="truncate text-xs">Enterprise</span>
+                                    <span className="truncate font-medium">Cananvalle</span>
+                                    <span className="truncate text-xs">Ecuador</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>

@@ -18,9 +18,7 @@ export type DataTableProps = {
     caption?: React.ReactNode
     emptyText?: string
     columns?: string[]
-    columnLabels?: Record<string, string>
     format?: Record<string, Formatter>
-    keyField?: string
 }
 
 function defaultRender(value: unknown): React.ReactNode {
@@ -47,9 +45,7 @@ export function DataTable({
     caption,
     emptyText = 'No data',
     columns,
-    columnLabels,
     format,
-    keyField,
 }: DataTableProps) {
     const cols = useMemo(() => {
         if (columns && columns.length) return columns
@@ -57,20 +53,13 @@ export function DataTable({
         return first ? Object.keys(first) : []
     }, [columns, data])
 
-    const rowKeyField = useMemo(() => {
-        if (keyField) return keyField
-        // guessed keys by common patterns
-        const prefer = ['id', 'id_finca', 'uuid', 'key']
-        return prefer.find((k) => cols.includes(k)) ?? cols[0] ?? 'id'
-    }, [keyField, cols])
-
     return (
         <Table>
             {caption ? <TableCaption>{caption}</TableCaption> : null}
-            <TableHeader>
+            <TableHeader className='capitalize'>
                 <TableRow>
                     {cols.map((col) => (
-                        <TableHead key={col}>{columnLabels?.[col] ?? col}</TableHead>
+                        <TableHead key={col}>{col}</TableHead>
                     ))}
                 </TableRow>
             </TableHeader>
@@ -90,22 +79,19 @@ export function DataTable({
                         <TableCell colSpan={cols.length}>{emptyText}</TableCell>
                     </TableRow>
                 ) : (
-                    data.map((row) => {
-                        const keyVal = row[rowKeyField] as React.Key
-                        return (
-                            <TableRow key={keyVal ?? JSON.stringify(row)}>
-                                {cols.map((col) => {
-                                    const val = row[col]
-                                    const fmt = format?.[col]
-                                    return (
-                                        <TableCell key={col}>
-                                            {fmt ? fmt(val, row, col) : defaultRender(val)}
-                                        </TableCell>
-                                    )
-                                })}
-                            </TableRow>
-                        )
-                    })
+                    data.map((row, idx) => (
+                        <TableRow key={idx}>
+                            {cols.map((col) => {
+                                const val = row[col]
+                                const fmt = format?.[col]
+                                return (
+                                    <TableCell key={col}>
+                                        {fmt ? fmt(val, row, col) : defaultRender(val)}
+                                    </TableCell>
+                                )
+                            })}
+                        </TableRow>
+                    ))
                 )}
             </TableBody>
         </Table>
