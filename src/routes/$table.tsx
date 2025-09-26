@@ -17,28 +17,22 @@ function TableRoute() {
 
     useEffect(() => {
         let alive = true
-        ;(async () => {
-            setLoading(true)
-            setError(null)
-            try {
-                // 1) cache-first immediate render
-                const cached = await fetchTable(tableName, { strategy: 'cache-first' })
-                if (alive) {
-                    setRows(cached.rows)
-                    setColumns(cached.columns)
-                    setLoading(false)
+            ; (async () => {
+                setLoading(true)
+                try {
+                    const result = await fetchTable(tableName)
+                    if (alive) {
+                        setRows(result.rows)
+                        setColumns(result.columns)
+                        // no column labels; use raw column names
+                        // keyField no longer used by DataTable
+                    }
+                } catch (err) {
+                    if (alive) setError(err instanceof Error ? err.message : 'Error cargando datos')
+                } finally {
+                    if (alive) setLoading(false)
                 }
-                // 2) network-first refresh and update if different
-                const fresh = await fetchTable(tableName, { strategy: 'network-first' })
-                if (alive) {
-                    setRows(fresh.rows)
-                    setColumns(fresh.columns)
-                }
-            } catch (err) {
-                if (alive) setError(err instanceof Error ? err.message : 'Error cargando datos')
-                if (alive) setLoading(false)
-            }
-        })()
+            })()
         return () => {
             alive = false
         }

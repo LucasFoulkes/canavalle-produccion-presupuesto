@@ -12,7 +12,6 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { SidebarSearch } from "@/components/sidebar-search"
 import {
@@ -106,23 +105,7 @@ const data = {
             ],
         },
     ],
-    projects: [
-        {
-            name: "Design Engineering",
-            url: "#",
-            icon: Frame,
-        },
-        {
-            name: "Sales & Marketing",
-            url: "#",
-            icon: PieChart,
-        },
-        {
-            name: "Travel",
-            url: "#",
-            icon: Map,
-        },
-    ],
+    // projects removed (Acciones section)
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -149,8 +132,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} />
-                <NavProjects projects={data.projects} />
+                <NavMain items={data.navMain} label="Base" />
+                <NavMain
+                    label="Resúmenes"
+                    items={[
+                        {
+                            title: 'Área productiva (FBV)',
+                            url: '/area_productiva',
+                            icon: PieChart,
+                            isActive: false,
+                            items: [],
+                        },
+                        {
+                            title: 'Obs. por cama y sección',
+                            url: '/observaciones_por_cama',
+                            icon: PieChart,
+                            isActive: false,
+                            items: [],
+                        },
+                    ]}
+                />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={data.user} />
