@@ -3,17 +3,14 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  // Render a plain table element without a wrapping div so sticky headers work.
+  // Consumers should wrap the table in their own scroll container if needed.
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
-    </div>
+    <table
+      data-slot="table"
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
   )
 }
 
@@ -21,7 +18,8 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      // Make header sticky-friendly by default. Parent must manage scroll.
+      className={cn("sticky top-0 bg-background [&_tr]:border-b", className)}
       {...props}
     />
   )

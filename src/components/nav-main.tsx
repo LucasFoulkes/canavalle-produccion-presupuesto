@@ -42,7 +42,7 @@ export function NavMain({
                     <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
                         <SidebarMenuItem>
                             <CollapsibleTrigger asChild>
-                                <SidebarMenuButton tooltip={item.title}>
+                                <SidebarMenuButton tooltip={item.title} className="text-muted-foreground font-thin data-[state=open]:text-sidebar-foreground">
                                     <item.icon />
                                     <span>{item.title}</span>
                                 </SidebarMenuButton>

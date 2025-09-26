@@ -7,11 +7,14 @@ import {
     Map,
     PieChart,
     SquareTerminal,
+    Database,
+    Users,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
+import { SidebarSearch } from "@/components/sidebar-search"
 import {
     Sidebar,
     SidebarContent,
@@ -30,63 +33,78 @@ const data = {
         avatar: "/avatars/shadcn.jpg",
     },
     navMain: [
+        // Infraestructura productiva
         {
-            title: "Estructura",
+            title: "Infraestructura",
             url: "/finca",
             icon: SquareTerminal,
             isActive: false,
             items: [
-                {
-                    title: "Finca",
-                    url: "/finca",
-                },
-                {
-                    title: "Bloque",
-                    url: "/bloque",
-                },
-                {
-                    title: "Cama",
-                    url: "/cama",
-                },
+                { title: "Fincas", url: "/finca" },
+                { title: "Bloques", url: "/bloque" },
+                { title: "Camas", url: "/cama" },
+                { title: "Grupos de Cama", url: "/grupo_cama" },
+                { title: "Secciones", url: "/seccion" },
             ],
-
         },
+        // Material vegetal
         {
-            title: "Variedades",
+            title: "Material Vegetal",
             url: "/variedad",
             icon: Frame,
             isActive: false,
             items: [
-                {
-                    title: "Variedad",
-                    url: "/variedad",
-                },
-                {
-                    title: 'Patron',
-                    url: '/patron',
-                },
-                {
-                    title: 'Breeder',
-                    url: '/breeder',
-                },
+                { title: "Variedades", url: "/variedad" },
+                { title: "Breeders", url: "/breeder" },
+                { title: "Patrones", url: "/patron" },
+                { title: "Estados Gr. Cama", url: "/grupo_cama_estado" },
+                { title: "Tipos de Planta", url: "/grupo_cama_tipo_planta" },
             ],
         },
+        // Fenología y desarrollo
         {
             title: 'Fenología',
-            url: '/fenologia',
+            url: '/estados_fenologicos',
             icon: PieChart,
             isActive: false,
             items: [
-                {
-                    title: "Estados Fenológicos",
-                    url: "/estados_fenologicos",
-                },
-                {
-                    title: "Tipos de Estado Fenológico",
-                    url: "/estado_fenologico_tipo",
-                },
+                { title: "Estados Fenológicos", url: "/estados_fenologicos" },
+                { title: "Tipos de Estado", url: "/estado_fenologico_tipo" },
             ],
-        }
+        },
+        // Operaciones y producción
+        {
+            title: 'Operaciones',
+            url: '/pinche',
+            icon: Database,
+            isActive: false,
+            items: [
+                { title: 'Pinches', url: '/pinche' },
+                { title: 'Tipos de Pinche', url: '/pinche_tipo' },
+                { title: 'Producción', url: '/produccion' },
+            ],
+        },
+        // Observaciones y GPS
+        {
+            title: 'Observaciones',
+            url: '/observacion',
+            icon: Map,
+            isActive: false,
+            items: [
+                { title: "Observaciones", url: "/observacion" },
+                { title: 'Puntos GPS', url: '/puntos_gps' },
+            ],
+        },
+        // Administración y usuarios
+        {
+            title: 'Administración',
+            url: '/usuario',
+            icon: Users,
+            isActive: false,
+            items: [
+                { title: 'Usuarios', url: '/usuario' },
+            ],
+        },
     ],
     projects: [
         {
@@ -126,6 +144,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                <div className="px-2 pb-2">
+                    <SidebarSearch items={data.navMain} />
+                </div>
             </SidebarHeader>
             <SidebarContent>
                 <NavMain items={data.navMain} />

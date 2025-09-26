@@ -54,47 +54,49 @@ export function DataTable({
     }, [columns, data])
 
     return (
-        <Table>
-            {caption ? <TableCaption>{caption}</TableCaption> : null}
-            <TableHeader className='capitalize'>
-                <TableRow>
-                    {cols.map((col) => (
-                        <TableHead key={col}>{col}</TableHead>
-                    ))}
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {loading ? (
+        <div className="relative max-w-full">
+            <Table>
+                {caption ? <TableCaption>{caption}</TableCaption> : null}
+                <TableHeader className='capitalize'>
                     <TableRow>
-                        <TableCell colSpan={cols.length}>Cargando…</TableCell>
+                        {cols.map((col) => (
+                            <TableHead key={col}>{col}</TableHead>
+                        ))}
                     </TableRow>
-                ) : error ? (
-                    <TableRow>
-                        <TableCell colSpan={cols.length} className="text-red-600">
-                            {error}
-                        </TableCell>
-                    </TableRow>
-                ) : data.length === 0 ? (
-                    <TableRow>
-                        <TableCell colSpan={cols.length}>{emptyText}</TableCell>
-                    </TableRow>
-                ) : (
-                    data.map((row, idx) => (
-                        <TableRow key={idx}>
-                            {cols.map((col) => {
-                                const val = row[col]
-                                const fmt = format?.[col]
-                                return (
-                                    <TableCell key={col}>
-                                        {fmt ? fmt(val, row, col) : defaultRender(val)}
-                                    </TableCell>
-                                )
-                            })}
+                </TableHeader>
+                <TableBody>
+                    {loading ? (
+                        <TableRow>
+                            <TableCell colSpan={cols.length}>Cargando…</TableCell>
                         </TableRow>
-                    ))
-                )}
-            </TableBody>
-        </Table>
+                    ) : error ? (
+                        <TableRow>
+                            <TableCell colSpan={cols.length} className="text-red-600">
+                                {error}
+                            </TableCell>
+                        </TableRow>
+                    ) : data.length === 0 ? (
+                        <TableRow>
+                            <TableCell colSpan={cols.length}>{emptyText}</TableCell>
+                        </TableRow>
+                    ) : (
+                        data.map((row, idx) => (
+                            <TableRow key={idx}>
+                                {cols.map((col) => {
+                                    const val = row[col]
+                                    const fmt = format?.[col]
+                                    return (
+                                        <TableCell key={col}>
+                                            {fmt ? fmt(val, row, col) : defaultRender(val)}
+                                        </TableCell>
+                                    )
+                                })}
+                            </TableRow>
+                        ))
+                    )}
+                </TableBody>
+            </Table>
+        </div>
     )
 }
 

@@ -39,14 +39,16 @@ function TableRoute() {
     }, [tableName])
 
     return (
-        <div>
-            <DataTable
-                data={rows}
-                loading={loading}
-                error={error}
-                caption={`${rows.length}`}
-                columns={columns}
-            />
+        <div className="flex-1 min-h-0 overflow-auto w-full">
+            <div className="p-2 min-w-full">
+                <DataTable
+                    data={rows}
+                    loading={loading}
+                    error={error}
+                    caption={`${rows.length}`}
+                    columns={columns}
+                />
+            </div>
         </div>
     )
 }
