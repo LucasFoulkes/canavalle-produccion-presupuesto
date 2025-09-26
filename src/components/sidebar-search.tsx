@@ -51,7 +51,7 @@ export function SidebarSearch({ items }: { items: NavItem[] }) {
                 const to: string = (opt.url ?? `/${opt.value}`)
                 router.navigate({ to })
             }}
-            placeholder="Buscar"
+            placeholder="Buscar tablas…"
             emptyText="No hay coincidencias"
         />
     )

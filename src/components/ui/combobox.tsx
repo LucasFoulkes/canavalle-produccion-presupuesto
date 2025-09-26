@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import { ChevronsUpDownIcon, SearchIcon } from 'lucide-react'
+import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -55,8 +55,6 @@ export function Combobox({
         }
     }
 
-    const selected = value && options.find((o) => o.value === value)
-
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -64,18 +62,11 @@ export function Combobox({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className={cn(
-                        "w-full justify-between font-normal",
-                        !selected && "text-muted-foreground",
-                        className
-                    )}
+                    className={cn("w-full justify-between", className)}
                 >
-                    <span className="flex items-center flex-1">
-                        <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-60" />
-                        <span className="truncate">
-                            {selected ? selected.label : placeholder}
-                        </span>
-                    </span>
+                    {value
+                        ? options.find((o) => o.value === value)?.label
+                        : placeholder}
                     <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
@@ -93,8 +84,13 @@ export function Combobox({
                                         keywords={[opt.label, opt.group ?? '', ...(opt.keywords ?? [])]}
                                         onSelect={selectValue}
                                     >
-                                        {opt.icon ? <span className="mr-2 inline-flex items-center">{opt.icon}</span> : null}
-                                        <span className="truncate">{opt.label}</span>
+                                        <CheckIcon
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                value === opt.value ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        {opt.label}
                                     </CommandItem>
                                 ))}
                             </CommandGroup>
