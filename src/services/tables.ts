@@ -4,6 +4,7 @@ import type { Finca, Bloque, Cama, GrupoCama, Variedad, Breeder, EstadoFenologic
 import * as aq from 'arquero'
 import { fetchAreaProductiva } from './area_productiva'
 import { fetchObservacionesPorCama } from './observaciones_por_cama'
+import { fetchResumenFenologico } from './resumen_fenologico'
 import { refreshAllPages, readAll } from '@/lib/data-utils'
 
 
@@ -234,7 +235,16 @@ export async function fetchEstadosFenologicos(): Promise<TableResult> {
 
 export async function fetchObservacion(): Promise<TableResult> {
     await refreshAllPages<Observacion>('observacion', db.observacion, '*')
-    const list = await readAll(db.observacion)
+    const list = await readAll<Observacion>(db.observacion)
+    // sort by date desc; handle nulls as oldest
+    list.sort((a, b) => {
+        const sa = a.creado_en ?? ''
+        const sb = b.creado_en ?? ''
+        if (sa && sb) return sb.localeCompare(sa)
+        if (sa) return -1
+        if (sb) return 1
+        return 0
+    })
     const rows = list as Array<Record<string, unknown>>
     return { rows, columns: ['id_cama', 'ubicacion_seccion', 'cantidad', 'tipo_observacion', 'punto_gps', 'creado_en'] }
 }
@@ -318,6 +328,7 @@ type Fetcher = () => Promise<TableResult>
 const registry: Record<string, Fetcher> = {
     area_productiva: fetchAreaProductiva,
     observaciones_por_cama: fetchObservacionesPorCama,
+    resumen_fenologico: fetchResumenFenologico,
     finca: fetchFincas,
     bloque: fetchBloque,
     cama: fetchCama,

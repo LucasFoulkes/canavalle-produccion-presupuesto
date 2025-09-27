@@ -1,8 +1,8 @@
 import { db } from '@/lib/db'
 import type { TableResult } from './tables'
 import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, Seccion, EstadoFenologicoTipo } from '@/types/tables'
-import * as aq from 'arquero'
-import { normText, readAll, refreshAllPages, toNumber } from '@/lib/data-utils'
+import { readAll, refreshAllPages, toNumber, normText } from '@/lib/data-utils'
+import { getStageList, normalizeObservaciones, cmpFechaDescThenFBVThenCamaSeccion } from '@/lib/report-utils'
 
 // Observaciones por Cama, agrupadas también por Sección; lista de estados detectados y área total de la cama
 export async function fetchObservacionesPorCama(): Promise<TableResult> {
@@ -32,65 +32,26 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
             .slice()
             .sort((a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || a.codigo.localeCompare(b.codigo))
             .map((e) => e.codigo)
-        return { rows: [], columns: ['finca', 'bloque', 'variedad', 'cama', 'seccion', ...stageCols, 'area_cama_m2'] }
+        return { rows: [], columns: ['finca', 'bloque', 'variedad', 'cama', 'seccion', 'fecha', ...stageCols, 'area_cama_m2'] }
     }
 
-    const tObs = aq.from(observaciones)
-    const tCama = aq.from(camas).rename({ nombre: 'cama_nombre' })
-    const tGrupo = aq.from(grupos).rename({ id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad' })
-    const tBloque = aq.from(bloques).rename({ nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
-    const tFinca = aq.from(fincas).rename({ nombre: 'finca_nombre' })
-    const tVariedad = aq.from(variedades).rename({ nombre: 'variedad_nombre' })
+    // Normalize observations with shared helper
+    const rows = normalizeObservaciones({ camas, grupos, bloques, fincas, variedades, observaciones })
 
-    // NOTE: area_cama_m2 should be derived from each cama's own dimensions (largo_metros × ancho_metros),
-    // not from a global sección length. We'll still read 'secciones' if needed for other summaries,
-    // but for this table we ignore the global largo and rely on cama.largo_metros.
-
-    const joined = tObs
-        .join_left(tCama, ['id_cama', 'id_cama'])
-        .join_left(tGrupo, ['id_grupo', 'id_grupo'])
-        .join_left(tBloque, ['grupo_id_bloque', 'id_bloque'])
-        .join_left(tFinca, ['bloque_id_finca', 'id_finca'])
-        .join_left(tVariedad, ['grupo_id_variedad', 'id_variedad'])
-        .derive({
-            finca: aq.escape((d: { finca_nombre?: string | null; bloque_id_finca?: number | null }) =>
-                d.finca_nombre ?? (d.bloque_id_finca != null ? String(d.bloque_id_finca) : '')
-            ),
-            bloque: aq.escape((d: { bloque_nombre?: string | null; grupo_id_bloque?: number | null }) =>
-                d.bloque_nombre ?? (d.grupo_id_bloque != null ? String(d.grupo_id_bloque) : '')
-            ),
-            variedad: aq.escape((d: { variedad_nombre?: string | null; grupo_id_variedad?: number | null }) =>
-                d.variedad_nombre ?? (d.grupo_id_variedad != null ? String(d.grupo_id_variedad) : '')
-            ),
-            cama: aq.escape((d: { cama_nombre?: string | null; id_cama?: number | null }) =>
-                d.cama_nombre ?? (d.id_cama != null ? String(d.id_cama) : '')
-            ),
-            seccion: aq.escape((d: { ubicacion_seccion?: string | null }) => (d.ubicacion_seccion ?? '').toString()),
-            ancho_m: aq.escape((d: { ancho_metros?: number | string | null }) => toNumber(d.ancho_metros)),
-            // Use cama.largo_metros per row instead of any global sección largo
-            largo_m: aq.escape((d: { largo_metros?: number | string | null }) => toNumber(d.largo_metros)),
-            estado: aq.escape((d: { tipo_observacion?: string | null }) => (d.tipo_observacion ?? '').toString().trim()),
-            cantidad: aq.escape((d: { cantidad?: number | string | null }) => toNumber(d.cantidad)),
-        })
-        .select('finca', 'bloque', 'variedad', 'cama', 'seccion', 'estado', 'cantidad', 'ancho_m', 'largo_m')
-
-    type Row = { finca: string; bloque: string; variedad: string; cama: string; seccion: string; estado: string; cantidad: number; ancho_m: number; largo_m: number }
-    const rows = joined.objects() as Row[]
-
-    // Aggregate per cama (grouping by cama and seccion for estados), compute total area per cama
+    // Aggregate per cama (grouping by cama, seccion and fecha for estados), compute total area per cama
     const countsByCamaSeccion = new Map<string, Map<string, number>>()
     const areaByCama = new Map<string, number>()
 
     for (const r of rows) {
         const keyCama = `${r.finca}||${r.bloque}||${r.variedad}||${r.cama}`
-        const keyCamaSeccion = `${keyCama}||${r.seccion}`
+        const keyCamaSeccion = `${keyCama}||${r.seccion}||${r.fecha}`
         // sum cantidades per cama+seccion per normalized estado
         let cmap = countsByCamaSeccion.get(keyCamaSeccion)
         if (!cmap) {
             cmap = new Map<string, number>()
             countsByCamaSeccion.set(keyCamaSeccion, cmap)
         }
-        const est = normText(r.estado)
+        const est = r.estado_norm
         if (est) cmap.set(est, (cmap.get(est) ?? 0) + toNumber(r.cantidad))
 
         // total area per cama = ancho * largo (not multiplied per observation)
@@ -101,13 +62,11 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
 
     // Flatten to rows: one row per cama per seccion with estados, and include total area per cama
     // Build stage columns definition
-    const stageList = estadosTipo
-        .slice()
-        .sort((a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || a.codigo.localeCompare(b.codigo))
+    const stageList = getStageList(estadosTipo)
 
     const result: Array<Record<string, unknown>> = []
     for (const [keyCamaSeccion, countsMap] of countsByCamaSeccion.entries()) {
-        const [finca, bloque, variedad, cama, seccion] = keyCamaSeccion.split('||')
+        const [finca, bloque, variedad, cama, seccion, fecha] = keyCamaSeccion.split('||')
         const keyCama = `${finca}||${bloque}||${variedad}||${cama}`
         const row: Record<string, unknown> = {
             finca,
@@ -115,6 +74,7 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
             variedad,
             cama,
             seccion,
+            fecha,
             area_cama_m2: areaByCama.get(keyCama) ?? 0,
         }
         for (const stage of stageList) {
@@ -127,19 +87,18 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
         result.push(row)
     }
 
+    // Sort by date desc, then by finca/bloque/variedad/cama/seccion for stability
+    result.sort(cmpFechaDescThenFBVThenCamaSeccion)
+
     return {
-        rows: result, columns: ['finca',
+        rows: result, columns: [
+            'fecha',
+            'finca',
             'bloque',
             'variedad',
             'cama',
             'seccion',
-            'arroz',
-            'arveja',
-            'garbanzo',
-            'uva',
-            'rayando_color',
-            'sepalos_abiertos',
-            'cosecha',
+            ...stageList.map(s => s.codigo),
             'area_cama_m2']
     }
 }

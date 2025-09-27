@@ -68,6 +68,7 @@ const data = {
             isActive: false,
             items: [
                 { title: "Estados Fenológicos", url: "/estados_fenologicos" },
+                { title: "Resumen Fenológico", url: "/resumen_fenologico" },
                 { title: "Tipos de Estado", url: "/estado_fenologico_tipo" },
             ],
         },
@@ -146,6 +147,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         {
                             title: 'Obs. por cama y sección',
                             url: '/observaciones_por_cama',
+                            icon: PieChart,
+                            isActive: false,
+                            items: [],
+                        },
+                        {
+                            title: 'Resumen Fenológico',
+                            url: '/resumen_fenologico',
                             icon: PieChart,
                             isActive: false,
                             items: [],
