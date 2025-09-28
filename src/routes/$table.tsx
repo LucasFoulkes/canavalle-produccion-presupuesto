@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import DataTable from '@/components/data-table'
+import type React from 'react'
 import { useEffect, useState } from 'react'
-import { fetchTable } from '@/services/tables'
+import { fetchTableView } from '@/services/table-views'
 
 export const Route = createFileRoute('/$table')({
     component: TableRoute,
@@ -20,7 +21,7 @@ function TableRoute() {
             ; (async () => {
                 setLoading(true)
                 try {
-                    const result = await fetchTable(tableName)
+                    const result = await fetchTableView(tableName)
                     if (alive) {
                         setRows(result.rows)
                         setColumns(result.columns)
@@ -41,13 +42,26 @@ function TableRoute() {
     return (
         <div className="flex-1 min-h-0 overflow-auto w-full">
             <div className="px-2 min-w-full">
-                <DataTable
-                    data={rows}
-                    loading={loading}
-                    error={error}
-                    caption={`${rows.length}`}
-                    columns={columns}
-                />
+                {/** Column-specific formatters per table (extend as needed) */}
+                {(() => {
+                    let format: Record<string, (value: unknown, row: Record<string, unknown>, key: string) => React.ReactNode> | undefined
+                    if (tableName === 'usuario') {
+                        format = {
+                            // Render cedula as plain text (no numeric formatting)
+                            cedula: (val) => (val == null ? '—' : String(val)),
+                        }
+                    }
+                    return (
+                        <DataTable
+                            data={rows}
+                            loading={loading}
+                            error={error}
+                            caption={`${rows.length}`}
+                            columns={columns}
+                            format={format}
+                        />
+                    )
+                })()}
             </div>
         </div>
     )

@@ -1,104 +1,8 @@
-import Dexie, { type EntityTable } from 'dexie'
-import type {
-    Finca,
-    Bloque,
-    Cama,
-    Breeder,
-    EstadoFenologicoTipo,
-    EstadosFenologicos,
-    GrupoCama,
-    GrupoCamaEstado,
-    GrupoCamaTipoPlanta,
-    Observacion,
-    Patron,
-    Pinche,
-    PincheTipo,
-    Produccion,
-    PuntosGPS,
-    Seccion,
-    Usuario,
-    Variedad,
-} from '@/types/tables'
+import Dexie from 'dexie'
 
-// Offline-first Dexie database
-export const db = new Dexie('CanavalleDB') as Dexie & {
-    // Table name 'finca' matches remote table for easier sync mental model
-    finca: EntityTable<
-        Finca,
-        'id_finca'
-    >
-    bloque: EntityTable<
-        Bloque,
-        'id_bloque'
-    >
-    cama: EntityTable<
-        Cama,
-        'id_cama'
-    >
-    breeder: EntityTable<
-        Breeder,
-        'id_breeder'
-    >
-    estado_fenologico_tipo: EntityTable<
-        EstadoFenologicoTipo,
-        'codigo'
-    >
-    estados_fenologicos: EntityTable<
-        EstadosFenologicos,
-        'id_estado_fenologico'
-    >
-    grupo_cama: EntityTable<
-        GrupoCama,
-        'id_grupo'
-    >
-    grupo_cama_estado: EntityTable<
-        GrupoCamaEstado,
-        'codigo'
-    >
-    grupo_cama_tipo_planta: EntityTable<
-        GrupoCamaTipoPlanta,
-        'codigo'
-    >
-    observacion: EntityTable<
-        Observacion,
-        'id_observacion'
-    >
-    patron: EntityTable<
-        Patron,
-        'codigo'
-    >
-    pinche: EntityTable<
-        Pinche,
-        'id'
-    >
-    pinche_tipo: EntityTable<
-        PincheTipo,
-        'codigo'
-    >
-    puntos_gps: EntityTable<
-        PuntosGPS,
-        'id'
-    >
-    usuario: EntityTable<
-        Usuario,
-        'id_usuario'
-    >
-    variedad: EntityTable<
-        Variedad,
-        'id_variedad'
-    >
-    produccion: EntityTable<
-        Produccion & { id?: number },
-        'id'
-    >
-    seccion: EntityTable<
-        Seccion & { id?: number },
-        'id'
-    >
-}
+export const db = new Dexie('CanavalleDB') as Dexie & Record<string, any>
 
-// Single latest schema version (no historical versions kept)
-db.version(3).stores({
+db.version(4).stores({
     finca: '++id_finca, nombre, creado_en, eliminado_en',
     bloque: '++id_bloque, id_finca, nombre, creado_en, eliminado_en, numero_camas, area_m2',
     cama: '++id_cama, nombre, creado_en, eliminado_en, largo_metros, plantas_totales, id_grupo, ancho_metros',
@@ -117,9 +21,6 @@ db.version(3).stores({
     variedad: '++id_variedad, nombre, color, id_breeder, creado_en, eliminado_en',
     produccion: '++id, created_at, finca, bloque, variedad, cantidad',
     seccion: '++id, largo_m',
+    sync: 'id, created_at, tables',
 })
 
-// Optionally map js class if needed in the future
-// db.finca.mapToClass(FincaModel)
-
-export type { Finca, Bloque, Cama }

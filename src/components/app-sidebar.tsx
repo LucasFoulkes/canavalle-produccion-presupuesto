@@ -12,7 +12,6 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
 import { SidebarSearch } from "@/components/sidebar-search"
 import {
     Sidebar,
@@ -68,7 +67,6 @@ const data = {
             isActive: false,
             items: [
                 { title: "Estados Fenológicos", url: "/estados_fenologicos" },
-                { title: "Resumen Fenológico", url: "/resumen_fenologico" },
                 { title: "Tipos de Estado", url: "/estado_fenologico_tipo" },
             ],
         },
@@ -103,6 +101,7 @@ const data = {
             isActive: false,
             items: [
                 { title: 'Usuarios', url: '/usuario' },
+                { title: 'Sync', url: '/sync' },
             ],
         },
     ],
@@ -117,12 +116,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/">
-                                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                                <div className="bg-black text-white flex aspect-square size-8 items-center justify-center rounded-lg">
                                     <Command className="size-4" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">Cananvalle</span>
-                                    <span className="truncate text-xs">Ecuador</span>
+                                    <span className="truncate text-xs">{data.user.name}</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>
@@ -133,7 +132,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} label="Base" />
+                {/* Summaries remain in main content */}
                 <NavMain
                     label="Resúmenes"
                     items={[
@@ -162,7 +161,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                {/* Move Base to the bottom; default collapsed and show a plus icon */}
+                <NavMain items={data.navMain} label="Base" defaultCollapsed={true} groupCollapsible={true} />
             </SidebarFooter>
         </Sidebar>
     )

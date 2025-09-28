@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react'
-import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react'
+import { CheckIcon, ChevronsUpDownIcon, Search as SearchIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
@@ -64,9 +64,12 @@ export function Combobox({
                     aria-expanded={open}
                     className={cn("w-full justify-between", className)}
                 >
-                    {value
-                        ? options.find((o) => o.value === value)?.label
-                        : placeholder}
+                    <span className="flex items-center gap-2 font-normal">
+                        <SearchIcon className="h-4 w-4 opacity-60" />
+                        {value
+                            ? options.find((o) => o.value === value)?.label
+                            : placeholder}
+                    </span>
                     <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>

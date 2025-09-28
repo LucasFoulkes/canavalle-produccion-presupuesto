@@ -143,7 +143,15 @@ export type PuntosGPS = {
     id: string // uuid
 }
 
+// New: sync table (logs of table syncs)
+export type Sync = {
+    id: number | string
+    created_at: string
+    tables: any | null
+}
+
 export type Seccion = {
+    id: number
     largo_m: number
 }
 
