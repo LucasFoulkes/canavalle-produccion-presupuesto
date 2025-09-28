@@ -35,6 +35,7 @@ const titles: Record<string, string> = {
   // Resúmenes
   area_productiva: 'Área productiva (FBV)',
   observaciones_por_cama: 'Observacion por cama',
+  cosecha: 'Cosecha',
 }
 
 function slugToTitle(slug: string | undefined): string {

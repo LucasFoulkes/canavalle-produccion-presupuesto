@@ -21,8 +21,12 @@ export type DataTableProps = {
     format?: Record<string, Formatter>
 }
 
-// Shared number formatter: up to 3 decimal places, no forced trailing zeros
-const numberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 3 })
+// Shared number formatter: simple style with dot decimal, no thousands grouping, exactly 2 decimals (e.g., 3478.26)
+const numberFormatter = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+})
 
 function formatNum(n: number): string {
     return numberFormatter.format(n)
@@ -30,8 +34,37 @@ function formatNum(n: number): string {
 
 function parseNumberLike(s: string): number | null {
     const trimmed = s.trim()
-    // Replace comma decimal with dot for parsing; keep digits, sign, dot
-    const normalized = trimmed.replace(/,/g, '.')
+    // Handle both 1,234.56 and 1.234,56 as well as simple 1234,56 or 1234.56
+    const hasComma = trimmed.includes(',')
+    const hasDot = trimmed.includes('.')
+
+    let normalized = trimmed
+    if (hasComma && hasDot) {
+        // Whichever appears last is the decimal separator
+        const lastComma = trimmed.lastIndexOf(',')
+        const lastDot = trimmed.lastIndexOf('.')
+        if (lastComma > lastDot) {
+            // Decimal is comma: remove dots (thousands), replace comma with dot
+            normalized = trimmed.replace(/\./g, '').replace(/,/g, '.')
+        } else {
+            // Decimal is dot: remove commas (thousands)
+            normalized = trimmed.replace(/,/g, '')
+        }
+    } else if (hasComma && !hasDot) {
+        // Treat single comma as decimal separator
+        // Remove any spaces used as groupings just in case
+        normalized = trimmed.replace(/\s+/g, '').replace(/,/g, '.')
+    } else if (!hasComma && hasDot) {
+        // Dot could be decimal or thousands; if multiple dots, remove all but the last
+        const parts = trimmed.split('.')
+        if (parts.length > 2) {
+            const dec = parts.pop()!
+            normalized = parts.join('') + '.' + dec
+        } else {
+            normalized = trimmed
+        }
+    }
+
     const num = Number(normalized)
     return Number.isFinite(num) ? num : null
 }

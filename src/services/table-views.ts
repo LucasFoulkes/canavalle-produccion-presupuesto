@@ -50,6 +50,8 @@ export const TABLE_VIEW_COLUMNS: Record<string, string[]> = {
     observaciones_por_cama: ['fecha', 'finca', 'bloque', 'cama', 'variedad', 'cama', 'seccion', 'area_cama_m2'],
     // Resumen fenológico returns fecha, finca, bloque, variedad + stage columns; fallback to the leading columns
     resumen_fenologico: ['fecha', 'finca', 'bloque', 'variedad'],
+    // Cosecha aggregated by fecha + variedad
+    cosecha: ['fecha', 'variedad', 'dias_cosecha'],
 }
 
 // Fetch rows for a table and project only the specified (or default) columns for display

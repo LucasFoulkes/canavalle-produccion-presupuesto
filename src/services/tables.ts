@@ -6,6 +6,7 @@ import { fetchAreaProductiva } from './area_productiva'
 import { fetchObservacionesPorCama } from './observaciones_por_cama'
 import { fetchResumenFenologico } from './resumen_fenologico'
 import { refreshAllPages, readAll } from '@/lib/data-utils'
+import { scaleTimelineToTotals, keepOnlyLastCosechaDay, sumCosechaByFechaVariedad } from '@/lib/predicciones'
 
 export type TableResult<T = Record<string, unknown>> = {
     rows: T[]
@@ -219,6 +220,14 @@ const registry: Record<string, Fetcher> = {
     area_productiva: fetchAreaProductiva,
     observaciones_por_cama: fetchObservacionesPorCama,
     resumen_fenologico: fetchResumenFenologico,
+    cosecha: async () => {
+        // Reuse resumen_fenologico rows and derive cosecha table
+        const base = await fetchResumenFenologico()
+        const scaled = scaleTimelineToTotals(base.rows as any)
+        const lastDays = keepOnlyLastCosechaDay(scaled as any)
+        const grouped = sumCosechaByFechaVariedad(lastDays as any)
+        return { rows: grouped as Array<Record<string, unknown>>, columns: ['fecha', 'variedad', 'dias_cosecha'] }
+    },
     sync: fetchSync,
     finca: fetchFincas,
     bloque: fetchBloque,

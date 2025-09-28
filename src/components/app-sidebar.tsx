@@ -157,6 +157,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             isActive: false,
                             items: [],
                         },
+                        {
+                            title: 'Cosecha',
+                            url: '/cosecha',
+                            icon: PieChart,
+                            isActive: false,
+                            items: [],
+                        },
                     ]}
                 />
             </SidebarContent>
