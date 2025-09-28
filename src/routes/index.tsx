@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import * as React from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { fetchTable } from '@/services/tables'
@@ -125,6 +125,11 @@ function RouteComponent() {
             <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
               <BarChart accessibilityLayer data={mode === 'day' ? dailyData : weeklyData} margin={{ left: 12, right: 12 }}>
                 <CartesianGrid vertical={false} />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  label={{ value: 'Cosecha total', angle: -90, position: 'insideLeft' }}
+                />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
