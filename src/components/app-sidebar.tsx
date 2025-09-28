@@ -144,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             items: [],
                         },
                         {
-                            title: 'Obs. por cama y sección',
+                            title: 'Observacion por cama',
                             url: '/observaciones_por_cama',
                             icon: PieChart,
                             isActive: false,

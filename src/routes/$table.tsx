@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import DataTable from '@/components/data-table'
+import ScrollContainer from '@/components/ui/scroll'
 import type React from 'react'
 import { useEffect, useState } from 'react'
 import { fetchTableView } from '@/services/table-views'
@@ -40,7 +41,7 @@ function TableRoute() {
     }, [tableName])
 
     return (
-        <div className="flex-1 min-h-0 overflow-auto w-full">
+        <ScrollContainer className="flex-1 min-h-0 w-full">
             <div className="px-2 min-w-full">
                 {/** Column-specific formatters per table (extend as needed) */}
                 {(() => {
@@ -63,6 +64,6 @@ function TableRoute() {
                     )
                 })()}
             </div>
-        </div>
+        </ScrollContainer>
     )
 }

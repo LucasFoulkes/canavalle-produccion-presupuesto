@@ -34,7 +34,7 @@ const titles: Record<string, string> = {
   usuario: 'Usuarios',
   // Resúmenes
   area_productiva: 'Área productiva (FBV)',
-  observaciones_por_cama: 'Obs. por cama y sección',
+  observaciones_por_cama: 'Observacion por cama',
 }
 
 function slugToTitle(slug: string | undefined): string {
