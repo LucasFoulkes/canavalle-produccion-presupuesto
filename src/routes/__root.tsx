@@ -5,8 +5,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
-import { Input } from "@/components/ui/input"
-import { Plus, Mic, AudioLines } from "lucide-react"
+import FooterAI from "@/components/footer-ai"
 
 const titles: Record<string, string> = {
   // Base
@@ -71,29 +70,7 @@ const RootLayout = () => {
         <div className="flex flex-1 flex-col gap-4 overflow-hidden">
           <Outlet />
         </div>
-        <footer className="flex py-3 shrink-0 items-center">
-          <div className="w-full px-4">
-            <div className="mx-auto w-full max-w-[720px]">
-              <div className="flex items-center rounded-full border bg-background px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-ring/40">
-                <button type="button" className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60">
-                  <Plus className="h-5 w-5" />
-                </button>
-                <Input
-                  className="h-12 flex-1 border-0 bg-transparent px-3 shadow-none focus-visible:ring-0 focus-visible:border-transparent"
-                  placeholder="Pregunta lo que sea..."
-                />
-                <div className="flex items-center gap-2">
-                  <button type="button" className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted/60">
-                    <Mic className="h-5 w-5" />
-                  </button>
-                  <button type="button" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <AudioLines className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
+        <FooterAI />
       </SidebarInset>
     </SidebarProvider>
   )
