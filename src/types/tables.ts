@@ -124,6 +124,7 @@ export type PincheTipo = {
 }
 
 export type Produccion = {
+    id: number
     created_at: string
     finca: number | null
     bloque: number | null

@@ -46,8 +46,8 @@ export const TABLE_VIEW_COLUMNS: Record<string, string[]> = {
     // Aggregates: prefer service-provided columns; these are safe fallbacks if not provided
     // Area productiva returns: finca, bloque, variedad, area_productiva_m2, area_total_m2
     area_productiva: ['finca', 'bloque', 'variedad', 'area_productiva_m2', 'area_total_m2'],
-    // Observaciones por cama returns dynamic stage columns; we show stable leading columns as fallback
-    observaciones_por_cama: ['fecha', 'finca', 'bloque', 'cama', 'variedad', 'cama', 'seccion', 'area_cama_m2'],
+    // Observaciones por cama returns dynamic stage columns; stable leading fallback columns only
+    observaciones_por_cama: ['fecha', 'finca', 'bloque', 'variedad', 'cama', 'seccion', 'area_cama_m2'],
     // Resumen fenológico returns fecha, finca, bloque, variedad + stage columns; fallback to the leading columns
     resumen_fenologico: ['fecha', 'finca', 'bloque', 'variedad'],
     // Cosecha aggregated by fecha + variedad

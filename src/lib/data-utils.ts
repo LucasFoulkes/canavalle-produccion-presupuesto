@@ -1,9 +1,11 @@
 import { supabase } from '@/lib/supabase'
+import { shouldRefreshTable } from '@/services/sync-manager'
 
 export type DexieTable<T> = {
     bulkPut: (rows: T[]) => Promise<unknown>
     toArray: () => Promise<T[]>
     clear: () => Promise<unknown>
+    count?: () => Promise<number>
 }
 
 // Centralized paginated refresh to avoid the 1,000-row default limit
@@ -12,7 +14,21 @@ export async function refreshAllPages<T>(
     dexieTable: DexieTable<T>,
     select: string = '*',
     pageSize = 1000,
+    options?: { force?: boolean },
 ): Promise<number> {
+    const { force = false } = options ?? {}
+    if (!force) {
+        try {
+            const needsRefresh = await shouldRefreshTable(tableName, dexieTable)
+            if (!needsRefresh) {
+                const cached = await dexieTable.toArray()
+                return cached.length
+            }
+        } catch (err) {
+            console.warn(`${tableName}: sync gating failed; forcing refresh`, err)
+        }
+    }
+
     let total = 0
     try {
         const allRows: T[] = []

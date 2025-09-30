@@ -3,17 +3,9 @@
 import { useMemo } from 'react'
 import Combobox, { type ComboOption } from '@/components/ui/combobox'
 import { useRouter } from '@tanstack/react-router'
-import type { LucideIcon } from 'lucide-react'
+import type { NavGroup } from '@/lib/navigation'
 
-type NavItem = {
-    title: string
-    url: string
-    icon: LucideIcon
-    isActive?: boolean
-    items?: { title: string; url: string }[]
-}
-
-export function SidebarSearch({ items }: { items: NavItem[] }) {
+export function SidebarSearch({ items }: { items: NavGroup[] }) {
     const router = useRouter()
 
     const options: ComboOption[] = useMemo(() => {

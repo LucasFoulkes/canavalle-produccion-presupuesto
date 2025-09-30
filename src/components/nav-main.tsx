@@ -1,7 +1,8 @@
 "use client"
 
-import { ChevronRight, Plus, Minus, type LucideIcon } from "lucide-react"
+import { ChevronRight, Plus, Minus } from "lucide-react"
 import { Link } from '@tanstack/react-router'
+import type { NavGroup } from '@/lib/navigation'
 
 import {
     Collapsible,
@@ -26,16 +27,7 @@ export function NavMain({
     defaultCollapsed = false,
     groupCollapsible = false,
 }: {
-    items: {
-        title: string
-        url: string
-        icon: LucideIcon
-        isActive?: boolean
-        items?: {
-            title: string
-            url: string
-        }[]
-    }[]
+    items: NavGroup[]
     label?: string
     defaultCollapsed?: boolean
     groupCollapsible?: boolean
@@ -44,7 +36,7 @@ export function NavMain({
         <SidebarMenu>
             {items.map((item) => (
                 item.items?.length ? (
-                    <Collapsible key={item.title} asChild defaultOpen={item.isActive && !defaultCollapsed}>
+                    <Collapsible key={item.title} asChild defaultOpen={!defaultCollapsed}>
                         <SidebarMenuItem>
                             <CollapsibleTrigger asChild>
                                 <SidebarMenuButton tooltip={item.title} className="text-muted-foreground font-thin data-[state=open]:text-sidebar-foreground">

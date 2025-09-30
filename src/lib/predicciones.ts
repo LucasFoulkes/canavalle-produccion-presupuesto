@@ -1,24 +1,5 @@
 import { toNumber } from '@/lib/data-utils'
-
-// Parse a stage cell like "123 (45.6%)" or numeric/string values
-export function parseStageCell(cell: unknown): { count: number; pct: number } {
-    if (cell == null) return { count: 0, pct: 0 }
-    if (typeof cell === 'number') return { count: toNumber(cell), pct: 0 }
-    const s = String(cell).trim()
-    if (!s) return { count: 0, pct: 0 }
-    const m = s.match(/^\s*([+-]?(?:\d{1,3}(?:[.,]\d{3})*|\d+)(?:[.,]\d+)?)\s*\(\s*([+-]?\d+(?:[.,]\d+)?)\s*%\s*\)\s*$/)
-    if (m) {
-        const main = m[1].replace(/,/g, '.')
-        const pct = m[2].replace(/,/g, '.')
-        const count = toNumber(main)
-        const p = toNumber(pct)
-        return { count, pct: p }
-    }
-    // If plain numeric-like string, treat as count with 0 pct
-    const n = toNumber(s)
-    if (Number.isFinite(n)) return { count: n, pct: 0 }
-    return { count: 0, pct: 0 }
-}
+import { parseCountPercent } from '@/lib/formatters'
 
 export type TimelineRow = Record<string, unknown> & { fecha: string; finca: string; bloque: string; variedad: string }
 
@@ -34,7 +15,7 @@ export function scaleTimelineToTotals(rows: TimelineRow[]): TimelineRow[] {
                 if (kn === 'cosecha') { cell = (r as any)[k]; break }
             }
         }
-        const { count, pct } = parseStageCell(cell)
+        const { count, pct } = parseCountPercent(cell)
         const scaled = pct > 0 ? count * (100 / pct) : count
         return { ...r, dias_cosecha: scaled }
     })

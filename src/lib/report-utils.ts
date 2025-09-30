@@ -104,12 +104,23 @@ export function normalizeObservaciones(
 ): NormalizedObs[] {
     const { camas, grupos, bloques, fincas, variedades, observaciones } = datasets
     if (!observaciones?.length) return []
-    const tObs = aq.from(observaciones).rename({ creado_en: 'obs_creado_en' })
-    const tCama = aq.from(camas).rename({ nombre: 'cama_nombre' })
-    const tGrupo = aq.from(grupos).rename({ id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad' })
-    const tBloque = aq.from(bloques).rename({ nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
-    const tFinca = aq.from(fincas).rename({ nombre: 'finca_nombre' })
-    const tVariedad = aq.from(variedades).rename({ nombre: 'variedad_nombre' })
+    // Safe renames: apply only if source column exists to avoid Arquero errors
+    const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
+        const t = aq.from(rows)
+        const first = rows?.[0] ?? {}
+        const out: Record<string, string> = {}
+        for (const [src, dst] of Object.entries(mapping)) {
+            if (Object.prototype.hasOwnProperty.call(first, src)) out[src] = dst
+        }
+        return Object.keys(out).length ? t.rename(out) : t
+    }
+
+    const tObs = safeRename(observaciones, { creado_en: 'obs_creado_en' })
+    const tCama = safeRename(camas, { nombre: 'cama_nombre' })
+    const tGrupo = safeRename(grupos, { id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad' })
+    const tBloque = safeRename(bloques, { nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
+    const tFinca = safeRename(fincas, { nombre: 'finca_nombre' })
+    const tVariedad = safeRename(variedades, { nombre: 'variedad_nombre' })
 
     const joined = tObs
         .join_left(tCama, ['id_cama', 'id_cama'])

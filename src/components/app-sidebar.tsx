@@ -1,15 +1,6 @@
 "use client"
 
 import * as React from "react"
-import {
-    Command,
-    Frame,
-    Map,
-    PieChart,
-    SquareTerminal,
-    Database,
-    Users,
-} from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { SidebarSearch } from "@/components/sidebar-search"
@@ -23,92 +14,12 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { Link } from '@tanstack/react-router'
-
-const data = {
-    user: {
-        name: "Lucas Foulkes",
-        email: "lukas@cananvalle.com",
-        avatar: "/avatars/shadcn.jpg",
-    },
-    navMain: [
-        // Infraestructura productiva
-        {
-            title: "Infraestructura",
-            url: "/finca",
-            icon: SquareTerminal,
-            isActive: false,
-            items: [
-                { title: "Fincas", url: "/finca" },
-                { title: "Bloques", url: "/bloque" },
-                { title: "Camas", url: "/cama" },
-                { title: "Grupos de Cama", url: "/grupo_cama" },
-                { title: "Secciones", url: "/seccion" },
-            ],
-        },
-        // Material vegetal
-        {
-            title: "Material Vegetal",
-            url: "/variedad",
-            icon: Frame,
-            isActive: false,
-            items: [
-                { title: "Variedades", url: "/variedad" },
-                { title: "Breeders", url: "/breeder" },
-                { title: "Patrones", url: "/patron" },
-                { title: "Estados Gr. Cama", url: "/grupo_cama_estado" },
-                { title: "Tipos de Planta", url: "/grupo_cama_tipo_planta" },
-            ],
-        },
-        // Fenología y desarrollo
-        {
-            title: 'Fenología',
-            url: '/estados_fenologicos',
-            icon: PieChart,
-            isActive: false,
-            items: [
-                { title: "Estados Fenológicos", url: "/estados_fenologicos" },
-                { title: "Tipos de Estado", url: "/estado_fenologico_tipo" },
-            ],
-        },
-        // Operaciones y producción
-        {
-            title: 'Operaciones',
-            url: '/pinche',
-            icon: Database,
-            isActive: false,
-            items: [
-                { title: 'Pinches', url: '/pinche' },
-                { title: 'Tipos de Pinche', url: '/pinche_tipo' },
-                { title: 'Producción', url: '/produccion' },
-            ],
-        },
-        // Observaciones y GPS
-        {
-            title: 'Observaciones',
-            url: '/observacion',
-            icon: Map,
-            isActive: false,
-            items: [
-                { title: "Observaciones", url: "/observacion" },
-                { title: 'Puntos GPS', url: '/puntos_gps' },
-            ],
-        },
-        // Administración y usuarios
-        {
-            title: 'Administración',
-            url: '/usuario',
-            icon: Users,
-            isActive: false,
-            items: [
-                { title: 'Usuarios', url: '/usuario' },
-                { title: 'Sync', url: '/sync' },
-            ],
-        },
-    ],
-    // projects removed (Acciones section)
-}
+import { brandInfo, navBaseGroups, navSearchGroups, navSummaryGroups } from '@/lib/navigation'
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const LogoIcon = brandInfo.logoIcon
+    const ownerName = brandInfo.owner ?? brandInfo.name
+
     return (
         <Sidebar variant="inset" {...props}>
             <SidebarHeader>
@@ -117,59 +28,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/">
                                 <div className="bg-black text-white flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <Command className="size-4" />
+                                    <LogoIcon className="size-4" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-medium">Cananvalle</span>
-                                    <span className="truncate text-xs">{data.user.name}</span>
+                                    <span className="truncate font-medium">{brandInfo.name}</span>
+                                    <span className="truncate text-xs">{ownerName}</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <div className="px-2 pb-2">
-                    <SidebarSearch items={data.navMain} />
+                    <SidebarSearch items={navSearchGroups} />
                 </div>
             </SidebarHeader>
             <SidebarContent>
                 {/* Summaries remain in main content */}
                 <NavMain
                     label="Resúmenes"
-                    items={[
-                        {
-                            title: 'Área productiva (FBV)',
-                            url: '/area_productiva',
-                            icon: PieChart,
-                            isActive: false,
-                            items: [],
-                        },
-                        {
-                            title: 'Observacion por cama',
-                            url: '/observaciones_por_cama',
-                            icon: PieChart,
-                            isActive: false,
-                            items: [],
-                        },
-                        {
-                            title: 'Resumen Fenológico',
-                            url: '/resumen_fenologico',
-                            icon: PieChart,
-                            isActive: false,
-                            items: [],
-                        },
-                        {
-                            title: 'Cosecha',
-                            url: '/cosecha',
-                            icon: PieChart,
-                            isActive: false,
-                            items: [],
-                        },
-                    ]}
+                    items={navSummaryGroups}
                 />
             </SidebarContent>
             <SidebarFooter>
                 {/* Move Base to the bottom; default collapsed and show a plus icon */}
-                <NavMain items={data.navMain} label="Base" defaultCollapsed={true} groupCollapsible={true} />
+                <NavMain items={navBaseGroups} label="Base" defaultCollapsed={true} groupCollapsible={true} />
             </SidebarFooter>
         </Sidebar>
     )

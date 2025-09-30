@@ -26,13 +26,20 @@ export async function fetchAreaProductiva(): Promise<TableResult> {
     }
 
     const tCama = aq.from(camas)
-    const tGrupo = aq
-        .from(grupos)
-        // make the grupo_cama fields explicit to avoid ambiguity
-        .rename({ id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad', estado: 'grupo_estado' })
-    const tBloque = aq.from(bloques).rename({ nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
-    const tFinca = aq.from(fincas).rename({ nombre: 'finca_nombre' })
-    const tVariedad = aq.from(variedades).rename({ nombre: 'variedad_nombre' })
+    const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
+        const t = aq.from(rows)
+        const first = rows?.[0] ?? {}
+        const out: Record<string, string> = {}
+        for (const [src, dst] of Object.entries(mapping)) {
+            if (Object.prototype.hasOwnProperty.call(first, src)) out[src] = dst
+        }
+        return Object.keys(out).length ? t.rename(out) : t
+    }
+
+    const tGrupo = safeRename(grupos, { id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad', estado: 'grupo_estado' })
+    const tBloque = safeRename(bloques, { nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
+    const tFinca = safeRename(fincas, { nombre: 'finca_nombre' })
+    const tVariedad = safeRename(variedades, { nombre: 'variedad_nombre' })
 
     const derived = tCama
         .join_left(tGrupo, ['id_grupo', 'id_grupo'])
