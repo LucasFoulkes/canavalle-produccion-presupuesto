@@ -1,56 +1,92 @@
 import { db } from '@/lib/db'
 import type { TableResult } from './tables'
-import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, Seccion, EstadoFenologicoTipo, EstadosFenologicos } from '@/types/tables'
+import type { Bloque, Finca, Variedad, EstadosFenologicos, EstadoFenologicoTipo } from '@/types/tables'
 import { normText, readAll, refreshAllPages, toNumber } from '@/lib/data-utils'
 import { fetchAreaProductiva } from './area_productiva'
-import { getStageList, toAreaMaps, normalizeObservaciones, buildInflowByFBVDateStage, buildNameMaps, durationsFromRow, cmpFechaDescThenFBV } from '@/lib/report-utils'
+import { fetchObservacionesPorCama } from './observaciones_por_cama'
+import { toAreaMaps, buildNameMaps, durationsFromRow, cmpFechaDescThenFBV, fbvKeyFromNames } from '@/lib/report-utils'
 
 // Resumen fenológico por día para cada Finca–Bloque–Variedad (FBV)
 // Para cada fecha, muestra por etapa: "cantidad (porcentaje del área FBV)"
 export async function fetchResumenFenologico(): Promise<TableResult> {
-    // Refresh required tables (best-effort, paginated)
+    // Use observaciones_por_cama as the data source (already normalized and aggregated)
+    const obsPorCamaResult = await fetchObservacionesPorCama()
+    const obsPorCamaRows = obsPorCamaResult.rows as Array<Record<string, unknown>>
+
+    // Refresh only the tables we need beyond what observaciones_por_cama already loaded
     await Promise.all([
-        refreshAllPages<Cama>('cama', db.cama, '*'),
-        refreshAllPages<GrupoCama>('grupo_cama', db.grupo_cama, '*'),
+        refreshAllPages<EstadosFenologicos>('estados_fenologicos', db.estados_fenologicos, '*'),
+        refreshAllPages<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*'),
         refreshAllPages<Bloque>('bloque', db.bloque, '*'),
         refreshAllPages<Finca>('finca', db.finca, '*'),
         refreshAllPages<Variedad>('variedad', db.variedad, '*'),
-        refreshAllPages<Observacion>('observacion', db.observacion, '*'),
-        refreshAllPages<Seccion & { id?: number }>('seccion', db.seccion, '*'),
-        refreshAllPages<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*'),
-        refreshAllPages<EstadosFenologicos>('estados_fenologicos', db.estados_fenologicos, '*'),
     ])
 
-    // Load data from cache
-    const [camas, grupos, bloques, fincas, variedades, observaciones, estadosTipo, estadosRows, secciones] = await Promise.all([
-        readAll<Cama>(db.cama),
-        readAll<GrupoCama>(db.grupo_cama),
+    const [estadosRows, estadosTipo, bloques, fincas, variedades] = await Promise.all([
+        readAll<EstadosFenologicos>(db.estados_fenologicos),
+        readAll<EstadoFenologicoTipo>(db.estado_fenologico_tipo),
         readAll<Bloque>(db.bloque),
         readAll<Finca>(db.finca),
         readAll<Variedad>(db.variedad),
-        readAll<Observacion>(db.observacion),
-        readAll<EstadoFenologicoTipo>(db.estado_fenologico_tipo),
-        readAll<EstadosFenologicos>(db.estados_fenologicos),
-        readAll<Seccion & { id?: number }>(db.seccion),
     ])
 
-    // Stage list ordered by 'orden' then code
-    const stageList = getStageList(estadosTipo)
+    // Get stage list from the observaciones_por_cama columns (excludes already filtered stages)
+    const obsCols = obsPorCamaResult.columns || []
+    const stageColumns = obsCols.filter(c =>
+        !['fecha', 'finca', 'bloque', 'variedad', 'cama', 'seccion', 'porcentaje_area', 'area_cama_m2'].includes(c)
+    )
 
     // Area totals by FBV using existing aggregator
     const areaRes = await fetchAreaProductiva()
     const { areaTotalByFBV: areaByFBV, areaProdByFBV } = toAreaMaps(areaRes.rows as Array<Record<string, any>>)
 
-    if (!observaciones.length) {
-        return { rows: [], columns: ['fecha', 'finca', 'bloque', 'variedad', ...stageList.map(s => s.codigo)] }
+    if (!obsPorCamaRows.length) {
+        return { rows: [], columns: ['fecha', 'finca', 'bloque', 'variedad', ...stageColumns] }
     }
 
-    // Normalize observations and build inflow
-    const normRows = normalizeObservaciones({ camas, grupos, bloques, fincas, variedades, observaciones })
-
-    const seccionLargo = toNumber((secciones?.[0] as any)?.largo_m) || 1
+    // Build inflow from observaciones_por_cama rows
+    // Structure: Map<FBV, Map<date, Map<stage, {count, area_m2}>>>
     type Payload = { count: number; area_m2: number }
-    const inflow = buildInflowByFBVDateStage(normRows, seccionLargo)
+    const inflow = new Map<string, Map<string, Map<string, Payload>>>()
+
+    for (const row of obsPorCamaRows) {
+        const finca = String(row.finca || '')
+        const bloque = String(row.bloque || '')
+        const variedad = String(row.variedad || '')
+        const fecha = String(row.fecha || '')
+        const fbv = fbvKeyFromNames(finca, bloque, variedad)
+
+        if (!inflow.has(fbv)) inflow.set(fbv, new Map())
+        const byDate = inflow.get(fbv)!
+        if (!byDate.has(fecha)) byDate.set(fecha, new Map())
+        const byStage = byDate.get(fecha)!
+
+        // For each stage column, add to inflow if it has a value
+        for (const stageCol of stageColumns) {
+            const val = row[stageCol]
+            if (val && typeof val === 'number' && val > 0) {
+                const stageNorm = normText(stageCol)
+                if (!byStage.has(stageNorm)) byStage.set(stageNorm, { count: 0, area_m2: 0 })
+                const p = byStage.get(stageNorm)!
+                p.count += val
+                // Use porcentaje_area to back-calculate area if available
+                const pct = toNumber(row.porcentaje_area)
+                const totalArea = areaByFBV.get(fbv) || 0
+                const estimatedArea = totalArea > 0 && pct > 0 ? (totalArea * pct / 100) : 0
+                p.area_m2 += estimatedArea
+            }
+        }
+    }
+
+    // Track which FBV+date combinations have actual observations (from the inflow map)
+    // These are the actual observation dates that should be highlighted
+    const actualObservationFBVDates = new Set<string>()
+    for (const [fbv, byDate] of inflow.entries()) {
+        for (const date of byDate.keys()) {
+            const key = `${fbv}||${date}`
+            actualObservationFBVDates.add(key)
+        }
+    }
 
     // Durations per FBV based on estados_fenologicos (use latest row if multiple)
     // dias_* mapping now handled by durationsFromRow()
@@ -65,8 +101,8 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
         const fincaId = e.id_finca != null ? String(e.id_finca) : ''
         const bloqueId = e.id_bloque != null ? String(e.id_bloque) : ''
         const variedadId = e.id_variedad != null ? String(e.id_variedad) : ''
-        const nameKey = `${fincaNameById.get(fincaId) ?? fincaId}||${bloqueNameById.get(bloqueId) ?? bloqueId}||${variedadNameById.get(variedadId) ?? variedadId}`
-        const idKey = `${fincaId}||${bloqueId}||${variedadId}`
+        const nameKey = fbvKeyFromNames(fincaNameById.get(fincaId) ?? fincaId, bloqueNameById.get(bloqueId) ?? bloqueId, variedadNameById.get(variedadId) ?? variedadId)
+        const idKey = fbvKeyFromNames(fincaId, bloqueId, variedadId)
 
         const prevName = estadosByFBVName.get(nameKey)
         const prevId = estadosByFBVId.get(idKey)
@@ -79,13 +115,19 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
         }
     }
 
+    // Build stageList from estadosTipo, filtered to only include stages in stageColumns
+    const stageColumnsSet = new Set(stageColumns.map(c => normText(c)))
+    const stageList = estadosTipo
+        .filter(st => stageColumnsSet.has(normText(st.codigo)))
+        .sort((a, b) => toNumber(a.orden) - toNumber(b.orden))
+
     // Build per-FBV durations for the known stage codes present in stageList
     function buildDurationsForFBV(fbv: string): Map<string, number> {
         // Try exact name-key match; fallback to ID-key if the slug looks like IDs
         let row = estadosByFBVName.get(fbv)
         if (!row) {
             const [f, b, v] = fbv.split('||')
-            const idKey = `${f ?? ''}||${b ?? ''}||${v ?? ''}`
+            const idKey = fbvKeyFromNames(f, b, v)
             row = estadosByFBVId.get(idKey)
         }
         return durationsFromRow(row, stageList)
@@ -177,7 +219,14 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
 
             // Snapshot row for this day
             const [finca, bloque, variedad] = fbv.split('||')
-            const row: Record<string, unknown> = { fecha: d, finca, bloque, variedad }
+            const fbvDateKey = `${fbv}||${d}`
+            const row: Record<string, unknown> = {
+                fecha: d,
+                finca,
+                bloque,
+                variedad,
+                _isNewObservation: actualObservationFBVDates.has(fbvDateKey) // metadata for styling - marks rows with actual observations
+            }
             let hasData = false
             for (const st of stageList) {
                 const code = normText(st.codigo)
@@ -206,6 +255,9 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
 
     // Sort by fecha desc, then FBV for stability
     result.sort(cmpFechaDescThenFBV)
+
+    console.log('Resumen fenologico: Total rows generated:', result.length)
+    console.log('Resumen fenologico: Stage columns:', stageList.map(s => s.codigo))
 
     return { rows: result, columns: ['fecha', 'finca', 'bloque', 'variedad', ...stageList.map(s => s.codigo)] }
 }

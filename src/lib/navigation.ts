@@ -38,6 +38,11 @@ export const navSummaryGroups: NavGroup[] = [
         icon: PieChart,
     },
     {
+        title: 'Variación por Día',
+        url: '/variacion_por_dia',
+        icon: PieChart,
+    },
+    {
         title: 'Cosecha',
         url: '/cosecha',
         icon: PieChart,

@@ -8,6 +8,9 @@ export type DexieTable<T> = {
     count?: () => Promise<number>
 }
 
+// Simple in-flight request cache to prevent duplicate fetches
+const inflightRequests = new Map<string, Promise<number>>()
+
 // Centralized paginated refresh to avoid the 1,000-row default limit
 export async function refreshAllPages<T>(
     tableName: string,
@@ -17,6 +20,13 @@ export async function refreshAllPages<T>(
     options?: { force?: boolean },
 ): Promise<number> {
     const { force = false } = options ?? {}
+
+    // Check if this exact request is already in flight
+    const cacheKey = `${tableName}:${select}`
+    if (!force && inflightRequests.has(cacheKey)) {
+        return inflightRequests.get(cacheKey)!
+    }
+
     if (!force) {
         try {
             const needsRefresh = await shouldRefreshTable(tableName, dexieTable)
@@ -29,31 +39,40 @@ export async function refreshAllPages<T>(
         }
     }
 
-    let total = 0
-    try {
-        const allRows: T[] = []
-        for (let from = 0; ; from += pageSize) {
-            const to = from + pageSize - 1
-            const { data, error } = await supabase
-                .from(tableName)
-                .select(select)
-                .range(from, to)
-            if (error) throw error
-            const rows = (data ?? []) as T[]
-            allRows.push(...rows)
-            total += rows.length
-            if (rows.length < pageSize) break
+    // Create the fetch promise and cache it
+    const fetchPromise = (async () => {
+        let total = 0
+        try {
+            const allRows: T[] = []
+            for (let from = 0; ; from += pageSize) {
+                const to = from + pageSize - 1
+                const { data, error } = await supabase
+                    .from(tableName)
+                    .select(select)
+                    .range(from, to)
+                if (error) throw error
+                const rows = (data ?? []) as T[]
+                allRows.push(...rows)
+                total += rows.length
+                if (rows.length < pageSize) break
+            }
+            if (allRows.length) {
+                // Replace cache to avoid duplicate growth when PKs are missing/unstable
+                await dexieTable.clear()
+                await dexieTable.bulkPut(allRows)
+            }
+        } catch (e) {
+            // Best-effort cache refresh; keep working offline
+            console.warn(`${tableName}: refresh failed; using cache`, e)
+        } finally {
+            // Remove from cache once complete
+            inflightRequests.delete(cacheKey)
         }
-        if (allRows.length) {
-            // Replace cache to avoid duplicate growth when PKs are missing/unstable
-            await dexieTable.clear()
-            await dexieTable.bulkPut(allRows)
-        }
-    } catch (e) {
-        // Best-effort cache refresh; keep working offline
-        console.warn(`${tableName}: refresh failed; using cache`, e)
-    }
-    return total
+        return total
+    })()
+
+    inflightRequests.set(cacheKey, fetchPromise)
+    return fetchPromise
 }
 
 export async function readAll<T>(dexieTable: DexieTable<T>): Promise<T[]> {

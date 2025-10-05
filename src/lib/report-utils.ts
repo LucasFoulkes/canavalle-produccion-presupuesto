@@ -2,6 +2,17 @@ import * as aq from 'arquero'
 import { normText, toNumber } from '@/lib/data-utils'
 import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, EstadoFenologicoTipo, EstadosFenologicos } from '@/types/tables'
 
+// Safe renames: apply only if source column exists to avoid Arquero errors
+export const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
+    const t = aq.from(rows)
+    const first = rows?.[0] ?? {}
+    const out: Record<string, string> = {}
+    for (const [src, dst] of Object.entries(mapping)) {
+        if (Object.prototype.hasOwnProperty.call(first, src)) out[src] = dst
+    }
+    return Object.keys(out).length ? t.rename(out) : t
+}
+
 // FBV helpers
 export function fbvKeyFromNames(finca?: string | null, bloque?: string | null, variedad?: string | null): string {
     return `${finca ?? ''}||${bloque ?? ''}||${variedad ?? ''}`
@@ -104,17 +115,6 @@ export function normalizeObservaciones(
 ): NormalizedObs[] {
     const { camas, grupos, bloques, fincas, variedades, observaciones } = datasets
     if (!observaciones?.length) return []
-    // Safe renames: apply only if source column exists to avoid Arquero errors
-    const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
-        const t = aq.from(rows)
-        const first = rows?.[0] ?? {}
-        const out: Record<string, string> = {}
-        for (const [src, dst] of Object.entries(mapping)) {
-            if (Object.prototype.hasOwnProperty.call(first, src)) out[src] = dst
-        }
-        return Object.keys(out).length ? t.rename(out) : t
-    }
-
     const tObs = safeRename(observaciones, { creado_en: 'obs_creado_en' })
     const tCama = safeRename(camas, { nombre: 'cama_nombre' })
     const tGrupo = safeRename(grupos, { id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad' })

@@ -3,6 +3,7 @@ import type { TableResult } from './tables'
 import type { Cama, GrupoCama, Bloque, Finca, Variedad } from '@/types/tables'
 import * as aq from 'arquero'
 import { normText, readAll, refreshAllPages, toNumber } from '@/lib/data-utils'
+import { safeRename, fbvKeyFromNames } from '@/lib/report-utils'
 
 // Área productiva por Finca–Bloque–Variedad
 export async function fetchAreaProductiva(): Promise<TableResult> {
@@ -26,16 +27,6 @@ export async function fetchAreaProductiva(): Promise<TableResult> {
     }
 
     const tCama = aq.from(camas)
-    const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
-        const t = aq.from(rows)
-        const first = rows?.[0] ?? {}
-        const out: Record<string, string> = {}
-        for (const [src, dst] of Object.entries(mapping)) {
-            if (Object.prototype.hasOwnProperty.call(first, src)) out[src] = dst
-        }
-        return Object.keys(out).length ? t.rename(out) : t
-    }
-
     const tGrupo = safeRename(grupos, { id_bloque: 'grupo_id_bloque', id_variedad: 'grupo_id_variedad', estado: 'grupo_estado' })
     const tBloque = safeRename(bloques, { nombre: 'bloque_nombre', id_finca: 'bloque_id_finca' })
     const tFinca = safeRename(fincas, { nombre: 'finca_nombre' })
@@ -71,7 +62,7 @@ export async function fetchAreaProductiva(): Promise<TableResult> {
     const objects = derived.objects() as Row[]
     const byKey = new Map<string, { finca: string; bloque: string; variedad: string; area_productiva_m2: number; area_total_m2: number }>()
     for (const r of objects) {
-        const key = `${r.finca}||${r.bloque}||${r.variedad}`
+        const key = fbvKeyFromNames(r.finca, r.bloque, r.variedad)
         const current = byKey.get(key)
         if (!current) {
             byKey.set(key, { finca: r.finca, bloque: r.bloque, variedad: r.variedad, area_productiva_m2: 0, area_total_m2: 0 })

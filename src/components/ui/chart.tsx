@@ -125,11 +125,15 @@ function ChartTooltipContent({
     labelKey?: string
   }) {
   const { config } = useChart()
-  const numberFormatter = React.useMemo(() => new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-    useGrouping: false,
-  }), [])
+  const numberFormatter = React.useMemo(() => {
+    return {
+      format: (value: number) => {
+        const parts = value.toFixed(2).split('.')
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+        return parts.join('.')
+      }
+    }
+  }, [])
 
   const tooltipLabel = React.useMemo(() => {
     if (hideLabel || !payload?.length) {
@@ -238,7 +242,7 @@ function ChartTooltipContent({
                         </span>
                       </div>
                       {item.value !== undefined && item.value !== null && (
-                        <span className="text-foreground font-mono font-medium tabular-nums">
+                        <span className="text-foreground font-mono font-medium tabular-nums whitespace-nowrap">
                           {(() => {
                             const n = Number(item.value as number)
                             return Number.isFinite(n)

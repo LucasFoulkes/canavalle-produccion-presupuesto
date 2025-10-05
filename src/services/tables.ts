@@ -6,6 +6,7 @@ import { buildRegistry } from './table-registry'
 import { fetchAreaProductiva } from './area_productiva'
 import { fetchObservacionesPorCama } from './observaciones_por_cama'
 import { fetchResumenFenologico } from './resumen_fenologico'
+import { fetchVariacionPorDia } from './variacion_por_dia'
 import { keepOnlyLastCosechaDay, scaleTimelineToTotals, sumCosechaByFechaVariedad } from '@/lib/predicciones'
 
 type SimpleRow = Record<string, unknown>
@@ -158,6 +159,7 @@ const customRegistry: Record<string, () => Promise<TableResult>> = {
     area_productiva: fetchAreaProductiva,
     observaciones_por_cama: fetchObservacionesPorCama,
     resumen_fenologico: fetchResumenFenologico,
+    variacion_por_dia: fetchVariacionPorDia,
     cosecha: async () => {
         const base = await fetchResumenFenologico()
         const scaled = scaleTimelineToTotals(base.rows as any)

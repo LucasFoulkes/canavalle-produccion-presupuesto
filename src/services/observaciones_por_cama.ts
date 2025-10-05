@@ -2,7 +2,7 @@ import { db } from '@/lib/db'
 import type { TableResult } from './tables'
 import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, Seccion, EstadoFenologicoTipo } from '@/types/tables'
 import { readAll, refreshAllPages, toNumber, normText } from '@/lib/data-utils'
-import { getStageList, normalizeObservaciones, cmpFechaDescThenFBVThenCamaSeccion } from '@/lib/report-utils'
+import { getStageList, normalizeObservaciones, cmpFechaDescThenFBVThenCamaSeccion, fbvKeyFromNames } from '@/lib/report-utils'
 
 // Observaciones por Cama, agrupadas también por Sección; lista de estados detectados y área total de la cama
 export async function fetchObservacionesPorCama(): Promise<TableResult> {
@@ -32,15 +32,52 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
             .slice()
             .sort((a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || a.codigo.localeCompare(b.codigo))
             .map((e) => e.codigo)
-        return { rows: [], columns: ['finca', 'bloque', 'variedad', 'cama', 'seccion', 'fecha', ...stageCols, 'area_cama_m2'] }
+        return { rows: [], columns: ['finca', 'bloque', 'variedad', 'cama', 'seccion', 'fecha', ...stageCols, 'porcentaje_area', 'area_cama_m2'] }
+    }
+
+    // Build lookup maps
+    const grupoById = new Map(grupos.map(g => [g.id_grupo, g]))
+    const bloqueById = new Map(bloques.map(b => [b.id_bloque, b]))
+    const fincaById = new Map(fincas.map(f => [f.id_finca, f]))
+    const variedadById = new Map(variedades.map(v => [v.id_variedad, v]))
+
+    // Calculate area per cama and total area per FBV from cama records
+    const areaByCama = new Map<string, number>()
+    const areaByFBV = new Map<string, number>()
+    const camaToFBVKey = new Map<string, string>()
+
+    for (const cama of camas) {
+        const grupo = grupoById.get(cama.id_grupo)
+        if (!grupo) continue
+        const bloque = bloqueById.get(grupo.id_bloque)
+        if (!bloque) continue
+        const finca = fincaById.get(bloque.id_finca ?? 0)
+        if (!finca) continue
+        const variedad = variedadById.get(grupo.id_variedad)
+        if (!variedad) continue
+
+        const fincaNombre = finca.nombre
+        const bloqueNombre = bloque.nombre
+        const variedadNombre = variedad.nombre
+        const camaNombre = cama.nombre
+
+        const keyCama = `${fincaNombre}||${bloqueNombre}||${variedadNombre}||${camaNombre}`
+        const keyFBV = fbvKeyFromNames(fincaNombre, bloqueNombre, variedadNombre)
+
+        const ancho = toNumber(cama.ancho_metros)
+        const largo = toNumber(cama.largo_metros)
+        const area = ancho * largo
+
+        areaByCama.set(keyCama, area)
+        camaToFBVKey.set(keyCama, keyFBV)
+        areaByFBV.set(keyFBV, (areaByFBV.get(keyFBV) ?? 0) + area)
     }
 
     // Normalize observations with shared helper
     const rows = normalizeObservaciones({ camas, grupos, bloques, fincas, variedades, observaciones })
 
-    // Aggregate per cama (grouping by cama, seccion and fecha for estados), compute total area per cama
+    // Aggregate per cama (grouping by cama, seccion and fecha for estados)
     const countsByCamaSeccion = new Map<string, Map<string, number>>()
-    const areaByCama = new Map<string, number>()
 
     for (const r of rows) {
         const keyCama = `${r.finca}||${r.bloque}||${r.variedad}||${r.cama}`
@@ -53,11 +90,6 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
         }
         const est = r.estado_norm
         if (est) cmap.set(est, (cmap.get(est) ?? 0) + toNumber(r.cantidad))
-
-        // total area per cama = ancho * largo (not multiplied per observation)
-        const area = toNumber(r.ancho_m) * toNumber(r.largo_m)
-        // Keep max in case of multiple observations
-        areaByCama.set(keyCama, Math.max(areaByCama.get(keyCama) ?? 0, area))
     }
 
     // Flatten to rows: one row per cama per seccion with estados, and include total area per cama
@@ -68,6 +100,13 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
     for (const [keyCamaSeccion, countsMap] of countsByCamaSeccion.entries()) {
         const [finca, bloque, variedad, cama, seccion, fecha] = keyCamaSeccion.split('||')
         const keyCama = `${finca}||${bloque}||${variedad}||${cama}`
+        const keyFBV = fbvKeyFromNames(finca, bloque, variedad)
+
+        // Calculate percentage of total FBV area
+        const camaArea = areaByCama.get(keyCama) ?? 0
+        const totalFBVArea = areaByFBV.get(keyFBV) ?? 0
+        const percentage = totalFBVArea > 0 ? (camaArea / totalFBVArea) * 100 : 0
+
         const row: Record<string, unknown> = {
             finca,
             bloque,
@@ -76,6 +115,7 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
             seccion,
             fecha,
             area_cama_m2: areaByCama.get(keyCama) ?? 0,
+            porcentaje_area: percentage,
         }
         for (const stage of stageList) {
             const codeNorm = normText(stage.codigo)
@@ -99,6 +139,7 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
             'cama',
             'seccion',
             ...stageList.map(s => s.codigo),
+            'porcentaje_area',
             'area_cama_m2']
     }
 }
