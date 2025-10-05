@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+﻿import OpenAI from 'openai'
 import readline from 'node:readline'
 
 const client = new OpenAI({

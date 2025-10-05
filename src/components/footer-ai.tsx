@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+﻿import { useCallback, useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Leaf, Mic, AudioLines, X, RotateCcw } from "lucide-react"
 import { useOpenAIChat } from "@/hooks/useOpenAIChat"
@@ -84,7 +84,7 @@ export function FooterAI() {
                                             type="button"
                                             onClick={() => { clearConversation(); setShowOverlay(false) }}
                                             disabled={loading}
-                                            title="Nueva sesión"
+                                            title="Nueva sesiÃ³n"
                                             className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 disabled:opacity-60"
                                         >
                                             <RotateCcw className="h-4 w-4" />
@@ -141,3 +141,4 @@ export function FooterAI() {
 }
 
 export default FooterAI
+
