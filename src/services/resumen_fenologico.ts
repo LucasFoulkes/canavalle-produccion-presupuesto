@@ -135,9 +135,9 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
 
     // Utility to iterate dates
     function addDays(iso: string, days: number): string {
-        const dt = new Date(iso + 'T00:00:00Z')
-        dt.setUTCDate(dt.getUTCDate() + days)
-        return dt.toISOString().slice(0, 10)
+        const dt = new Date(iso + 'T00:00:00')
+        dt.setDate(dt.getDate() + days)
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
     }
 
     const result: Array<Record<string, unknown>> = []

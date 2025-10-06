@@ -165,7 +165,7 @@ const customRegistry: Record<string, () => Promise<TableResult>> = {
         const scaled = scaleTimelineToTotals(base.rows as any)
         const lastDays = keepOnlyLastCosechaDay(scaled as any)
         const grouped = sumCosechaByFechaVariedad(lastDays as any)
-        return { rows: grouped as Array<Record<string, unknown>>, columns: ['fecha', 'variedad', 'dias_cosecha'] }
+        return { rows: grouped as Array<Record<string, unknown>>, columns: ['fecha', 'finca', 'bloque', 'variedad', 'dias_cosecha'] }
     },
 }
 

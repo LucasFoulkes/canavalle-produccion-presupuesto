@@ -144,7 +144,10 @@ export function normalizeObservaciones(
                 const m = s.match(/^(\d{4}-\d{2}-\d{2})/)
                 if (m) return m[1]
                 const t = Date.parse(s)
-                if (Number.isFinite(t)) return new Date(t).toISOString().slice(0, 10)
+                if (Number.isFinite(t)) {
+                    const date = new Date(t)
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                }
                 return ''
             }),
         })

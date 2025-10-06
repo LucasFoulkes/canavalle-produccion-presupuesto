@@ -65,22 +65,28 @@ export function keepOnlyLastCosechaDay(rows: TimelineRow[]): TimelineRow[] {
     return out
 }
 
-// Group by fecha and variedad, summing dias_cosecha; drops finca and bloque
-export function sumCosechaByFechaVariedad(rows: TimelineRow[]): Array<{ fecha: string; variedad: string; dias_cosecha: number }> {
-    const acc = new Map<string, { fecha: string; variedad: string; dias_cosecha: number }>()
+// Group by fecha, finca, bloque, and variedad, summing dias_cosecha
+export function sumCosechaByFechaVariedad(rows: TimelineRow[]): Array<{ fecha: string; finca: string; bloque: string; variedad: string; dias_cosecha: number }> {
+    const acc = new Map<string, { fecha: string; finca: string; bloque: string; variedad: string; dias_cosecha: number }>()
     for (const r of rows) {
         const fecha = String(r.fecha)
-        const variedad = String(r.variedad)
-        const key = `${fecha}||${variedad}`
+        const finca = String(r.finca ?? '')
+        const bloque = String(r.bloque ?? '')
+        const variedad = String(r.variedad ?? '')
+        const key = `${fecha}||${finca}||${bloque}||${variedad}`
         const val = toNumber((r as any).dias_cosecha)
-        if (!acc.has(key)) acc.set(key, { fecha, variedad, dias_cosecha: 0 })
+        if (!acc.has(key)) acc.set(key, { fecha, finca, bloque, variedad, dias_cosecha: 0 })
         const entry = acc.get(key)!
         if (Number.isFinite(val)) entry.dias_cosecha += val
     }
-    // Sort by fecha desc then variedad asc for stability
+    // Sort by fecha desc then finca/bloque/variedad asc for stability
     return Array.from(acc.values()).sort((a, b) => {
         const d = b.fecha.localeCompare(a.fecha)
         if (d !== 0) return d
+        const f = a.finca.localeCompare(b.finca)
+        if (f !== 0) return f
+        const bl = a.bloque.localeCompare(b.bloque)
+        if (bl !== 0) return bl
         return a.variedad.localeCompare(b.variedad)
     })
 }

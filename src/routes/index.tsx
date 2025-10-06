@@ -10,22 +10,31 @@ export const Route = createFileRoute('/')({
 })
 
 function RouteComponent() {
-  // Raw cosecha rows (fecha, variedad, dias_cosecha)
-  const [rows, setRows] = React.useState<Array<{ fecha: string; variedad: string; dias_cosecha: number }>>([])
+  // Raw cosecha rows (fecha, finca, bloque, variedad, dias_cosecha)
+  const [rows, setRows] = React.useState<Array<{ fecha: string; finca: string; bloque: string; variedad: string; dias_cosecha: number }>>([])
   const [error, setError] = React.useState<string | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
   const [cosechaSummary, setCosechaSummary] = React.useState<{ today: Map<string, number>; week: Map<string, number> }>({ today: new Map(), week: new Map() })
 
   React.useEffect(() => {
     let cancelled = false
       ; (async () => {
         try {
-          // Use the cosecha table we already derive (fecha, variedad, dias_cosecha)
+          setIsLoading(true)
+          // Use the cosecha table we already derive (fecha, finca, bloque, variedad, dias_cosecha)
           const { rows } = await fetchTable('cosecha')
-          const shaped = (rows as Array<Record<string, unknown>>).map(r => ({
-            fecha: String((r as any).fecha),
-            variedad: String((r as any).variedad ?? ''),
-            dias_cosecha: toNumber((r as any).dias_cosecha) || 0,
-          }))
+          const shaped = (rows as Array<Record<string, unknown>>).map(r => {
+            // Extract just the date part (YYYY-MM-DD) from fecha, in case it has time
+            const rawFecha = String((r as any).fecha)
+            const dateOnly = rawFecha.split('T')[0].split(' ')[0]
+            return {
+              fecha: dateOnly,
+              finca: String((r as any).finca ?? ''),
+              bloque: String((r as any).bloque ?? ''),
+              variedad: String((r as any).variedad ?? ''),
+              dias_cosecha: toNumber((r as any).dias_cosecha) || 0,
+            }
+          })
           if (!cancelled) {
             setRows(shaped)
 
@@ -33,7 +42,7 @@ function RouteComponent() {
             const weekTotals = new Map<string, number>()
 
             const now = new Date()
-            const todayKey = now.toISOString().slice(0, 10)
+            const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
             const currentDay = (now.getUTCDay() + 6) % 7
             const currentMonday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - currentDay))
             const currentYear = currentMonday.getUTCFullYear()
@@ -46,7 +55,9 @@ function RouteComponent() {
               if (!Number.isFinite(base)) continue
               const variety = r.variedad ?? ''
 
-              if (r.fecha === todayKey) {
+              // Normalize fecha to just date part for comparison
+              const rowDateOnly = r.fecha.split('T')[0].split(' ')[0]
+              if (rowDateOnly === todayKey) {
                 todayTotals.set(variety, (todayTotals.get(variety) ?? 0) + base)
                 todayTotals.set('', (todayTotals.get('') ?? 0) + base)
               }
@@ -70,7 +81,7 @@ function RouteComponent() {
         } catch (e: any) {
           if (!cancelled) setError(e?.message ?? 'Error loading data')
         } finally {
-          // no-op
+          if (!cancelled) setIsLoading(false)
         }
       })()
     return () => {
@@ -80,7 +91,7 @@ function RouteComponent() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden p-4 gap-4">
-      <CosechaCard rows={rows} error={error} summary={cosechaSummary} />
+      <CosechaCard rows={rows} error={error} isLoading={isLoading} summary={cosechaSummary} />
     </div>
   )
 }
