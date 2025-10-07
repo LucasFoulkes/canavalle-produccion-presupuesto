@@ -1,6 +1,16 @@
 import * as aq from 'arquero'
 import { normText, toNumber } from '@/lib/data-utils'
-import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, EstadoFenologicoTipo, EstadosFenologicos } from '@/types/tables'
+import type {
+    Cama,
+    GrupoCama,
+    Bloque,
+    Finca,
+    Variedad,
+    Observacion,
+    ObservacionesTipo,
+    EstadoFenologicoOrden,
+    EstadosFenologicos,
+} from '@/types/tables'
 
 // Safe renames: apply only if source column exists to avoid Arquero errors
 export const safeRename = <T extends Record<string, any>>(rows: T[], mapping: Record<string, string>) => {
@@ -52,10 +62,55 @@ export function buildNameMaps(
 }
 
 // Stage metadata
-export function getStageList(estadosTipo: EstadoFenologicoTipo[]) {
-    return estadosTipo
-        .slice()
-        .sort((a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || String(a.codigo).localeCompare(String(b.codigo)))
+export type StageDefinition = { codigo: string; orden: number | null }
+
+export function getStageList(observaciones: ObservacionesTipo[], ordenes: EstadoFenologicoOrden[]): StageDefinition[] {
+    const orderMap = new Map<string, number>()
+    for (const item of ordenes) {
+        const code = normText(item.codigo_observacion)
+        if (!code) continue
+        const orderValue = toNumber(item.orden, Number.NaN)
+        if (Number.isFinite(orderValue)) {
+            orderMap.set(code, orderValue)
+        }
+    }
+
+    const stageMap = new Map<string, StageDefinition>()
+
+    for (const obs of observaciones) {
+        const rawCode = String(obs.codigo ?? '')
+        const codeNorm = normText(rawCode)
+        if (!codeNorm) continue
+        const orderValue = orderMap.get(codeNorm)
+        stageMap.set(codeNorm, {
+            codigo: rawCode,
+            orden: orderValue ?? null,
+        })
+    }
+
+    for (const item of ordenes) {
+        const rawCode = String(item.codigo_observacion ?? '')
+        const codeNorm = normText(rawCode)
+        if (!codeNorm) continue
+        const orderValue = toNumber(item.orden, Number.NaN)
+        if (!stageMap.has(codeNorm)) {
+            stageMap.set(codeNorm, {
+                codigo: rawCode,
+                orden: Number.isFinite(orderValue) ? orderValue : null,
+            })
+        } else if (Number.isFinite(orderValue)) {
+            const current = stageMap.get(codeNorm)!
+            stageMap.set(codeNorm, {
+                codigo: current.codigo,
+                orden: orderValue,
+            })
+        }
+    }
+
+    return Array.from(stageMap.values()).sort(
+        (a, b) =>
+            (a.orden ?? 1e9) - (b.orden ?? 1e9) || String(a.codigo).localeCompare(String(b.codigo)),
+    )
 }
 export function getDiasFieldByCode(): Record<string, keyof EstadosFenologicos> {
     return {
@@ -76,7 +131,7 @@ export function getDiasFieldByCode(): Record<string, keyof EstadosFenologicos> {
         cosecha: 'dias_cosecha' as keyof EstadosFenologicos,
     } as any
 }
-export function durationsFromRow(row: EstadosFenologicos | undefined, stageList: EstadoFenologicoTipo[]): Map<string, number> {
+export function durationsFromRow(row: EstadosFenologicos | undefined, stageList: StageDefinition[]): Map<string, number> {
     const diasFieldByCode = getDiasFieldByCode()
     const map = new Map<string, number>()
     for (const st of stageList) {

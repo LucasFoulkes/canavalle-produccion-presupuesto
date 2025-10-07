@@ -5,4 +5,5 @@
 5. correct variedad to camas. update groups maybe?
 6. add a way to input like in mass pinches and produccion
 7. fix the cama variedad issue.
-    a. grupos gives variedad kinda refactor so it so it gives range of camas. so like new col. 
+    a. grupos gives variedad kinda refactor so it so it gives range of camas. so like new col.  
+8. add humedad for varidad in bloque, temp suelo same, conductividad.

@@ -1,6 +1,15 @@
 import { db } from '@/lib/db'
 import type { TableResult } from './tables'
-import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, EstadoFenologicoTipo } from '@/types/tables'
+import type {
+    Cama,
+    GrupoCama,
+    Bloque,
+    Finca,
+    Variedad,
+    Observacion,
+    ObservacionesTipo,
+    EstadoFenologicoOrden,
+} from '@/types/tables'
 import { readAll, refreshAllPages, toNumber, normText } from '@/lib/data-utils'
 import { getStageList, normalizeObservaciones, fbvKeyFromNames } from '@/lib/report-utils'
 
@@ -13,17 +22,28 @@ export async function fetchVariacionPorDia(): Promise<TableResult> {
         refreshAllPages<Finca>('finca', db.finca, '*'),
         refreshAllPages<Variedad>('variedad', db.variedad, '*'),
         refreshAllPages<Observacion>('observacion', db.observacion, '*'),
-        refreshAllPages<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*'),
+        refreshAllPages<ObservacionesTipo>('observaciones_tipo', db.observaciones_tipo, '*'),
+        refreshAllPages<EstadoFenologicoOrden>('estado_fenologico_orden', db.estado_fenologico_orden, '*'),
     ])
 
-    const [camas, grupos, bloques, fincas, variedades, observaciones, estadosTipo] = await Promise.all([
+    const [
+        camas,
+        grupos,
+        bloques,
+        fincas,
+        variedades,
+        observaciones,
+        observacionesTipo,
+        estadosOrden,
+    ] = await Promise.all([
         readAll<Cama>(db.cama),
         readAll<GrupoCama>(db.grupo_cama),
         readAll<Bloque>(db.bloque),
         readAll<Finca>(db.finca),
         readAll<Variedad>(db.variedad),
         readAll<Observacion>(db.observacion),
-        readAll<EstadoFenologicoTipo>(db.estado_fenologico_tipo),
+        readAll<ObservacionesTipo>(db.observaciones_tipo),
+        readAll<EstadoFenologicoOrden>(db.estado_fenologico_orden),
     ])
 
     if (!observaciones.length) {
@@ -34,7 +54,7 @@ export async function fetchVariacionPorDia(): Promise<TableResult> {
     const normalized = normalizeObservaciones({ camas, grupos, bloques, fincas, variedades, observaciones })
 
     // Get stage list
-    const stageList = getStageList(estadosTipo)
+    const stageList = getStageList(observacionesTipo, estadosOrden)
 
     // Build area lookup for camas and calculate total FBV areas
     const grupoById = new Map(grupos.map(g => [g.id_grupo, g]))

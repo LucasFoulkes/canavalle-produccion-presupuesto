@@ -9,70 +9,71 @@ import { Download } from 'lucide-react'
 import { toNumber } from '@/lib/data-utils'
 import * as XLSX from 'xlsx'
 
-type CosechaCardProps = {
-    rows: Array<{ fecha: string; finca: string; bloque: string; variedad: string; dias_cosecha: number }>
-    error: string | null
-    isLoading: boolean
-    summary?: { today: Map<string, number>; week: Map<string, number> }
+export type ProduccionRow = {
+    fecha: string
+    finca: string
+    bloque: string
+    variedad: string
+    cantidad: number
 }
 
-export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProps) {
-    const [mode, setMode] = React.useState<'day' | 'week'>('day')
-    const [finca, setFinca] = React.useState<string>('') // empty = all
-    const [bloque, setBloque] = React.useState<string>('') // empty = all
-    const [variedad, setVariedad] = React.useState<string>('') // empty = all
+export type ProduccionCardProps = {
+    rows: ProduccionRow[]
+    error: string | null
+    isLoading: boolean
+}
 
-    // Single source of truth for today's date - calculated once
+export function ProduccionCard({ rows, error, isLoading }: ProduccionCardProps) {
+    const [mode, setMode] = React.useState<'day' | 'week'>('day')
+    const [finca, setFinca] = React.useState<string>('')
+    const [bloque, setBloque] = React.useState<string>('')
+    const [variedad, setVariedad] = React.useState<string>('')
+
     const today = React.useMemo(() => {
         const now = new Date()
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
         return {
             date: now,
             key: todayKey,
-            formatted: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            formatted: now.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' }),
         }
     }, [])
 
     const chartConfig = React.useMemo<ChartConfig>(() => ({
-        total: { label: 'Cosecha total', color: 'var(--chart-2)' },
+        total: { label: 'Producción total', color: 'var(--chart-1)' },
     }), [])
 
-    // Derive unique fincas, bloques, and variedades for filter options
     const fincaOptions = React.useMemo<ComboOption[]>(() => {
         const set = new Set<string>()
         for (const r of rows) if (r.finca) set.add(r.finca)
-        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map(v => ({ label: v, value: v }))
+        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map((v) => ({ label: v, value: v }))
         return [{ label: 'Todas', value: '' }, ...opts]
     }, [rows])
 
     const bloqueOptions = React.useMemo<ComboOption[]>(() => {
         const set = new Set<string>()
         for (const r of rows) {
-            // Only include bloques from the selected finca (or all if no finca filter)
             if (finca && r.finca !== finca) continue
             if (r.bloque) set.add(r.bloque)
         }
-        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map(v => ({ label: v, value: v }))
+        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map((v) => ({ label: v, value: v }))
         return [{ label: 'Todos', value: '' }, ...opts]
     }, [rows, finca])
 
     const variedadOptions = React.useMemo<ComboOption[]>(() => {
         const set = new Set<string>()
         for (const r of rows) {
-            // Only include variedades from the selected finca and/or bloque (or all if no filter)
             if (finca && r.finca !== finca) continue
             if (bloque && r.bloque !== bloque) continue
             if (r.variedad) set.add(r.variedad)
         }
-        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map(v => ({ label: v, value: v }))
+        const opts = Array.from(set).sort((a, b) => a.localeCompare(b)).map((v) => ({ label: v, value: v }))
         return [{ label: 'Todas', value: '' }, ...opts]
     }, [rows, finca, bloque])
 
-    // Aggregate daily totals from filtered rows, 90 days before and after today
     const dailyData = React.useMemo(() => {
         const acc = new Map<string, number>()
 
-        // Calculate date range: 90 days before and 90 days after today
         const startDate = new Date(today.date)
         startDate.setDate(startDate.getDate() - 90)
         const startKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
@@ -82,24 +83,24 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
         const endKey = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
 
         for (const r of rows) {
-            // Apply filters
+            if (!r.fecha) continue
             if (finca && r.finca !== finca) continue
             if (bloque && r.bloque !== bloque) continue
             if (variedad && r.variedad !== variedad) continue
 
             const rowDate = r.fecha.split('T')[0].split(' ')[0]
-
-            // Filter to date range
             if (rowDate < startKey || rowDate > endKey) continue
 
-            const v = toNumber(r.dias_cosecha)
+            const v = toNumber(r.cantidad)
             if (!Number.isFinite(v)) continue
             acc.set(rowDate, (acc.get(rowDate) ?? 0) + v)
         }
-        return Array.from(acc.entries()).map(([date, total]) => ({ date, total, isToday: date === today.key })).sort((a, b) => a.date.localeCompare(b.date))
-    }, [rows, finca, bloque, variedad, today.key, today.date])
 
-    // Compute weekly aggregation from daily data when needed
+        return Array.from(acc.entries())
+            .map(([date, total]) => ({ date, total, isToday: date === today.key }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+    }, [rows, finca, bloque, variedad, today])
+
     const weeklyData = React.useMemo(() => {
         if (mode !== 'week') return [] as Array<{ date: string; total: number; isToday: boolean }>
         const acc = new Map<string, { total: number; hasToday: boolean }>()
@@ -107,32 +108,29 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
         for (const { date, total, isToday } of dailyData) {
             const d = new Date(date)
             if (Number.isNaN(d.getTime())) continue
-            // ISO week key: YYYY-Www (week starts Monday)
-            const day = (d.getUTCDay() + 6) % 7 // Mon=0..Sun=6
+            const day = (d.getUTCDay() + 6) % 7
             const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day))
             const year = monday.getUTCFullYear()
-            // week number
             const oneJan = new Date(Date.UTC(year, 0, 1))
             const week = Math.floor(((+monday - +oneJan) / 86400000 + ((oneJan.getUTCDay() + 6) % 7)) / 7) + 1
             const key = `${year}-W${String(week).padStart(2, '0')}`
 
-            const existing = acc.get(key) ?? { total: 0, hasToday: false }
-            acc.set(key, { total: existing.total + total, hasToday: existing.hasToday || isToday })
+            const entry = acc.get(key) ?? { total: 0, hasToday: false }
+            acc.set(key, { total: entry.total + total, hasToday: entry.hasToday || isToday })
         }
-        return Array.from(acc.entries()).map(([date, { total, hasToday }]) => ({
-            date,
-            total,
-            isToday: hasToday
-        })).sort((a, b) => a.date.localeCompare(b.date))
-    }, [dailyData, mode, today.key])
+
+        return Array.from(acc.entries())
+            .map(([date, { total, hasToday }]) => ({ date, total, isToday: hasToday }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+    }, [dailyData, mode])
 
     const summaryValue = React.useMemo(() => {
-        if (!summary) return null
-        const key = variedad || ''
-        const map = mode === 'week' ? summary.week : summary.today
-        if (map.size === 0) return null
-        return map.get(key) ?? 0
-    }, [summary, mode, variedad])
+        if (mode === 'week') {
+            return weeklyData.reduce((acc, row) => acc + row.total, 0)
+        }
+        const todayEntry = dailyData.find((row) => row.date === today.key)
+        return todayEntry?.total ?? 0
+    }, [mode, weeklyData, dailyData, today.key])
 
     const summaryLabel = React.useMemo(() => {
         if (mode === 'week') {
@@ -142,49 +140,31 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
             const oneJan = new Date(Date.UTC(year, 0, 1))
             const week = Math.floor(((+monday - +oneJan) / 86400000 + ((oneJan.getUTCDay() + 6) % 7)) / 7) + 1
             const weekKey = `${year}-W${String(week).padStart(2, '0')}`
-            return `Cosecha esperada ${weekKey}`
+            return `Producción total ${weekKey}`
         }
-        return `Cosecha esperada ${today.formatted}`
+        return `Producción total ${today.formatted}`
     }, [mode, today])
 
-    // Export to Excel function
     const handleExportExcel = React.useCallback(() => {
-        // Prepare data based on current mode and filters
         const data = mode === 'day' ? dailyData : weeklyData
 
-        // Create worksheet data with headers
         const wsData = [
-            [mode === 'day' ? 'Fecha' : 'Semana', 'Total Cosecha', 'Hoy'],
-            ...data.map(row => [
-                row.date,
-                row.total,
-                row.isToday ? 'Sí' : 'No'
-            ])
+            [mode === 'day' ? 'Fecha' : 'Semana', 'Total Producción', 'Hoy'],
+            ...data.map((row) => [row.date, row.total, row.isToday ? 'Sí' : 'No']),
         ]
 
-        // Create workbook and worksheet
         const wb = XLSX.utils.book_new()
         const ws = XLSX.utils.aoa_to_sheet(wsData)
+        ws['!cols'] = [{ wch: 15 }, { wch: 18 }, { wch: 10 }]
+        XLSX.utils.book_append_sheet(wb, ws, 'Produccion')
 
-        // Set column widths
-        ws['!cols'] = [
-            { wch: 15 },  // Date/Week column
-            { wch: 15 },  // Total column
-            { wch: 10 }   // IsToday column
-        ]
-
-        // Add worksheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Cosecha')
-
-        // Generate filename with filters and date
-        const filterParts = []
+        const filterParts: string[] = []
         if (finca) filterParts.push(`Finca-${finca}`)
         if (bloque) filterParts.push(`Bloque-${bloque}`)
         if (variedad) filterParts.push(`Variedad-${variedad}`)
-        const filterSuffix = filterParts.length > 0 ? `_${filterParts.join('_')}` : ''
-        const filename = `Cosecha_${mode === 'day' ? 'Diaria' : 'Semanal'}${filterSuffix}_${today.key}.xlsx`
+        const filterSuffix = filterParts.length ? `_${filterParts.join('_')}` : ''
+        const filename = `Produccion_${mode === 'day' ? 'Diaria' : 'Semanal'}${filterSuffix}_${today.key}.xlsx`
 
-        // Download file
         XLSX.writeFile(wb, filename)
     }, [mode, dailyData, weeklyData, finca, bloque, variedad, today.key])
 
@@ -192,8 +172,8 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
         <Card className="flex flex-col min-h-0 h-full">
             <CardHeader className="flex flex-row items-center justify-between border-b flex-shrink-0 gap-3 flex-wrap">
                 <CardTitle className="flex flex-col gap-1">
-                    <span>Cosecha</span>
-                    {summaryValue != null && Number.isFinite(summaryValue) && (
+                    <span>Producción</span>
+                    {Number.isFinite(summaryValue) && (
                         <span className="text-xs font-normal text-muted-foreground">
                             {summaryLabel}: <strong>{toNumber(summaryValue).toLocaleString('fr-FR').replace(/\u202F/g, ' ').replace(',', '.')}</strong>
                         </span>
@@ -206,7 +186,6 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                         placeholder="Finca"
                         onSelect={(opt) => {
                             setFinca(opt.value)
-                            // Reset bloque and variedad when finca changes
                             if (opt.value !== finca) {
                                 setBloque('')
                                 setVariedad('')
@@ -219,7 +198,6 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                         placeholder="Bloque"
                         onSelect={(opt) => {
                             setBloque(opt.value)
-                            // Reset variedad when bloque changes
                             if (opt.value !== bloque) setVariedad('')
                         }}
                     />
@@ -249,7 +227,7 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                         variant="outline"
                         size="sm"
                         onClick={handleExportExcel}
-                        className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+                        className="gap-2 bg-blue-600 text-white hover:bg-blue-700"
                     >
                         <Download className="h-4 w-4" />
                         Excel
@@ -273,7 +251,7 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                             <YAxis
                                 tickLine={false}
                                 axisLine={false}
-                                label={{ value: 'Cosecha total', angle: -90, position: 'insideLeft' }}
+                                label={{ value: 'Producción total', angle: -90, position: 'insideLeft' }}
                             />
                             <XAxis
                                 dataKey="date"
@@ -283,12 +261,11 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                                 minTickGap={32}
                                 tickFormatter={(value) => {
                                     if (mode === 'week') return String(value)
-                                    // Parse YYYY-MM-DD without timezone conversion
                                     const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/)
                                     if (!match) return String(value)
                                     const [, year, month, day] = match
                                     const d = new Date(Number(year), Number(month) - 1, Number(day))
-                                    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                    return d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })
                                 }}
                             />
                             <ChartTooltip
@@ -298,19 +275,18 @@ export function CosechaCard({ rows, error, isLoading, summary }: CosechaCardProp
                                         nameKey="total"
                                         labelFormatter={(value) => {
                                             if (mode === 'week') return String(value)
-                                            // Parse YYYY-MM-DD without timezone conversion
                                             const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/)
                                             if (!match) return String(value)
                                             const [, year, month, day] = match
                                             const d = new Date(Number(year), Number(month) - 1, Number(day))
-                                            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                            return d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric', year: 'numeric' })
                                         }}
                                     />
                                 }
                             />
                             <Bar dataKey="total">
                                 {(mode === 'day' ? dailyData : weeklyData).map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.isToday ? '#22c55e' : '#2563eb'} />
+                                    <Cell key={`cell-${index}`} fill={entry.isToday ? '#f97316' : '#0ea5e9'} />
                                 ))}
                             </Bar>
                         </BarChart>

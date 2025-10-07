@@ -52,7 +52,8 @@ export const TABLE_VIEW_COLUMNS: Record<string, string[]> = {
     seccion: ['largo_m'],
     puntos_gps: ['capturado_en', 'latitud', 'longitud', 'precision', 'altitud', 'observacion', 'usuario_id'],
     sync: ['id', 'created_at', 'tables'],
-    estado_fenologico_tipo: ['codigo', 'orden'],
+    observaciones_tipo: ['codigo'],
+    estado_fenologico_orden: ['codigo_observacion', 'orden'],
     // Enriched joins
     bloque: ['finca', 'nombre', 'numero_camas', 'area_m2'],
     cama: ['finca', 'bloque', 'nombre', 'id_grupo', 'largo_metros', 'ancho_metros'],

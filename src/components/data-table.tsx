@@ -214,8 +214,10 @@ export function DataTable({
                         ) : (
                             processedData.map((row, idx) => {
                                 const isNewObs = row._isNewObservation === true
+                                const bloqueGroup = typeof row._bloqueGroup === 'number' ? row._bloqueGroup : 0
+                                const isFirstInBloque = idx > 0 && processedData[idx - 1]._bloqueGroup !== bloqueGroup
                                 return (
-                                    <TableRow key={idx}>
+                                    <TableRow key={idx} className={isFirstInBloque ? 'border-t-2 border-t-gray-600' : ''}>
                                         {cols.map((col) => {
                                             const val = row[col]
                                             const fmt = format?.[col]

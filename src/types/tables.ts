@@ -42,10 +42,13 @@ export type Breeder = {
     eliminado_en: string | null
 }
 
-export type EstadoFenologicoTipo = {
+export type ObservacionesTipo = {
     codigo: string
-    creado_en: string | null
-    orden: number | null
+}
+
+export type EstadoFenologicoOrden = {
+    codigo_observacion: string
+    orden: number
 }
 
 export type EstadosFenologicos = {

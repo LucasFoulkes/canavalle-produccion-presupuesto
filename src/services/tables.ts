@@ -15,7 +15,8 @@ type AnyConfig = TableFetcherConfig<any>
 
 const tableConfigs: AnyConfig[] = [
     { key: 'finca', table: 'finca', store: db.finca },
-    { key: 'estado_fenologico_tipo', table: 'estado_fenologico_tipo', store: db.estado_fenologico_tipo },
+    { key: 'observaciones_tipo', table: 'observaciones_tipo', store: db.observaciones_tipo },
+    { key: 'estado_fenologico_orden', table: 'estado_fenologico_orden', store: db.estado_fenologico_orden },
     { key: 'pinche', table: 'pinche', store: db.pinche },
     { key: 'produccion', table: 'produccion', store: db.produccion },
     { key: 'grupo_cama_estado', table: 'grupo_cama_estado', store: db.grupo_cama_estado },

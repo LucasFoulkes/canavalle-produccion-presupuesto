@@ -3,6 +3,8 @@ import * as React from 'react'
 import { fetchTable } from '@/services/tables'
 import { toNumber } from '@/lib/data-utils'
 import { CosechaCard } from '@/components/cosecha-card'
+import { ObservacionDiaCard } from '@/components/observacion-dia-card'
+import { ProduccionCard, type ProduccionRow } from '@/components/produccion-card'
 
 export const Route = createFileRoute('/')({
   validateSearch: (search: { table?: string }) => search,
@@ -16,6 +18,18 @@ function RouteComponent() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [cosechaSummary, setCosechaSummary] = React.useState<{ today: Map<string, number>; week: Map<string, number> }>({ today: new Map(), week: new Map() })
 
+  // Observaciones por cama data
+  const [obsRows, setObsRows] = React.useState<Array<Record<string, unknown>>>([])
+  const [obsColumns, setObsColumns] = React.useState<string[]>([])
+  const [obsError, setObsError] = React.useState<string | null>(null)
+  const [obsLoading, setObsLoading] = React.useState(true)
+
+  // Producción data
+  const [produccionRows, setProduccionRows] = React.useState<ProduccionRow[]>([])
+  const [produccionError, setProduccionError] = React.useState<string | null>(null)
+  const [produccionLoading, setProduccionLoading] = React.useState(true)
+
+  // Fetch cosecha data
   React.useEffect(() => {
     let cancelled = false
       ; (async () => {
@@ -89,9 +103,110 @@ function RouteComponent() {
     }
   }, [])
 
+  // Fetch observaciones_por_cama data
+  React.useEffect(() => {
+    let cancelled = false
+      ; (async () => {
+        try {
+          setObsLoading(true)
+          const result = await fetchTable('observaciones_por_cama')
+          if (!cancelled) {
+            setObsRows(result.rows as Array<Record<string, unknown>>)
+            setObsColumns(result.columns || [])
+          }
+        } catch (e: any) {
+          if (!cancelled) setObsError(e?.message ?? 'Error loading observaciones')
+        } finally {
+          if (!cancelled) setObsLoading(false)
+        }
+      })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Fetch producción data with name lookups
+  React.useEffect(() => {
+    let cancelled = false
+      ; (async () => {
+        try {
+          setProduccionLoading(true)
+          const [produccionResult, fincaResult, bloqueResult, variedadResult] = await Promise.all([
+            fetchTable('produccion'),
+            fetchTable('finca'),
+            fetchTable('bloque'),
+            fetchTable('variedad'),
+          ])
+
+          if (cancelled) return
+
+          const fincaMap = new Map<string, string>()
+          for (const row of fincaResult.rows as Array<Record<string, unknown>>) {
+            const id = String((row as any).id_finca ?? (row as any).id ?? '')
+            if (!id) continue
+            const name = String((row as any).nombre ?? id)
+            fincaMap.set(id, name)
+          }
+
+          const bloqueMap = new Map<string, string>()
+          for (const row of bloqueResult.rows as Array<Record<string, unknown>>) {
+            const id = String((row as any).id_bloque ?? (row as any).id ?? '')
+            if (!id) continue
+            const name = String((row as any).nombre ?? id)
+            bloqueMap.set(id, name)
+          }
+
+          const variedadMap = new Map<string, string>()
+          for (const row of variedadResult.rows as Array<Record<string, unknown>>) {
+            const id = String((row as any).id_variedad ?? (row as any).id ?? '')
+            if (!id) continue
+            const name = String((row as any).nombre ?? id)
+            variedadMap.set(id, name)
+          }
+
+          const shaped = (produccionResult.rows as Array<Record<string, unknown>>)
+            .map((r) => {
+              const rawDate = String((r as any).created_at ?? '')
+              const dateOnly = rawDate.split('T')[0].split(' ')[0]
+              const fincaId = String((r as any).finca ?? '')
+              const bloqueId = String((r as any).bloque ?? '')
+              const variedadId = String((r as any).variedad ?? '')
+              return {
+                fecha: dateOnly,
+                finca: fincaMap.get(fincaId) ?? (fincaId || 'Sin finca'),
+                bloque: bloqueMap.get(bloqueId) ?? (bloqueId || 'Sin bloque'),
+                variedad: variedadMap.get(variedadId) ?? (variedadId || 'Sin variedad'),
+                cantidad: toNumber((r as any).cantidad) || 0,
+              }
+            })
+            .filter((row) => row.fecha)
+
+          setProduccionRows(shaped)
+          setProduccionError(null)
+        } catch (e: any) {
+          if (!cancelled) setProduccionError(e?.message ?? 'Error loading producción')
+        } finally {
+          if (!cancelled) setProduccionLoading(false)
+        }
+      })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden p-4 gap-4">
-      <CosechaCard rows={rows} error={error} isLoading={isLoading} summary={cosechaSummary} />
+      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4 min-h-0 flex-1">
+        <div className="min-h-0">
+          <CosechaCard rows={rows} error={error} isLoading={isLoading} summary={cosechaSummary} />
+        </div>
+        <div className="min-h-0">
+          <ObservacionDiaCard rows={obsRows} columns={obsColumns} error={obsError} isLoading={obsLoading} />
+        </div>
+        <div className="min-h-0">
+          <ProduccionCard rows={produccionRows} error={produccionError} isLoading={produccionLoading} />
+        </div>
+      </div>
     </div>
   )
 }

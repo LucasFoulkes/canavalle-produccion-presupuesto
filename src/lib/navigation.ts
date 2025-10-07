@@ -80,7 +80,8 @@ export const navBaseGroups: NavGroup[] = [
         icon: PieChart,
         items: [
             { title: 'Estados Fenológicos', url: '/estados_fenologicos' },
-            { title: 'Tipos de Estado', url: '/estado_fenologico_tipo' },
+            { title: 'Tipos de Observación', url: '/observaciones_tipo' },
+            { title: 'Orden Fenológico', url: '/estado_fenologico_orden' },
         ],
     },
     {

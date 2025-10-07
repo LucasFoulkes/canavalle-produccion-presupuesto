@@ -1,10 +1,17 @@
 import { db } from '@/lib/db'
 import type { TableResult } from './tables'
-import type { Bloque, Finca, Variedad, EstadosFenologicos, EstadoFenologicoTipo } from '@/types/tables'
+import type {
+    Bloque,
+    Finca,
+    Variedad,
+    EstadosFenologicos,
+    ObservacionesTipo,
+    EstadoFenologicoOrden,
+} from '@/types/tables'
 import { normText, readAll, refreshAllPages, toNumber } from '@/lib/data-utils'
 import { fetchAreaProductiva } from './area_productiva'
 import { fetchObservacionesPorCama } from './observaciones_por_cama'
-import { toAreaMaps, buildNameMaps, durationsFromRow, cmpFechaDescThenFBV, fbvKeyFromNames } from '@/lib/report-utils'
+import { toAreaMaps, buildNameMaps, durationsFromRow, cmpFechaDescThenFBV, fbvKeyFromNames, getStageList } from '@/lib/report-utils'
 
 // Resumen fenológico por día para cada Finca–Bloque–Variedad (FBV)
 // Para cada fecha, muestra por etapa: "cantidad (porcentaje del área FBV)"
@@ -16,15 +23,24 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
     // Refresh only the tables we need beyond what observaciones_por_cama already loaded
     await Promise.all([
         refreshAllPages<EstadosFenologicos>('estados_fenologicos', db.estados_fenologicos, '*'),
-        refreshAllPages<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*'),
+        refreshAllPages<ObservacionesTipo>('observaciones_tipo', db.observaciones_tipo, '*'),
+        refreshAllPages<EstadoFenologicoOrden>('estado_fenologico_orden', db.estado_fenologico_orden, '*'),
         refreshAllPages<Bloque>('bloque', db.bloque, '*'),
         refreshAllPages<Finca>('finca', db.finca, '*'),
         refreshAllPages<Variedad>('variedad', db.variedad, '*'),
     ])
 
-    const [estadosRows, estadosTipo, bloques, fincas, variedades] = await Promise.all([
+    const [
+        estadosRows,
+        observacionesTipo,
+        estadosOrden,
+        bloques,
+        fincas,
+        variedades,
+    ] = await Promise.all([
         readAll<EstadosFenologicos>(db.estados_fenologicos),
-        readAll<EstadoFenologicoTipo>(db.estado_fenologico_tipo),
+        readAll<ObservacionesTipo>(db.observaciones_tipo),
+        readAll<EstadoFenologicoOrden>(db.estado_fenologico_orden),
         readAll<Bloque>(db.bloque),
         readAll<Finca>(db.finca),
         readAll<Variedad>(db.variedad),
@@ -35,13 +51,25 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
     const stageColumns = obsCols.filter(c =>
         !['fecha', 'finca', 'bloque', 'variedad', 'cama', 'seccion', 'porcentaje_area', 'area_cama_m2'].includes(c)
     )
+    const stageColumnsSet = new Set(stageColumns.map((c) => normText(c)))
+
+    const stageDefinitions = getStageList(observacionesTipo, estadosOrden)
+    const stageList = stageDefinitions.filter((stage) => stageColumnsSet.has(normText(stage.codigo)))
+
+    // Include any stage columns not explicitly defined in the lookup tables to preserve report columns
+    for (const column of stageColumns) {
+        const norm = normText(column)
+        if (!stageList.some((stage) => normText(stage.codigo) === norm)) {
+            stageList.push({ codigo: column, orden: null })
+        }
+    }
 
     // Area totals by FBV using existing aggregator
     const areaRes = await fetchAreaProductiva()
     const { areaTotalByFBV: areaByFBV, areaProdByFBV } = toAreaMaps(areaRes.rows as Array<Record<string, any>>)
 
     if (!obsPorCamaRows.length) {
-        return { rows: [], columns: ['fecha', 'finca', 'bloque', 'variedad', ...stageColumns] }
+        return { rows: [], columns: ['fecha', 'finca', 'bloque', 'variedad', ...stageList.map((s) => s.codigo)] }
     }
 
     // Build inflow from observaciones_por_cama rows
@@ -115,12 +143,7 @@ export async function fetchResumenFenologico(): Promise<TableResult> {
         }
     }
 
-    // Build stageList from estadosTipo, filtered to only include stages in stageColumns
-    const stageColumnsSet = new Set(stageColumns.map(c => normText(c)))
-    const stageList = estadosTipo
-        .filter(st => stageColumnsSet.has(normText(st.codigo)))
-        .sort((a, b) => toNumber(a.orden) - toNumber(b.orden))
-
+    // Build ordered stage list from lookup tables, limited to the columns present in the aggregated observations
     // Build per-FBV durations for the known stage codes present in stageList
     function buildDurationsForFBV(fbv: string): Map<string, number> {
         // Try exact name-key match; fallback to ID-key if the slug looks like IDs

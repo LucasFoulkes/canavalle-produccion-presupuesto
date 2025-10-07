@@ -1,6 +1,16 @@
 import { db } from '@/lib/db'
 import type { TableResult } from './tables'
-import type { Cama, GrupoCama, Bloque, Finca, Variedad, Observacion, Seccion, EstadoFenologicoTipo } from '@/types/tables'
+import type {
+    Cama,
+    GrupoCama,
+    Bloque,
+    Finca,
+    Variedad,
+    Observacion,
+    Seccion,
+    ObservacionesTipo,
+    EstadoFenologicoOrden,
+} from '@/types/tables'
 import { readAll, refreshAllPages, toNumber, normText } from '@/lib/data-utils'
 import { getStageList, normalizeObservaciones, cmpFechaDescThenFBVThenCamaSeccion, fbvKeyFromNames } from '@/lib/report-utils'
 
@@ -14,24 +24,34 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
         refreshAllPages<Variedad>('variedad', db.variedad, '*'),
         refreshAllPages<Observacion>('observacion', db.observacion, '*'),
         refreshAllPages<Seccion & { id?: number }>('seccion', db.seccion, '*'),
-        refreshAllPages<EstadoFenologicoTipo>('estado_fenologico_tipo', db.estado_fenologico_tipo, '*'),
+        refreshAllPages<ObservacionesTipo>('observaciones_tipo', db.observaciones_tipo, '*'),
+        refreshAllPages<EstadoFenologicoOrden>('estado_fenologico_orden', db.estado_fenologico_orden, '*'),
     ])
 
-    const [camas, grupos, bloques, fincas, variedades, observaciones, estadosTipo] = await Promise.all([
+    const [
+        camas,
+        grupos,
+        bloques,
+        fincas,
+        variedades,
+        observaciones,
+        observacionesTipo,
+        estadosOrden,
+    ] = await Promise.all([
         readAll<Cama>(db.cama),
         readAll<GrupoCama>(db.grupo_cama),
         readAll<Bloque>(db.bloque),
         readAll<Finca>(db.finca),
         readAll<Variedad>(db.variedad),
         readAll<Observacion>(db.observacion),
-        readAll<EstadoFenologicoTipo>(db.estado_fenologico_tipo),
+        readAll<ObservacionesTipo>(db.observaciones_tipo),
+        readAll<EstadoFenologicoOrden>(db.estado_fenologico_orden),
     ])
 
+    const stageList = getStageList(observacionesTipo, estadosOrden)
+
     if (!observaciones.length) {
-        const stageCols: string[] = estadosTipo
-            .slice()
-            .sort((a, b) => (a.orden ?? 1e9) - (b.orden ?? 1e9) || a.codigo.localeCompare(b.codigo))
-            .map((e) => e.codigo)
+        const stageCols: string[] = stageList.map((e) => e.codigo)
         return { rows: [], columns: ['finca', 'bloque', 'variedad', 'cama', 'seccion', 'fecha', ...stageCols, 'porcentaje_area', 'area_cama_m2'] }
     }
 
@@ -94,8 +114,6 @@ export async function fetchObservacionesPorCama(): Promise<TableResult> {
 
     // Flatten to rows: one row per cama per seccion with estados, and include total area per cama
     // Build stage columns definition
-    const stageList = getStageList(estadosTipo)
-
     const result: Array<Record<string, unknown>> = []
     for (const [keyCamaSeccion, countsMap] of countsByCamaSeccion.entries()) {
         const [finca, bloque, variedad, cama, seccion, fecha] = keyCamaSeccion.split('||')
